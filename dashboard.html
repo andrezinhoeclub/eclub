@@ -2875,12 +2875,31 @@ window.GuardaSessao = (function () {
             }).join('');
         };
 
+        // Remover o aniversariante apaga também os nomes que entraram pelo link
+        // dele (saem da lista do evento, dos relatórios e da portaria).
+        // Só ficam guardados os que já PAGARAM ou já ENTRARAM na casa — esses
+        // têm dinheiro ou histórico envolvido e continuam na Auditoria.
         window.removerAniversariante = async (id) => {
-            if (!(await ECUI.confirmar({ titulo: 'Remover esta lista de aniversário?', texto: 'As reservas já feitas por esse link continuam valendo normalmente — elas só deixam de aparecer agrupadas aqui.', confirmar: 'Remover lista', perigo: true }))) return;
+            const link = dadosLinksAniversario.find(l => l.id === id);
+            const nomesDoLink = dadosReservas.filter(r => r.link_aniversario_id === id);
+            const protegidos = nomesDoLink.filter(r => r.pago === true || r.entrou === true);
+            const apagar = nomesDoLink.filter(r => !(r.pago === true || r.entrou === true));
+            let texto = `Aniversariante: ${link?.aniversariante || '---'}\n`;
+            texto += apagar.length
+                ? `${apagar.length} nome(s) da lista também saem da lista do evento, dos relatórios e da portaria.`
+                : 'Nenhum nome na lista para apagar.';
+            if (protegidos.length) texto += `\n\n${protegidos.length} nome(s) que já pagaram ou já entraram ficam guardados na Auditoria.`;
+            texto += '\n\nNão dá para desfazer.';
+            if (!(await ECUI.confirmar({ titulo: 'Remover aniversariante e a lista?', texto, confirmar: apagar.length ? `Remover lista e ${apagar.length} nome(s)` : 'Remover lista', perigo: true }))) return;
+            if (apagar.length) {
+                const { error: erroNomes } = await sb.from('reservas').delete()
+                    .eq('link_aniversario_id', id).eq('pago', false).eq('entrou', false);
+                if (erroNomes) return mostrarAviso('Erro ao apagar os nomes da lista: ' + erroNomes.message);
+            }
             const { error } = await sb.from('links_aniversario').delete().eq('id', id);
             if (error) return mostrarAviso('Erro ao remover: ' + error.message);
-            mostrarAviso('Lista de aniversário removida!', true);
-            await carregarLinksAniversario();
+            mostrarAviso(apagar.length ? `Aniversariante removido com ${apagar.length} nome(s) da lista.` : 'Lista de aniversário removida!', true);
+            await Promise.all([carregarLinksAniversario(), carregarReservas()]);
         };
 
         window.renderCamarotesVendidos = () => {
@@ -3626,6 +3645,6 @@ window.GuardaSessao = (function () {
   .ap-rodape b{color:#e3b94e;font-weight:800}
   @media print{.ap-rodape{display:none!important}}
 </style>
-<div id="ap-rodape" class="ap-rodape" data-tela="Dashboard" data-versao="1.4">Desenvolvido por <b>Abre a Porta</b> · Dashboard v1.4 · 22/10/2026</div>
+<div id="ap-rodape" class="ap-rodape" data-tela="Dashboard" data-versao="1.5">Desenvolvido por <b>Abre a Porta</b> · Dashboard v1.5 · 24/10/2026</div>
 </body>
 </html>
