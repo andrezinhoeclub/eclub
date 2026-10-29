@@ -1,4 +1,4 @@
-/* estilo.css — v2.3 — visual padrão estilo aplicativo (claro, com modo escuro) */
+/* estilo.css — v2.4 — visual padrão estilo aplicativo (claro, com modo escuro) */
 :root{
   --marca:#c2255c; --marca2:#e64980; --marca-txt:#ffffff;
   --fundo:#eef0f3; --cartao:#ffffff; --cartao2:#f6f7f9; --linha:#e1e4e9;
@@ -384,3 +384,38 @@ body.em-conversa .barra-baixo,body.em-conversa footer{display:none}
 .aviso-msg b{display:block;font-size:.92rem}
 .aviso-msg span{display:block;color:var(--suave);font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @keyframes desce{from{transform:translateY(-20px);opacity:0}to{transform:none;opacity:1}}
+
+/* =====================================================================
+   v2.4 — EVENTOS E AGENDA
+   ===================================================================== */
+.ev-card{display:block;background:var(--cartao);margin-bottom:8px;text-decoration:none;color:var(--texto)}
+.ev-card .flyer{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:linear-gradient(120deg,#5f3dc4,#c2255c 60%,#f08c00)}
+.ev-card .flyer.vazio{display:flex;align-items:center;justify-content:center;font-size:2.4rem}
+.ev-linha{display:flex;gap:12px;padding:12px 14px;align-items:flex-start}
+.ev-data{flex:0 0 52px;text-align:center;line-height:1.1}
+.ev-data small{display:block;font-size:.72rem;font-weight:700;color:var(--marca);text-transform:uppercase}
+.ev-data b{display:block;font-size:1.6rem}
+.ev-data span{display:block;font-size:.7rem;color:var(--suave);text-transform:uppercase}
+.ev-info{flex:1;min-width:0}
+.ev-info .hora{color:var(--suave);font-size:.84rem}
+.ev-info h3{margin:2px 0 4px;font-size:1.05rem;color:var(--marca)}
+.ev-info .onde{font-size:.86rem;color:var(--suave)}
+.ev-info .conta{font-size:.8rem;margin-top:6px}
+.ev-tag{display:inline-block;font-size:.72rem;font-weight:700;border-radius:6px;padding:2px 8px;margin-left:6px;background:#ebfbee;color:#2b8a3e}
+.ev-tag.talvez{background:#fff4e6;color:#d9480f}
+.ev-detalhe .flyer{width:100%;display:block;max-height:70vh;object-fit:contain;background:#000}
+.ev-respostas{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.ev-respostas button{border:1px solid var(--linha);background:var(--cartao2);border-radius:10px;padding:12px 4px;font:600 .9rem Inter,sans-serif;color:var(--texto);cursor:pointer}
+.ev-respostas button.sel{background:var(--marca);border-color:var(--marca);color:#fff}
+.ev-respostas button.sel.talvez{background:#f08c00;border-color:#f08c00}
+.quem-vai{display:flex;flex-wrap:wrap;gap:10px}
+.quem-vai a{width:64px;text-align:center;text-decoration:none;color:var(--texto);font-size:.7rem}
+.quem-vai a .av{width:56px;height:56px;margin:0 auto 3px;border-radius:50%;overflow:hidden;background:var(--cartao2);display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid var(--ok)}
+.quem-vai a .av.talvez{border-color:#f08c00}
+.quem-vai a .av canvas{width:100%;height:100%}
+.quem-vai a span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.post .ev-no-post{display:block;margin:0 0 8px;text-decoration:none;color:var(--texto);background:var(--cartao2)}
+.post .ev-no-post img{width:100%;max-height:420px;object-fit:cover;display:block}
+@media (min-width:700px){ .ev-card{border-radius:12px;overflow:hidden} }
+#abasAdmin button{font-size:.8rem;padding:12px 2px}
+input[type=datetime-local]{width:100%;background:var(--cartao);border:1px solid var(--linha);color:var(--texto);border-radius:10px;padding:10px 11px;font:16px Inter,sans-serif}

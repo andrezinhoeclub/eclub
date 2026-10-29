@@ -1,4 +1,4 @@
-// perfil.js — v2.2 — perfil de um membro (layout em cartão central)
+// perfil.js — v2.3 — perfil de um membro (layout em cartão central)
 (async function () {
   'use strict';
   const { sb, $, msg, idades, visto, avatar, sexos, gradeFotos, moldura, exigirMembro, emBreve, toast,
@@ -66,6 +66,9 @@
     }
   }
   numeros();
+  sb.rpc('eventos_na_agenda', { p_id: id }).then(({ data }) => {
+    if (data) { const b = badge('📅 ' + data + (data === 1 ? ' Evento na Agenda' : ' Eventos na Agenda'), 'azul'); b.style.cursor = 'default'; }
+  });
   $('bSeguir').addEventListener('click', async () => {
     $('bSeguir').disabled = true;
     const { data, error } = await sb.rpc('alternar_seguir', { p_membro: id });

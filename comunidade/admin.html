@@ -8,7 +8,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Administração</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=2.3">
+<link rel="stylesheet" href="estilo.css?v=2.4">
 </head>
 <body>
 
@@ -19,8 +19,9 @@
 
   <div class="oculto" id="painel">
     <div class="titulo-secao">Painel da administração</div>
-    <div class="abas" style="grid-template-columns:repeat(4,1fr)" id="abasAdmin">
-      <button type="button" class="sel" data-aba="verif">Verificações</button>
+    <div class="abas" style="grid-template-columns:repeat(5,1fr)" id="abasAdmin">
+      <button type="button" class="sel" data-aba="verif">Verificar</button>
+      <button type="button" data-aba="eventos">Eventos</button>
       <button type="button" data-aba="membros">Membros</button>
       <button type="button" data-aba="planos">Planos</button>
       <button type="button" data-aba="destaques">Destaques</button>
@@ -59,6 +60,47 @@
         <div id="pLista"></div>
         <div class="msg" id="pMsg"></div>
       </div>
+    </div>
+
+    <!-- EVENTOS -->
+    <div class="oculto" id="abaEventos">
+      <div class="cartao">
+        <h1 id="evTituloForm">Novo evento</h1>
+        <input type="hidden" id="evId">
+        <label class="campo" for="evTitulo">Nome do evento *</label>
+        <input type="text" id="evTitulo" maxlength="120" placeholder="Ex.: Halloween E-Club">
+        <label class="campo" for="evOrg">Organização</label>
+        <input type="text" id="evOrg" maxlength="80" value="E-Club">
+        <div class="filtros">
+          <div><label class="campo" for="evInicio">Começa *</label><input type="datetime-local" id="evInicio"></div>
+          <div><label class="campo" for="evFim">Termina</label><input type="datetime-local" id="evFim"></div>
+        </div>
+        <label class="campo" for="evLocal">Local</label>
+        <input type="text" id="evLocal" maxlength="120" placeholder="Ex.: E-Club">
+        <label class="campo" for="evEndereco">Endereço</label>
+        <input type="text" id="evEndereco" maxlength="200" placeholder="Rua, número, bairro">
+        <div class="filtros">
+          <div><label class="campo" for="evCidade">Cidade</label><input type="text" id="evCidade" maxlength="60" value="Curitiba"></div>
+          <div><label class="campo" for="evUf">UF</label><select id="evUf"></select></div>
+        </div>
+        <label class="campo" for="evDescricao">Descrição</label>
+        <textarea id="evDescricao" maxlength="4000" placeholder="Atrações, regras, dress code, valores…"></textarea>
+        <div class="filtros">
+          <div><label class="campo" for="evLink">Link de lista/ingressos (https://…)</label><input type="text" id="evLink" maxlength="300" placeholder="https://eclub.curitiba.br/listas"></div>
+          <div><label class="campo" for="evLinkTxt">Texto do botão</label><input type="text" id="evLinkTxt" maxlength="40" placeholder="Nome na lista"></div>
+        </div>
+        <label class="campo" for="evFlyer">Flyer (imagem)</label>
+        <input type="file" id="evFlyer" accept="image/*">
+        <img id="evPrevia" class="oculto" alt="" style="max-width:100%;max-height:260px;margin-top:8px;border-radius:8px">
+        <label class="campo" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="evAtivo" checked style="width:20px;height:20px"> Visível para os membros</label>
+        <div class="linha-acoes">
+          <button class="btn" id="evSalvar" type="button">Salvar evento</button>
+          <button class="btn secundario oculto" id="evCancelar" type="button">Cancelar edição</button>
+        </div>
+        <div class="msg" id="evMsg"></div>
+      </div>
+      <div class="titulo-secao">Eventos cadastrados</div>
+      <div class="lista-pessoas" id="evLista"></div>
     </div>
 
     <!-- DESTAQUES -->
@@ -121,11 +163,11 @@
   </div>
 </template>
 
-<footer>admin.html v2.2</footer>
+<footer>admin.html v2.3</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
-<script src="base.js?v=2.4"></script>
-<script src="admin.js?v=2.1"></script>
+<script src="base.js?v=2.5"></script>
+<script src="admin.js?v=2.2"></script>
 </body>
 </html>

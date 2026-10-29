@@ -1,7 +1,7 @@
-// feed.js — v1.1 — publicações (curtir, comentar, seguir) e mural de recados
+// feed.js — v1.2 — publicações (curtir, comentar, seguir) e mural de recados
 (function () {
   'use strict';
-  const { sb, links, fotoProtegida, abrirVisor, sexos, avatar, tempo, toast } = window.BASE;
+  const { sb, links, fotoProtegida, abrirVisor, sexos, avatar, tempo, toast, flyer } = window.BASE;
 
   function el(tag, cls, texto) {
     const e = document.createElement(tag);
@@ -20,7 +20,7 @@
     const quem = el('div', 'quem');
     const nome = el('a'); nome.href = av.href;
     nome.append(sexos(p), ' ' + p.apelido, el('span', 'suave', ' . ' + p.uf));
-    quem.append(nome, el('small', null, tempo(p.criado_em)));
+    quem.append(nome, el('small', null, (p.evento ? 'Confirmou presença no evento · ' : '') + tempo(p.criado_em)));
     cab.append(av, quem);
 
     // Opções (seguir / apagar / denunciar)
@@ -52,6 +52,22 @@
     opc.append(bOpc, lista);
     cab.appendChild(opc);
     c.appendChild(cab);
+
+    // Evento (confirmou presença)
+    if (p.evento) {
+      const ev = el('a', 'ev-no-post'); ev.href = 'eventos.html?id=' + p.evento;
+      if (p.ev_capa) { const img = el('img'); img.src = flyer(p.ev_capa); img.alt = p.ev_titulo || 'Evento'; img.loading = 'lazy'; ev.appendChild(img); }
+      const d = new Date(p.ev_inicio);
+      const linha = el('div', 'ev-linha');
+      const dt = el('div', 'ev-data');
+      dt.append(el('small', null, ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'][d.getDay()]), el('b', null, String(d.getDate())),
+                el('span', null, ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'][d.getMonth()]));
+      const inf = el('div', 'ev-info');
+      inf.append(el('div', 'hora', 'a partir das ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })),
+                 el('h3', null, p.ev_titulo || ''), el('div', 'onde', p.ev_local || ''));
+      linha.append(dt, inf); ev.appendChild(linha);
+      c.appendChild(ev);
+    }
 
     // Texto
     if (p.texto) c.appendChild(el('div', 'txt', p.texto));

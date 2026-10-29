@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Eventos</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=2.4">
+</head>
+<body>
+
+<main>
+  <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
+
+  <!-- LISTA -->
+  <div class="oculto" id="telaLista">
+    <div class="abas" id="abas">
+      <button type="button" data-aba="proximos" class="sel">Próximos</button>
+      <button type="button" data-aba="agenda">Minha Agenda</button>
+      <button type="button" data-aba="anteriores">Anteriores</button>
+    </div>
+    <div id="lista"></div>
+    <div class="cartao oculto" id="vazio"><p class="suave" style="margin:0" id="txtVazio"></p></div>
+  </div>
+
+  <!-- DETALHE -->
+  <div class="oculto ev-detalhe" id="telaDetalhe">
+    <div class="cartao" style="padding:10px 14px"><a href="eventos.html" id="voltar">← Todos os eventos</a></div>
+    <img class="flyer oculto" id="dFlyer" alt="Flyer do evento">
+    <div class="cartao">
+      <div class="ev-linha" style="padding:0">
+        <div class="ev-data" id="dData"></div>
+        <div class="ev-info">
+          <div class="hora" id="dHora"></div>
+          <h3 id="dTitulo" style="font-size:1.3rem"></h3>
+          <div class="onde" id="dOrg"></div>
+        </div>
+      </div>
+      <p id="dLocal" style="margin:12px 0 0"></p>
+      <p id="dDescricao" style="white-space:pre-wrap"></p>
+      <a class="btn oculto" id="dLink" target="_blank" rel="noopener noreferrer"></a>
+    </div>
+
+    <div class="titulo-secao">Você vai?</div>
+    <div class="cartao">
+      <div class="ev-respostas" id="respostas">
+        <button type="button" data-r="vou">✅ Vou</button>
+        <button type="button" data-r="talvez" class="talvez-btn">🤔 Talvez</button>
+        <button type="button" data-r="nao">✖ Não vou</button>
+      </div>
+      <label class="campo" style="display:flex;gap:8px;align-items:center;margin-top:12px">
+        <input type="checkbox" id="dDiscreto" style="width:20px;height:20px;accent-color:var(--marca)">
+        <span>Confirmar de forma <b>discreta</b> (conto no número, mas meu nome não aparece)</span>
+      </label>
+      <div class="msg" id="mResp"></div>
+    </div>
+
+    <div class="titulo-secao" id="tQuem">Quem vai</div>
+    <div class="cartao">
+      <div class="quem-vai" id="quemVai"></div>
+      <p class="suave oculto" id="ninguem" style="margin:0">Ninguém confirmou publicamente ainda. Seja o primeiro!</p>
+    </div>
+  </div>
+</main>
+
+<footer><a href="regras.html">Regras e privacidade</a> · eventos.html v1.0</footer>
+
+<script src="config.js?v=1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="base.js?v=2.5"></script>
+<script src="eventos.js?v=1.0"></script>
+</body>
+</html>

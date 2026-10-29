@@ -1,4 +1,4 @@
-// base.js — v2.4 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v2.5 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -222,6 +222,9 @@
     add('link', { rel: 'icon', type: 'image/png', href: 'icone-192.png' });
   })();
 
+  // Endereço público do flyer de um evento
+  const flyer = (caminho) => caminho ? sb.storage.from('eventos').getPublicUrl(caminho).data.publicUrl : null;
+
   // ---------- Pequenas utilidades ----------
   function toast(texto) {
     document.querySelectorAll('.aviso-toast').forEach(t => t.remove());
@@ -324,7 +327,7 @@
 
     const topo = document.createElement('div'); topo.className = 'barra-topo';
     topo.innerHTML = '<div class="icones">' +
-      pag('menu', 'Menu') + pag('agenda', 'Eventos') + pag('perfil', 'Meu perfil', 'meu-perfil.html') +
+      pag('menu', 'Menu') + pag('agenda', 'Eventos', 'eventos.html') + pag('perfil', 'Meu perfil', 'meu-perfil.html') +
       pag('recado', 'Recados', 'recados.html') + pag('chat', 'Mensagens', 'chat.html') + pag('camera', 'Publicar foto', 'inicio.html?postar=foto') +
       pag('busca', 'Buscar membros', 'aovivo.html?busca=1') + '</div>';
     document.body.prepend(topo);
@@ -436,7 +439,7 @@
     item('amigos', 'Meus Amigos', null);
     item('camera', 'Meu Fotolog', 'meu-perfil.html');
     item('perfil', 'Fotos de Rosto', null);
-    item('agenda', 'Minha Agenda', null);
+    item('agenda', 'Minha Agenda', 'eventos.html?aba=agenda');
     item('estrela', 'Meus Depoimentos', null);
     item('coracao', 'Minhas Paqueras', null);
     item('nota', 'Minhas Anotações', null);
@@ -449,7 +452,7 @@
     item('radar', 'Radar', 'aovivo.html');
     item('forum', 'Fórum', null);
     item('grupos', 'Círculos', null);
-    item('agenda', 'Eventos', null);
+    item('agenda', 'Eventos', 'eventos.html');
     item('trofeu', 'Ranking', null);
 
     secao('Conta');
@@ -511,7 +514,7 @@
 
   window.BASE = { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, sair, prepararFoto,
                   links, definirMarca, moldura, abrirVisor, gradeFotos, fotoProtegida, visto, idades, tempo,
-                  sexos, avatar, toast, emBreve, icone, CAMPOS, signo, mesDe, UFS, NOME_TIPO, NOME: A.NOME };
+                  sexos, avatar, toast, emBreve, icone, flyer, CAMPOS, signo, mesDe, UFS, NOME_TIPO, NOME: A.NOME };
 
   // Nome da comunidade no topo e no título
   document.addEventListener('DOMContentLoaded', () => {
