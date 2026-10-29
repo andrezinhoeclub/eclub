@@ -1,4 +1,4 @@
-// entrar.js — v1.2 — login, cadastro, convite (completar cadastro) e recuperação de senha
+// entrar.js — v1.3 — login, cadastro, convite (completar cadastro) e recuperação de senha
 (function () {
   'use strict';
 
@@ -45,7 +45,8 @@
     $('fEntrar').classList.toggle('oculto', aba !== 'entrar');
     $('fCadastro').classList.toggle('oculto', aba !== 'cadastro');
     $('fNovaSenha').classList.toggle('oculto', aba !== 'novasenha');
-    $('abas').classList.toggle('oculto', aba === 'novasenha');
+    $('fLink').classList.toggle('oculto', aba !== 'link');
+    $('abas').classList.toggle('oculto', aba === 'novasenha' || aba === 'link');
   }
   document.querySelectorAll('#abas button').forEach(b => b.addEventListener('click', () => mostrar(b.dataset.aba)));
 
@@ -128,9 +129,63 @@
     msg('mEntrar', 'ok', 'Se este e-mail tiver conta, você vai receber um link para criar uma nova senha.');
   });
 
+  // Link de "nova senha": quem ainda não tem perfil (convite) vai direto completar o cadastro
+  async function aposRecuperacao() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    const { data: p } = await sb.from('perfis').select('id').eq('id', user.id).maybeSingle();
+    if (!p) modoCompletar(user); else mostrar('novasenha');
+  }
   sb.auth.onAuthStateChange((evento) => {
-    if (evento === 'PASSWORD_RECOVERY') mostrar('novasenha');
+    if (evento === 'PASSWORD_RECOVERY' && !linkEmail) aposRecuperacao();
   });
+
+  // ---------- LINK DO E-MAIL ----------
+  // O e-mail traz ?token_hash=...&type=... e o código só é usado quando a pessoa toca em "Continuar".
+  // Assim o Hotmail/Outlook (que abre os links sozinho para checar vírus) não queima o convite.
+  const qs = new URLSearchParams(location.search);
+  const hs = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const TIPOS_LINK = {
+    invite:   ['🎉 Você foi convidado!', 'Toque em continuar para criar sua senha e completar seu cadastro.'],
+    recovery: ['🔑 Criar nova senha', 'Toque em continuar para criar sua nova senha.'],
+    email:    ['✉️ Confirmar e-mail', 'Toque em continuar para confirmar seu e-mail.'],
+    signup:   ['✉️ Confirmar e-mail', 'Toque em continuar para confirmar seu e-mail.']
+  };
+  const linkEmail = qs.get('token_hash') && TIPOS_LINK[qs.get('type')] ? { hash: qs.get('token_hash'), tipo: qs.get('type') } : null;
+  const linkComErro = hs.get('error_code') || hs.get('error') || qs.get('error_code');
+
+  function linkVencido(tipo) {
+    mostrar('link');
+    $('lTitulo').textContent = '⏰ Este link já foi usado ou venceu';
+    $('lTexto').textContent = 'Sem problema: digite seu e-mail e mandamos um link novo. Se você recebeu um convite, por ele você cria a senha e completa o cadastro.';
+    $('bLink').classList.add('oculto'); $('lReenviar').classList.remove('oculto');
+  }
+  $('bReenviar').addEventListener('click', async () => {
+    const email = $('lEmail').value.trim().toLowerCase();
+    if (!emailBom(email)) { msg('mLink', 'erro', 'Digite um e-mail válido.'); return; }
+    $('bReenviar').disabled = true;
+    await sb.auth.resetPasswordForEmail(email, { redirectTo: urlDe('entrar.html') });
+    msg('mLink', 'ok', 'Se este e-mail tiver convite ou conta, você vai receber um link novo em instantes (veja também o spam).');
+  });
+
+  if (linkEmail) {
+    history.replaceState({}, '', location.pathname);   // tira o código da barra de endereço
+    mostrar('link');
+    $('lTitulo').textContent = TIPOS_LINK[linkEmail.tipo][0];
+    $('lTexto').textContent = TIPOS_LINK[linkEmail.tipo][1];
+    $('bLink').addEventListener('click', async () => {
+      $('bLink').disabled = true; msg('mLink', 'info', 'Conferindo o link…');
+      await sb.auth.signOut({ scope: 'local' });   // se outra conta estava aberta neste aparelho
+      const { error } = await sb.auth.verifyOtp({ token_hash: linkEmail.hash, type: linkEmail.tipo });
+      $('bLink').disabled = false;
+      if (error) { msg('mLink', null, ''); linkVencido(linkEmail.tipo); return; }
+      msg('mLink', null, '');
+      if (linkEmail.tipo === 'recovery') aposRecuperacao(); else encaminhar();
+    });
+  } else if (linkComErro) {
+    history.replaceState({}, '', location.pathname);
+    linkVencido(hs.get('type') || 'invite');
+  }
 
   $('fNovaSenha').addEventListener('submit', async (ev) => {
     ev.preventDefault();
@@ -279,7 +334,7 @@
   });
 
   // Já está logado? (ou voltou pelo link de confirmação) → segue direto
-  sb.auth.getSession().then(({ data }) => {
+  if (!linkEmail && !linkComErro) sb.auth.getSession().then(({ data }) => {
     if (data.session && !location.hash.includes('type=recovery')) encaminhar();
   });
 })();
