@@ -1,4 +1,4 @@
-// perfil.js — v2.1 — perfil de um membro (layout em cartão central)
+// perfil.js — v2.2 — perfil de um membro (layout em cartão central)
 (async function () {
   'use strict';
   const { sb, $, msg, idades, visto, avatar, sexos, gradeFotos, moldura, exigirMembro, emBreve, toast,
@@ -160,6 +160,21 @@
     mostrarAlbum();
   });
   mostrarAlbum();
+
+  // ---------- Recados ----------
+  $('bChat').href = 'chat.html?com=' + encodeURIComponent(id);
+  const mural = window.FEED.recados($('mural'), id, eu);
+  $('bRecado').addEventListener('click', () => setTimeout(() => $('rTexto').focus(), 300));
+  if (location.hash === '#recados') setTimeout(() => { $('recados').scrollIntoView({ block: 'start' }); $('rTexto').focus(); }, 600);
+  $('rEnviar').addEventListener('click', async () => {
+    const texto = $('rTexto').value.trim();
+    if (!texto) { msg('mRecado', 'erro', 'Escreva o recado.'); return; }
+    $('rEnviar').disabled = true;
+    const { error } = await sb.from('recados').insert({ perfil: id, autor: eu.id, texto });
+    $('rEnviar').disabled = false;
+    if (error) { msg('mRecado', 'erro', /Limite/.test(error.message) ? error.message : 'Não foi possível enviar o recado.'); return; }
+    $('rTexto').value = ''; msg('mRecado', 'ok', 'Recado enviado ✓'); mural.recarregar();
+  });
 
   // ---------- Publicações ----------
   window.FEED.lista($('publicacoes'), eu, 'autor', id, 'Nenhuma publicação ainda.');

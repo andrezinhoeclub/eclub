@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Mensagens</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=2.2">
+</head>
+<body>
+
+<main id="principal">
+  <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
+
+  <!-- Lista de conversas -->
+  <div class="oculto" id="telaLista">
+    <div class="titulo-secao">Mensagens</div>
+    <div class="conversas" id="conversas"></div>
+    <div class="cartao oculto" id="semConversas">
+      <p class="suave" style="margin:0">Nenhuma conversa ainda. Abra o perfil de um membro e toque em <b>Chat</b> para começar.</p>
+    </div>
+  </div>
+</main>
+
+<!-- Conversa aberta -->
+<div class="conversa oculto" id="telaConversa" style="position:relative">
+  <div class="cab-conv">
+    <button type="button" id="bVoltar" aria-label="Voltar">←</button>
+    <span class="av" id="cAvatar"></span>
+    <a class="nome" id="cNome" href="#"><span></span><small id="cStatus"></small></a>
+    <button type="button" id="bOpcoes" aria-label="Opções">⋯</button>
+  </div>
+  <div class="opcoes-conv oculto" id="opcoesConv">
+    <button type="button" id="oPerfil">👤 Ver perfil</button>
+    <button type="button" id="oApagar">🗑 Apagar conversa (só para mim)</button>
+    <button type="button" id="oDenunciar">⚠️ Denunciar / bloquear</button>
+  </div>
+  <div class="msgs" id="msgs"></div>
+  <div class="barra-envio" id="barraEnvio">
+    <button type="button" class="foto" id="bFoto" aria-label="Enviar foto">📷</button>
+    <textarea id="cTexto" rows="1" maxlength="2000" placeholder="Mensagem…"></textarea>
+    <button type="button" id="bEnviar" aria-label="Enviar">➤</button>
+  </div>
+  <div class="aviso-envio oculto" id="avisoEnvio"></div>
+  <input type="file" id="cArquivo" accept="image/*" class="oculto">
+</div>
+
+<footer><a href="regras.html">Regras e privacidade</a> · chat.html v1.0</footer>
+
+<script src="config.js?v=1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="base.js?v=2.3"></script>
+<script src="chat.js?v=1.0"></script>
+</body>
+</html>

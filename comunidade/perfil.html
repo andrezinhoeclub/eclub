@@ -8,7 +8,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Perfil</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=2.0">
+<link rel="stylesheet" href="estilo.css?v=2.2">
 </head>
 <body>
 
@@ -35,8 +35,8 @@
         <button type="button" data-breve><span class="ic">💘</span><span>Paquerar</span></button>
         <button type="button" data-breve><span class="ic">⭐</span><span>Favoritar</span></button>
         <button type="button" data-breve><span class="ic">👥</span><span>Add Amigo</span></button>
-        <button type="button" data-breve><span class="ic">💬</span><span>Chat</span></button>
-        <button type="button" data-breve><span class="ic">✉️</span><span>Recado</span></button>
+        <a id="bChat" href="#"><span class="ic">💬</span><span>Chat</span></a>
+        <a href="#recados" id="bRecado"><span class="ic">✉️</span><span>Recado</span></a>
         <a href="#fotolog"><span class="ic">📷</span><span>Fotolog</span></a>
         <button type="button" id="bMaisAcoes"><span class="ic">⋯</span><span>mais…</span></button>
       </div>
@@ -115,18 +115,29 @@
     <div class="titulo-secao">Preferências</div>
     <div class="cartao preferencias" id="preferencias"></div>
 
+    <!-- Recados -->
+    <div class="titulo-secao" id="recados">Recados</div>
+    <div class="cartao">
+      <div class="novo-recado">
+        <textarea id="rTexto" maxlength="500" placeholder="Deixe um recado no mural…"></textarea>
+        <button class="btn" id="rEnviar" type="button">Enviar</button>
+      </div>
+      <div class="msg" id="mRecado"></div>
+    </div>
+    <div id="mural"></div>
+
     <!-- Publicações -->
     <div class="titulo-secao">Publicações</div>
     <div id="publicacoes"></div>
   </div>
 </main>
 
-<footer><a href="regras.html">Regras e privacidade</a> · perfil.html v2.1</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · perfil.html v2.2</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
-<script src="base.js?v=2.0"></script>
-<script src="feed.js?v=1.0"></script>
-<script src="perfil.js?v=2.1"></script>
+<script src="base.js?v=2.3"></script>
+<script src="feed.js?v=1.1"></script>
+<script src="perfil.js?v=2.2"></script>
 </body>
 </html>

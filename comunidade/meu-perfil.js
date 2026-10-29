@@ -1,4 +1,4 @@
-// meu-perfil.js — v2.0 — editar perfil (com detalhes Ele/Ela), fotos, álbum privado e bloqueios
+// meu-perfil.js — v2.1 — editar perfil (com detalhes Ele/Ela), fotos, álbum privado e bloqueios
 (async function () {
   'use strict';
   const { sb, $, msg, formacao, links, fotoProtegida, gradeFotos, sexos,
@@ -244,6 +244,15 @@
     $('semAcessos').classList.toggle('oculto', !!$('listaAcessos').children.length);
   }
   carregarAlbum();
+
+  // ---------- Quem pode me mandar mensagem ----------
+  function pintarPriv(v) { document.querySelectorAll('#privMsg .chip').forEach(c => c.classList.toggle('sel', (c.dataset.v === 'true') === v)); }
+  pintarPriv(!!eu.msg_so_quem_sigo);
+  document.querySelectorAll('#privMsg .chip').forEach(c => c.addEventListener('click', async () => {
+    const v = c.dataset.v === 'true';
+    const { error } = await sb.from('perfis').update({ msg_so_quem_sigo: v }).eq('id', eu.id);
+    if (!error) { eu.msg_so_quem_sigo = v; pintarPriv(v); window.BASE.toast('Salvo ✓'); }
+  }));
 
   // ---------- Bloqueados ----------
   async function carregarBloqueados() {

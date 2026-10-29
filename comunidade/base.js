@@ -1,4 +1,4 @@
-// base.js — v2.2 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v2.3 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -45,7 +45,7 @@
     const { data: { user } } = await sb.auth.getUser();
     if (!user) { location.replace('entrar.html'); throw new Error('sem login'); }
     const { data: perfil } = await sb.from('perfis')
-      .select('id, numero, apelido, tipo, sexo_1, sexo_2, status, verificado, foto_perfil, cidade, uf, bio, procura, isento, acesso_ate, detalhes')
+      .select('id, numero, apelido, tipo, sexo_1, sexo_2, status, verificado, foto_perfil, cidade, uf, bio, procura, isento, acesso_ate, detalhes, msg_so_quem_sigo')
       .eq('id', user.id).maybeSingle();
     if (!perfil) { await sair(); throw new Error('sem perfil'); }
     return { user, perfil };
@@ -313,7 +313,7 @@
     const topo = document.createElement('div'); topo.className = 'barra-topo';
     topo.innerHTML = '<div class="icones">' +
       pag('menu', 'Menu') + pag('agenda', 'Eventos') + pag('perfil', 'Meu perfil', 'meu-perfil.html') +
-      pag('recado', 'Recados') + pag('chat', 'Chat') + pag('camera', 'Publicar foto', 'inicio.html?postar=foto') +
+      pag('recado', 'Recados', 'recados.html') + pag('chat', 'Mensagens', 'chat.html') + pag('camera', 'Publicar foto', 'inicio.html?postar=foto') +
       pag('busca', 'Buscar membros', 'aovivo.html?busca=1') + '</div>';
     document.body.prepend(topo);
 
@@ -334,6 +334,24 @@
     sb.from('album_pedidos').select('solicitante', { count: 'exact', head: true })
       .eq('dono', perfil.id).eq('status', 'pendente')
       .then(({ count }) => { if (count) $('b_perfil').textContent = count; });
+
+    // Avisos: mensagens não lidas e recados novos
+    async function avisos() {
+      const { data } = await sb.rpc('meus_avisos');
+      const a = (data && data[0]) || {};
+      $('b_chat').textContent = a.mensagens ? (a.mensagens > 99 ? '99+' : a.mensagens) : '';
+      $('b_recado').textContent = a.recados ? (a.recados > 99 ? '99+' : a.recados) : '';
+    }
+    window.BASE.avisos = avisos;
+    avisos();
+    setInterval(() => { if (!document.hidden) avisos(); }, 60000);
+    // Mensagem nova chega na hora (tempo real)
+    try {
+      sb.channel('avisos-' + perfil.id)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensagens', filter: 'para=eq.' + perfil.id },
+            () => { avisos(); document.dispatchEvent(new CustomEvent('mensagem-nova')); })
+        .subscribe();
+    } catch (e) {}
 
     // "Estou online" a cada 4 minutos
     sb.rpc('registrar_acesso');
@@ -391,7 +409,7 @@
     item('letra', 'Letras', () => {}, alternador('letras', [['normais', 'Normais'], ['grandes', 'Grandes']], 'normais'));
 
     secao('Minhas coisas');
-    item('recado', 'Meus Recados', null);
+    item('recado', 'Meus Recados', 'recados.html');
     item('amigos', 'Meus Amigos', null);
     item('camera', 'Meu Fotolog', 'meu-perfil.html');
     item('perfil', 'Fotos de Rosto', null);

@@ -8,7 +8,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Meu perfil</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=2.0">
+<link rel="stylesheet" href="estilo.css?v=2.2">
 </head>
 <body>
 
@@ -100,6 +100,16 @@
       <p class="suave">Apelido, tipo de perfil e data de nascimento só a administração pode alterar. Todos os campos são opcionais.</p>
     </div>
 
+    <!-- Privacidade das mensagens -->
+    <div class="titulo-secao">Quem pode me mandar mensagem</div>
+    <div class="cartao">
+      <div class="chips" id="privMsg">
+        <div class="chip" data-v="false">💬 Todos os membros</div>
+        <div class="chip" data-v="true">🔒 Só quem eu sigo</div>
+      </div>
+      <p class="suave" style="margin-bottom:0">Com "só quem eu sigo", os outros ainda podem deixar recado no seu mural, mas não abrem conversa privada.</p>
+    </div>
+
     <!-- Quem vê o álbum -->
     <div class="titulo-secao">Quem pode ver meu álbum privado</div>
     <div class="cartao">
@@ -116,11 +126,11 @@
   </div>
 </main>
 
-<footer><a href="regras.html">Regras e privacidade</a> · meu-perfil.html v2.0</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · meu-perfil.html v2.1</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
-<script src="base.js?v=2.0"></script>
-<script src="meu-perfil.js?v=2.0"></script>
+<script src="base.js?v=2.3"></script>
+<script src="meu-perfil.js?v=2.1"></script>
 </body>
 </html>

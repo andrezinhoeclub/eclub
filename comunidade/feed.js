@@ -1,4 +1,4 @@
-// feed.js — v1.0 — publicações (cartões, curtir, comentar, seguir) usadas no início e no perfil
+// feed.js — v1.1 — publicações (curtir, comentar, seguir) e mural de recados
 (function () {
   'use strict';
   const { sb, links, fotoProtegida, abrirVisor, sexos, avatar, tempo, toast } = window.BASE;
@@ -162,5 +162,49 @@
     return { recarregar: () => carregar(true) };
   }
 
-  window.FEED = { cartao, lista };
+
+  // ---------- Mural de recados de um perfil ----------
+  // opcoes: { meu: true } no mural do próprio membro (mostra "Responder")
+  function recados(container, perfilId, eu, opcoes) {
+    const o = opcoes || {};
+    let ultimo = null;
+    container.innerHTML = '';
+    const caixa = el('div');
+    const vazio = el('div', 'cartao oculto'); vazio.appendChild(el('p', 'suave', o.meu ? 'Ninguém deixou recado ainda.' : 'Seja o primeiro a deixar um recado!'));
+    const mais = el('button', 'btn secundario oculto', 'Ver recados anteriores'); mais.type = 'button';
+    container.append(caixa, vazio, mais);
+
+    async function carregar(reiniciar) {
+      if (reiniciar) { ultimo = null; caixa.innerHTML = ''; }
+      const { data } = await sb.rpc('recados_do_perfil', { p_perfil: perfilId, p_antes: ultimo });
+      const lista = data || [];
+      vazio.classList.toggle('oculto', !(reiniciar && lista.length === 0));
+      lista.forEach(r => {
+        const d = el('div', 'recado');
+        const av = el('a', 'av'); av.href = 'perfil.html?id=' + encodeURIComponent(r.autor); avatar(av, r, 120);
+        const corpo = el('div', 'corpo');
+        const nome = el('a'); nome.href = av.href; nome.append(sexos(r), ' ' + r.apelido, el('span', 'suave', ' . ' + r.uf + ' · ' + tempo(r.criado_em)));
+        const acoes = el('div', 'acoes-rec');
+        if (o.meu && r.autor !== eu.id) { const resp = el('a', null, '↩ Responder no mural'); resp.href = 'perfil.html?id=' + encodeURIComponent(r.autor) + '#recados'; acoes.appendChild(resp); }
+        if (r.autor !== eu.id) { const ch = el('a', null, '💬 Chat'); ch.href = 'chat.html?com=' + encodeURIComponent(r.autor); acoes.appendChild(ch); }
+        if (r.posso_apagar) {
+          const x = el('button', null, 'Apagar'); x.type = 'button';
+          x.addEventListener('click', async () => {
+            if (!x.dataset.ok) { x.dataset.ok = '1'; x.textContent = 'Toque de novo'; setTimeout(() => { delete x.dataset.ok; x.textContent = 'Apagar'; }, 3500); return; }
+            await sb.from('recados').delete().eq('id', r.id); d.remove();
+          });
+          acoes.appendChild(x);
+        }
+        corpo.append(nome, el('p', null, r.texto), acoes);
+        d.append(av, corpo); caixa.appendChild(d);
+      });
+      if (lista.length) ultimo = lista[lista.length - 1].criado_em;
+      mais.classList.toggle('oculto', lista.length < 30);
+    }
+    mais.addEventListener('click', () => carregar(false));
+    carregar(true);
+    return { recarregar: () => carregar(true) };
+  }
+
+  window.FEED = { cartao, lista, recados };
 })();
