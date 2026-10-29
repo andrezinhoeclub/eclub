@@ -1,4 +1,4 @@
-// entrar.js — v1.1 — login, cadastro (casal / solteira / solteiro) e recuperação de senha
+// entrar.js — v1.2 — login, cadastro, convite (completar cadastro) e recuperação de senha
 (function () {
   'use strict';
 
@@ -54,7 +54,8 @@
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
     const { data: p, error } = await sb.from('perfis').select('status').eq('id', user.id).maybeSingle();
-    if (error || !p) { msg('mEntrar', 'erro', 'Não foi possível carregar seu perfil. Tente de novo.'); return; }
+    if (error) { msg('mEntrar', 'erro', 'Não foi possível carregar seu perfil. Tente de novo.'); return; }
+    if (!p) { modoCompletar(user); return; }
     if (p.status === 'suspenso' || p.status === 'banido') {
       await sb.auth.signOut();
       msg('mEntrar', 'erro', p.status === 'banido'
@@ -64,6 +65,34 @@
     }
     location.replace(p.status === 'aprovado' ? 'inicio.html' : 'verificacao.html');
   }
+
+  // ---------- CONVITE: completar o cadastro ----------
+  let completando = false;
+  async function modoCompletar(user) {
+    completando = true;
+    mostrar('cadastro');
+    $('abas').classList.add('oculto');
+    $('cEmail').value = user.email; $('cEmail').disabled = true;
+    $('bCadastrar').textContent = 'Concluir cadastro';
+    const { data } = await sb.rpc('meu_convite');
+    const pad = data && data[0] && data[0].padrinho;
+    msg('mCadastro', 'info', (pad ? '🎉 Você foi convidado por ' + pad + '! ' : '👋 Falta pouco! ') +
+      'Complete seu cadastro e crie sua senha. Depois vem a verificação com selfie e documento.');
+  }
+
+  // ---------- Cadastro aberto ou só por convite ----------
+  sb.rpc('cadastro_aberto').then(({ data }) => {
+    if (data === false && !completando) {
+      const b = document.querySelector('#abas [data-aba="cadastro"]');
+      b.textContent = 'Convite';
+      b.addEventListener('click', () => setTimeout(() => {
+        if (completando) return;
+        $('blocoDados').classList.add('oculto'); $('tipos').classList.add('oculto');
+        $('tipos').previousElementSibling.classList.add('oculto');
+        msg('mCadastro', 'info', 'No momento, a entrada é somente por convite. Peça a um membro para te convidar: você vai receber um e-mail com o link.');
+      }, 0));
+    }
+  });
 
   // ---------- ENTRAR ----------
   let falhas = 0, travadoAte = 0;
@@ -206,6 +235,22 @@
       return erro('É preciso marcar as três confirmações para criar a conta.');
 
     $('bCadastrar').disabled = true; msg('mCadastro');
+    if (completando) {
+      const dados = { apelido, tipo, sexo_1: sexo1, nascimento_1: n1, sexo_2: sexo2, nascimento_2: n2,
+        cidade, uf, procura: [...procura], aceite_termos: 'sim', aceite_maioridade: 'sim',
+        aceite_dados_sensiveis: 'sim', termos_versao: A.TERMOS_VERSAO };
+      const r1 = await sb.auth.updateUser({ password: s1 });
+      if (r1.error) { $('bCadastrar').disabled = false; return erro('Não foi possível salvar a senha. Tente outra.'); }
+      const r2 = await sb.rpc('completar_cadastro', { p_dados: dados });
+      $('bCadastrar').disabled = false;
+      if (r2.error) {
+        return erro(/18 anos|Convite|completo|aceitar/.test(r2.error.message) ? r2.error.message
+          : 'Não foi possível concluir. Confira a idade e se o apelido ainda está livre.');
+      }
+      msg('mCadastro', 'ok', 'Cadastro concluído! Indo para a verificação…');
+      setTimeout(encaminhar, 900);
+      return;
+    }
     const { error } = await sb.auth.signUp({
       email, password: s1,
       options: {
@@ -222,7 +267,8 @@
 
     if (error) {
       if (/registered|already/i.test(error.message)) return erro('Já existe uma conta com este e-mail. Use "Entrar" ou "Esqueci minha senha".');
-      if (/database error/i.test(error.message)) return erro('Não foi possível criar a conta. Confira a idade e se o apelido ainda está livre.');
+      if (/convite/i.test(error.message)) return erro('No momento, a entrada é somente por convite de um membro.');
+      if (/database error/i.test(error.message)) return erro('Não foi possível criar a conta. Confira a idade e se o apelido ainda está livre (ou, se o cadastro estiver fechado, peça um convite).');
       if (/rate|too many/i.test(error.message)) return erro('Muitas tentativas. Aguarde alguns minutos.');
       return erro('Não foi possível criar a conta agora. Tente de novo em instantes.');
     }

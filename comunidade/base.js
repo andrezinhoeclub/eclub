@@ -1,4 +1,4 @@
-// base.js — v2.0 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v2.1 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -386,7 +386,7 @@
     item('estrela', 'Meus Depoimentos', null);
     item('coracao', 'Minhas Paqueras', null);
     item('nota', 'Minhas Anotações', null);
-    item('convite', 'Convidar Amigos', null);
+    item('convite', 'Convidar Amigos', 'convidar.html');
 
     secao('Ferramentas');
     item('amigos', 'Meus Seguidores', null);

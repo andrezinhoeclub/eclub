@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Convidar amigos</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=2.0">
+</head>
+<body>
+
+<main class="estreito">
+  <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
+
+  <div class="oculto" id="tela">
+    <div class="titulo-secao">Convidar amigos</div>
+    <div class="cartao">
+      <h1>✉️ Convide quem você conhece</h1>
+      <p class="suave">A pessoa recebe um e-mail com o link para entrar. Ela completa o cadastro e passa pela mesma verificação de todos (selfie com código e documento). Você fica registrado como <b>padrinho</b> no perfil dela.</p>
+      <form id="fConvite" novalidate>
+        <label class="campo" for="cEmail">E-mail do amigo</label>
+        <input type="text" id="cEmail" inputmode="email" autocomplete="off" maxlength="200" placeholder="amigo@email.com">
+        <button class="btn" id="bConvidar" type="submit" style="margin-top:10px">Enviar convite</button>
+      </form>
+      <div class="msg" id="mConvite"></div>
+      <p class="suave" id="txtLimite">Até 10 convites por dia. Convide só quem você conhece e confia: perfis convidados por você aparecem ligados ao seu.</p>
+    </div>
+
+    <div class="contadores" style="grid-template-columns:1fr 1fr 1fr">
+      <div>📨 <b id="nEnviados">0</b> Enviados</div>
+      <div>✅ <b id="nAceitos">0</b> Aceitos</div>
+      <div style="border-right:0">👥 <b id="nAfilhados">0</b> Membros</div>
+    </div>
+
+    <div class="titulo-secao">Meus convites</div>
+    <div class="cartao">
+      <div class="lista-pessoas" id="lista"></div>
+      <p class="suave oculto" id="vazio">Você ainda não convidou ninguém.</p>
+    </div>
+  </div>
+</main>
+
+<footer><a href="regras.html">Regras e privacidade</a> · convidar.html v1.0</footer>
+
+<script src="config.js?v=1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="base.js?v=2.1"></script>
+<script src="convidar.js?v=1.0"></script>
+</body>
+</html>

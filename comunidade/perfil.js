@@ -1,4 +1,4 @@
-// perfil.js — v2.0 — perfil de um membro (layout em cartão central)
+// perfil.js — v2.1 — perfil de um membro (layout em cartão central)
 (async function () {
   'use strict';
   const { sb, $, msg, idades, visto, avatar, sexos, gradeFotos, moldura, exigirMembro, emBreve, toast,
@@ -34,7 +34,7 @@
   $('txtCidade').textContent = p.cidade + ' . ' + p.uf;
 
   const anos = Math.max(0, Math.floor((Date.now() - new Date(p.criado_em).getTime()) / (365.25 * 86400000)));
-  const badge = (t, cls, alvo) => (alvo || $('badges')).appendChild(el('span', 'badge ' + (cls || ''), t));
+  const badge = (t, cls, alvo) => (alvo || $('badges')).appendChild(el('span', 'badge ' + (cls || ''), t));  // devolve o elemento
   if (p.verificado) badge('✓ Maioridade Verificada', 'verde');
   badge('👑 ' + (anos >= 1 ? anos + (anos === 1 ? ' Ano' : ' Anos') : 'Novo') + ' na comunidade', 'ouro');
   const nomePessoa = (sx, n) => (p.tipo !== 'casal' ? '' : (sx === 'M' ? 'Ele' : 'Ela') + (p.sexo_1 === p.sexo_2 ? ' ' + n : '') + ': ');
@@ -58,6 +58,12 @@
     $('bSeguir').classList.toggle('on', !!n.sigo);
     $('bSeguir').lastElementChild.textContent = n.sigo ? 'Seguindo' : 'Seguir';
     $('bSeguir').firstElementChild.textContent = n.sigo ? '✓' : '➕';
+    if (n.convidados && !$('bConvidados')) { const b = badge('✉️ ' + n.convidados + (n.convidados === 1 ? ' Convidado' : ' Convidados'), 'azul'); b.id = 'bConvidados'; }
+    if (n.padrinho_apelido) {
+      $('txtPadrinho').textContent = 'Padrinho: ';
+      const a = el('a', null, n.padrinho_apelido); a.href = 'perfil.html?id=' + encodeURIComponent(n.padrinho);
+      $('txtPadrinho').appendChild(a);
+    }
   }
   numeros();
   $('bSeguir').addEventListener('click', async () => {

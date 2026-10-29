@@ -1,4 +1,4 @@
-// admin.js — v2.0 — verificações, membros (privilégios), planos e destaques
+// admin.js — v2.1 — verificações, membros (privilégios), planos e destaques
 (async function () {
   'use strict';
   const { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, moldura, toast } = window.BASE;
@@ -30,7 +30,20 @@
   }));
   $('mBusca').addEventListener('input', () => { clearTimeout(timerM); timerM = setTimeout(carregarMembros, 400); });
 
+  // Cadastro aberto / só por convite
+  async function carregarCadastro() {
+    const { data } = await sb.from('config').select('valor').eq('chave', 'cadastro_aberto').maybeSingle();
+    const aberto = !data || data.valor === true;
+    document.querySelectorAll('#cadAberto .chip').forEach(c => c.classList.toggle('sel', (c.dataset.v === 'true') === aberto));
+  }
+  document.querySelectorAll('#cadAberto .chip').forEach(c => c.addEventListener('click', async () => {
+    const { error } = await sb.from('config').upsert({ chave: 'cadastro_aberto', valor: c.dataset.v === 'true' });
+    toast(error ? 'Erro: ' + error.message : (c.dataset.v === 'true' ? 'Cadastro ABERTO ✓' : 'Entrada só por convite ✓'));
+    carregarCadastro();
+  }));
+
   async function carregarMembros() {
+    carregarCadastro();
     let q = sb.from('perfis').select('id, numero, apelido, tipo, sexo_1, sexo_2, cidade, uf, status, isento, acesso_ate, criado_em')
       .order('criado_em', { ascending: false }).limit(50);
     const busca = $('mBusca').value.trim().replace(/[%_\\,()]/g, '');

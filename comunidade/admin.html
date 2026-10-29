@@ -29,6 +29,15 @@
     <!-- MEMBROS -->
     <div class="oculto" id="abaMembros">
       <div class="cartao">
+        <h2 style="margin:0 0 6px">Entrada de novos membros</h2>
+        <p class="suave" style="margin:0 0 8px">Aberto: qualquer pessoa cria conta pelo site. Fechado: só entra quem receber convite por e-mail. Nos dois casos a verificação é obrigatória.</p>
+        <div class="chips" id="cadAberto">
+          <div class="chip" data-v="true">🟢 Cadastro aberto</div>
+          <div class="chip" data-v="false">🔒 Só por convite</div>
+        </div>
+        <div class="linha-acoes"><a class="btn secundario" href="convidar.html">✉️ Convidar alguém agora</a></div>
+      </div>
+      <div class="cartao">
         <h1>Membros</h1>
         <p class="suave">Busque pelo apelido. Aqui você dá <b>privilégio</b> (isento de mensalidade), soma dias de acesso, suspende ou bane.</p>
         <input type="search" id="mBusca" placeholder="Apelido…" maxlength="24">
@@ -112,11 +121,11 @@
   </div>
 </template>
 
-<footer>admin.html v2.0</footer>
+<footer>admin.html v2.1</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="base.js?v=2.0"></script>
-<script src="admin.js?v=2.0"></script>
+<script src="admin.js?v=2.1"></script>
 </body>
 </html>
