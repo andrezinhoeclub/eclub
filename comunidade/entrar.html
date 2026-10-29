@@ -7,54 +7,37 @@
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Entrar</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=2.0">
 <style>
-  :root{
-    --fundo:#0f0d12; --cartao:#19161d; --cartao2:#221e27; --linha:#2f2a35;
-    --texto:#f3eef5; --suave:#a79fae; --rosa:#d6336c; --rosa2:#ff5c8d; --ok:#2fbf71; --erro:#ff6b6b;
-    --raio:14px;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;background:var(--fundo);color:var(--texto);font-family:Inter,-apple-system,Helvetica,sans-serif;font-size:15px}
-  body{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:28px 16px 40px;
-       background:radial-gradient(1000px 500px at 50% -10%,#3a1426 0%,transparent 60%),var(--fundo)}
-  .marca{text-align:center;margin:10px 0 22px}
-  .marca h1{font-family:Fraunces,Georgia,serif;font-size:34px;margin:0;letter-spacing:.5px}
-  .marca p{margin:6px 0 0;color:var(--suave);font-size:13px;letter-spacing:.08em;text-transform:uppercase}
-  .caixa{width:100%;max-width:440px;background:var(--cartao);border:1px solid var(--linha);border-radius:20px;padding:22px}
-  .abas{display:grid;grid-template-columns:1fr 1fr;background:var(--cartao2);border-radius:12px;padding:4px;margin-bottom:20px}
-  .abas button{border:0;background:none;color:var(--suave);font:600 14px Inter,sans-serif;padding:10px;border-radius:9px;cursor:pointer}
-  .abas button.ativa{background:var(--rosa);color:#fff}
-  label{display:block;font-size:13px;color:var(--suave);margin:14px 0 6px}
-  input,select{width:100%;background:var(--cartao2);border:1px solid var(--linha);color:var(--texto);
-       border-radius:10px;padding:12px 13px;font:15px Inter,sans-serif;outline:none}
-  input:focus,select:focus{border-color:var(--rosa2)}
+  /* Tela de entrar — mesmo padrão visual do sistema */
+  body{padding:0 12px 40px;display:flex;flex-direction:column;align-items:center;
+       background:linear-gradient(180deg,var(--marca2) 0,var(--marca) 230px,var(--fundo) 230px)}
+  .marca{text-align:center;color:#fff;padding:34px 0 22px}
+  .marca h1{font-size:2.1rem;font-weight:800;margin:0;letter-spacing:.02em}
+  .marca p{margin:4px 0 0;font-size:.82rem;opacity:.92}
+  .caixa{width:100%;max-width:440px;background:var(--cartao);border:1px solid var(--linha);border-radius:14px;padding:18px;box-shadow:0 6px 24px rgba(16,24,40,.12)}
+  .caixa .abas{display:grid;grid-template-columns:1fr 1fr;margin:0 0 16px;overflow:hidden}
+  .caixa .abas button{border:0;border-bottom:3px solid transparent;background:none;color:var(--azul);font:600 .95rem Inter,sans-serif;padding:12px;cursor:pointer}
+  .caixa .abas button.ativa{color:var(--texto);border-bottom-color:var(--marca)}
+  .caixa label{display:block;font-size:.84rem;color:var(--suave);margin:12px 0 6px}
+  .caixa input:not([type=checkbox]),.caixa select{width:100%;background:var(--cartao);border:1px solid var(--linha);color:var(--texto);border-radius:8px;padding:12px;font:.98rem Inter,sans-serif;outline:none}
+  .caixa input:focus,.caixa select:focus{border-color:var(--marca)}
+  .caixa .btn{margin-top:16px}
   .linha2{display:grid;grid-template-columns:1fr 90px;gap:10px}
   .tipos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-  .tipo{border:1px solid var(--linha);background:var(--cartao2);border-radius:12px;padding:14px 6px;text-align:center;cursor:pointer;user-select:none}
-  .tipo .ic{font-size:24px;display:block;margin-bottom:4px}
-  .tipo b{font-size:13px}
-  .tipo.sel{border-color:var(--rosa2);background:#3a1426}
+  .tipo{border:1px solid var(--linha);background:var(--cartao2);border-radius:10px;padding:12px 6px;text-align:center;cursor:pointer;user-select:none}
+  .tipo .ic{font-size:1.5rem;display:block;margin-bottom:2px}
+  .tipo b{font-size:.85rem}
+  .tipo.sel{border-color:var(--marca);background:#fff0f6}
+  :root[data-tema="escuro"] .tipo.sel{background:#3a1426}
   .marcas{display:flex;gap:8px;flex-wrap:wrap}
-  .chip{border:1px solid var(--linha);background:var(--cartao2);border-radius:999px;padding:8px 14px;cursor:pointer;font-size:13px;user-select:none}
-  .chip.sel{border-color:var(--rosa2);background:#3a1426}
-  .aceite{display:flex;gap:10px;align-items:flex-start;margin:12px 0;font-size:13px;color:var(--suave);line-height:1.45}
-  .aceite input{width:20px;height:20px;flex:0 0 20px;margin-top:1px;accent-color:var(--rosa)}
-  .aceite a{color:var(--rosa2)}
-  .btn{width:100%;margin-top:18px;border:0;border-radius:12px;padding:14px;font:700 15px Inter,sans-serif;
-       background:linear-gradient(90deg,var(--rosa),var(--rosa2));color:#fff;cursor:pointer}
-  .btn:disabled{opacity:.5;cursor:default}
-  .link{display:block;text-align:center;margin-top:16px;color:var(--suave);font-size:13px;background:none;border:0;cursor:pointer;width:100%;text-decoration:underline}
-  .msg{margin-top:14px;padding:12px;border-radius:10px;font-size:13px;line-height:1.45;display:none}
-  .msg.erro{display:block;background:#3a1717;color:#ffb3b3;border:1px solid #5e2424}
-  .msg.ok{display:block;background:#123222;color:#9be7bf;border:1px solid #1e5236}
-  .dica{font-size:12px;color:var(--suave);margin-top:5px}
+  .aceite{display:flex!important;gap:10px;align-items:flex-start;line-height:1.45}
+  .aceite input{width:20px;height:20px;flex:0 0 20px;margin-top:1px;accent-color:var(--marca)}
+  .link{display:block;width:100%;text-align:center;margin-top:14px;color:var(--azul);font:.88rem Inter,sans-serif;background:none;border:0;cursor:pointer;text-decoration:underline}
+  .dica{font-size:.78rem;color:var(--suave);margin-top:5px}
   .dica.ok{color:var(--ok)} .dica.ruim{color:var(--erro)}
-  .oculto{display:none!important}
-  .selo{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:18px;color:var(--suave);font-size:12px}
-  footer{margin-top:24px;color:#6f6776;font-size:11px;text-align:center}
-  footer a{color:#8d8594}
+  .selo-seg{text-align:center;margin-top:16px;color:var(--suave);font-size:.78rem}
 </style>
 </head>
 <body>
@@ -156,15 +139,15 @@
     <div class="msg" id="mNovaSenha"></div>
   </form>
 
-  <div class="selo">🔒 Perfis verificados · fotos protegidas · dados criptografados</div>
+  <div class="selo-seg">🔒 Perfis verificados · fotos protegidas · dados criptografados</div>
 </div>
 
 <footer>
-  <a href="regras.html">Regras e privacidade</a> · entrar.html v1.1
+  <a href="regras.html">Regras e privacidade</a> · entrar.html v2.0
 </footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
-<script src="entrar.js?v=1.0"></script>
+<script src="entrar.js?v=1.1"></script>
 </body>
 </html>
