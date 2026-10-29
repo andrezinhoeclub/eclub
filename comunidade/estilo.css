@@ -1,4 +1,4 @@
-/* estilo.css — v2.4 — visual padrão estilo aplicativo (claro, com modo escuro) */
+/* estilo.css — v2.5 — visual padrão estilo aplicativo (claro, com modo escuro) */
 :root{
   --marca:#c2255c; --marca2:#e64980; --marca-txt:#ffffff;
   --fundo:#eef0f3; --cartao:#ffffff; --cartao2:#f6f7f9; --linha:#e1e4e9;
@@ -419,3 +419,39 @@ body.em-conversa .barra-baixo,body.em-conversa footer{display:none}
 @media (min-width:700px){ .ev-card{border-radius:12px;overflow:hidden} }
 #abasAdmin button{font-size:.8rem;padding:12px 2px}
 input[type=datetime-local]{width:100%;background:var(--cartao);border:1px solid var(--linha);color:var(--texto);border-radius:10px;padding:10px 11px;font:16px Inter,sans-serif}
+
+/* =====================================================================
+   v2.5 — EVENTOS (modelo CRS)
+   ===================================================================== */
+.ev-atalho{display:flex;align-items:center;gap:10px;background:var(--cartao);padding:14px;margin-bottom:1px;color:var(--texto);text-decoration:none;font-weight:500}
+.ev-tipos{display:grid;gap:1px;margin-bottom:8px}
+.ev-tipos a{display:block;background:var(--cartao2);padding:12px 14px 12px 24px;color:var(--texto);text-decoration:none}
+.ev-tipos a span{display:block;color:var(--suave);font-size:.84rem}
+.ev-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--cartao);padding:10px 14px;margin:8px 0 1px}
+.ev-cab select{width:auto;border:0;background:none;color:var(--azul);font-weight:600;padding:4px}
+.ev-card.destaque-semana{background:#fff9f0;border-top:3px solid #f08c00}
+:root[data-tema="escuro"] .ev-card.destaque-semana{background:#2b2412}
+.ev-faixa{padding:10px 14px 0;font-weight:800;font-size:.82rem;color:#d9480f}
+.ev-card .flyer{aspect-ratio:auto;max-height:220px;object-fit:cover}
+.ev-info h3{color:#c77700}
+.ev-local{font-weight:700;font-size:.9rem;margin-top:2px}
+.ev-selos{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.ev-selo{font-size:.72rem;font-weight:600;padding:3px 8px;border-radius:5px;background:#868e96;color:#fff}
+.ev-selo.eu{background:#c77700}
+.ev-selo.pend{background:#f08c00}
+.ev-selo.conf{background:#2f9e44}
+.ev-selo.sec{background:#495057}
+.ev-selo.leve{background:none;color:var(--suave);padding-left:2px}
+.ev-opcoes{display:grid;gap:6px;margin:10px 0}
+.ev-opcoes label{display:grid;grid-template-columns:22px 1fr;gap:2px 8px;align-items:start;background:var(--cartao2);border:1px solid var(--linha);border-radius:10px;padding:10px 12px;cursor:pointer}
+.ev-opcoes label input{grid-row:span 2;width:18px;height:18px;margin-top:2px;accent-color:var(--marca)}
+.ev-opcoes label b{font-size:.86rem}
+.ev-opcoes label span{font-size:.8rem;color:var(--suave)}
+.ev-opcoes label:has(input:checked){border-color:var(--marca);background:#fff0f6}
+:root[data-tema="escuro"] .ev-opcoes label:has(input:checked){background:#3a1426}
+.ev-opcoes label:has(input:disabled){opacity:.75;cursor:default}
+.ev-barra-dono{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;flex-wrap:wrap}
+.ev-barra-dono span{display:flex;gap:14px}
+.av-mini{width:42px;height:42px;border-radius:50%;overflow:hidden;background:var(--cartao2);display:flex;align-items:center;justify-content:center;flex:0 0 42px}
+.av-mini canvas{width:100%;height:100%}
+input[type=date]{font-size:16px}

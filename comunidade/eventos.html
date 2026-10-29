@@ -8,69 +8,174 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Eventos</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=2.4">
+<link rel="stylesheet" href="estilo.css?v=2.5">
 </head>
 <body>
 
 <main>
   <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
 
-  <!-- LISTA -->
+  <!-- ===================== LISTA ===================== -->
   <div class="oculto" id="telaLista">
-    <div class="abas" id="abas">
+    <a class="ev-atalho" href="eventos.html?aba=agenda" id="atalhoAgenda">📅 Minha Agenda</a>
+    <a class="ev-atalho" href="#" id="atalhoCriar">➕ Criar evento, agenda ou viagem</a>
+    <div class="ev-tipos oculto" id="escolherTipo">
+      <a href="eventos.html?criar=evento"><b>🎉 Evento</b><span>Festa, encontro, show. Os membros confirmam presença.</span></a>
+      <a href="eventos.html?criar=agenda"><b>📍 Agenda</b><span>Avise onde e quando vocês vão estar.</span></a>
+      <a href="eventos.html?criar=viagem"><b>✈️ Viagem</b><span>Destino, data de ida e de volta.</span></a>
+    </div>
+
+    <div class="ev-cab">
+      <b id="tituloLista">📅 Agenda</b>
+      <select id="filtroUf" aria-label="Estado"><option value="">Todos os estados</option></select>
+    </div>
+    <div class="abas" id="abas" style="grid-template-columns:repeat(4,1fr)">
       <button type="button" data-aba="proximos" class="sel">Próximos</button>
-      <button type="button" data-aba="agenda">Minha Agenda</button>
+      <button type="button" data-aba="agenda">Agenda</button>
+      <button type="button" data-aba="meus">Criados</button>
       <button type="button" data-aba="anteriores">Anteriores</button>
     </div>
+    <div id="destaque"></div>
+    <div class="titulo-secao oculto" id="tituloProximos" style="text-align:center">Próximos eventos</div>
     <div id="lista"></div>
     <div class="cartao oculto" id="vazio"><p class="suave" style="margin:0" id="txtVazio"></p></div>
   </div>
 
-  <!-- DETALHE -->
+  <!-- ===================== CRIAR / EDITAR ===================== -->
+  <div class="oculto" id="telaForm">
+    <div class="cartao" style="padding:10px 14px"><a href="eventos.html" class="lnk-voltar">← voltar</a></div>
+    <div class="titulo-secao" id="fTitulo" style="text-align:center">Evento</div>
+    <div class="cartao">
+      <p class="suave" id="fAjuda" style="margin-top:0"></p>
+      <label class="campo" for="fNome">Nome do evento *</label>
+      <input type="text" id="fNome" maxlength="120">
+      <label class="campo" for="fChamada">Chamada do evento</label>
+      <input type="text" id="fChamada" maxlength="120" placeholder="Uma frase curta (ex.: Vista a tentação)">
+      <label class="campo" for="fDescricao">Descrição do evento</label>
+      <textarea id="fDescricao" maxlength="4000"></textarea>
+
+      <label class="campo" id="lLocal">Local do evento *</label>
+      <input type="search" id="fLugarBusca" maxlength="120" placeholder="Digite o nome do local para procurar…" autocomplete="off">
+      <div class="lista-pessoas" id="fSugestoes" style="margin-top:6px"></div>
+      <div id="fLugarNovo">
+        <input type="text" id="fLocal" maxlength="120" placeholder="Nome do local" style="margin-top:6px">
+        <input type="text" id="fEndereco" maxlength="200" placeholder="Endereço (rua, número, bairro)" style="margin-top:6px">
+        <div class="filtros" style="margin-top:6px">
+          <input type="text" id="fCidade" maxlength="60" placeholder="Cidade">
+          <select id="fUf"></select>
+        </div>
+      </div>
+
+      <div class="filtros">
+        <div><label class="campo" for="fData" id="lData">Data de início *</label><input type="date" id="fData"></div>
+        <div id="blocoHora"><label class="campo" for="fHora">Hora</label><select id="fHora"></select></div>
+        <div id="blocoVolta" class="oculto"><label class="campo" for="fVolta">Data de volta *</label><input type="date" id="fVolta"></div>
+      </div>
+
+      <div id="blocoLink">
+        <label class="campo" for="fLink">Link de lista / ingressos (opcional, https://…)</label>
+        <input type="text" id="fLink" maxlength="300" placeholder="https://eclub.curitiba.br/listas">
+      </div>
+
+      <label class="campo" for="fImagem">Imagem do evento (opcional · até 6 MB)</label>
+      <input type="file" id="fImagem" accept="image/*">
+      <img id="fPrevia" class="oculto" alt="" style="max-width:100%;max-height:260px;margin-top:8px;border-radius:8px">
+
+      <div id="opcoesFixas">
+        <p class="suave" style="margin:16px 0 6px"><b>Atenção:</b> depois de criado, as opções abaixo não podem ser alteradas.</p>
+        <div class="ev-opcoes" data-campo="lista">
+          <label><input type="radio" name="lista" value="aberta" checked><b>LISTA ABERTA</b><span>Qualquer perfil pode confirmar presença.</span></label>
+          <label><input type="radio" name="lista" value="fechada"><b>LISTA FECHADA</b><span>Apenas eu insiro perfis na lista (quem pedir fica em Pendentes).</span></label>
+          <label><input type="radio" name="lista" value="secreta"><b>EVENTO SECRETO</b><span>Apenas eu insiro perfis na lista e somente os participantes têm acesso ao evento.</span></label>
+        </div>
+        <div id="opcoesEvento">
+          <div class="ev-opcoes" data-campo="publico">
+            <label><input type="radio" name="publico" value="misto"><b>EVENTO NÃO-LIBERAL</b><span>Público misto, liberal e não-liberal.</span></label>
+            <label><input type="radio" name="publico" value="liberal" checked><b>EVENTO LIBERAL</b><span>Apenas público liberal.</span></label>
+          </div>
+          <div class="ev-opcoes" data-campo="exclusivo">
+            <label><input type="radio" name="exclusivo" value="false"><b>ABERTO AO PÚBLICO</b><span>Membros e pessoas de fora podem ir.</span></label>
+            <label><input type="radio" name="exclusivo" value="true" checked><b>EXCLUSIVO PARA MEMBROS</b><span>Apenas membros da comunidade podem ir.</span></label>
+          </div>
+          <div class="ev-opcoes" data-campo="divulgacao">
+            <label><input type="radio" name="divulgacao" value="midias"><b>EM OUTRAS MÍDIAS</b><span>O evento é divulgado aqui e em outras redes sociais.</span></label>
+            <label><input type="radio" name="divulgacao" value="comunidade" checked><b>APENAS NA COMUNIDADE</b><span>O evento é divulgado só aqui dentro.</span></label>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn" id="fSalvar" type="button" style="margin-top:16px">Salvar</button>
+      <div class="msg" id="fMsg"></div>
+    </div>
+  </div>
+
+  <!-- ===================== DETALHE ===================== -->
   <div class="oculto ev-detalhe" id="telaDetalhe">
-    <div class="cartao" style="padding:10px 14px"><a href="eventos.html" id="voltar">← Todos os eventos</a></div>
-    <img class="flyer oculto" id="dFlyer" alt="Flyer do evento">
+    <div class="cartao ev-barra-dono">
+      <a href="eventos.html" class="lnk-voltar">← voltar</a>
+      <span id="acoesDono" class="oculto">
+        <a href="#" id="dGerenciar">Gerenciar convidados</a>
+        <a href="#" id="dEditar">Editar evento</a>
+      </span>
+    </div>
+    <img class="flyer oculto" id="dFlyer" alt="Imagem do evento">
     <div class="cartao">
       <div class="ev-linha" style="padding:0">
         <div class="ev-data" id="dData"></div>
         <div class="ev-info">
-          <div class="hora" id="dHora"></div>
-          <h3 id="dTitulo" style="font-size:1.3rem"></h3>
-          <div class="onde" id="dOrg"></div>
+          <h3 id="dTitulo" style="font-size:1.3rem;margin-top:0"></h3>
+          <div class="suave" id="dChamada"></div>
         </div>
       </div>
-      <p id="dLocal" style="margin:12px 0 0"></p>
-      <p id="dDescricao" style="white-space:pre-wrap"></p>
-      <a class="btn oculto" id="dLink" target="_blank" rel="noopener noreferrer"></a>
+      <p id="dQuando" style="margin:12px 0 4px;font-weight:600"></p>
+      <p id="dLocal" style="margin:0"></p>
+      <p class="suave" id="dEndereco" style="margin:2px 0 0"></p>
+      <p id="dPublico" style="margin:10px 0 0;font-size:.88rem"></p>
+      <a href="#" id="dMaisInfo" class="oculto" style="display:inline-block;margin-top:8px">mais informações sobre o evento…</a>
+      <p id="dDescricao" class="oculto" style="white-space:pre-wrap"></p>
+      <a class="btn secundario oculto" id="dLink" target="_blank" rel="noopener noreferrer" style="margin-top:10px">🎟️ Lista / ingressos</a>
+      <button class="btn" id="dParticipar" type="button" style="margin-top:12px">♥ Eu vou</button>
+      <div class="msg" id="dMsg"></div>
     </div>
 
-    <div class="titulo-secao">Você vai?</div>
-    <div class="cartao">
-      <div class="ev-respostas" id="respostas">
-        <button type="button" data-r="vou">✅ Vou</button>
-        <button type="button" data-r="talvez" class="talvez-btn">🤔 Talvez</button>
-        <button type="button" data-r="nao">✖ Não vou</button>
+    <!-- Gerenciar convidados (criador) -->
+    <div class="cartao oculto" id="painelGerenciar">
+      <h2>Gerenciar convidados</h2>
+      <label class="campo" for="gNumero">Adicionar pelo nº de membro</label>
+      <div class="novo-recado">
+        <input type="text" id="gNumero" inputmode="numeric" maxlength="8" placeholder="Ex.: 10002">
+        <button class="btn" id="gAdicionar" type="button">Adicionar</button>
       </div>
-      <label class="campo" style="display:flex;gap:8px;align-items:center;margin-top:12px">
-        <input type="checkbox" id="dDiscreto" style="width:20px;height:20px;accent-color:var(--marca)">
-        <span>Confirmar de forma <b>discreta</b> (conto no número, mas meu nome não aparece)</span>
-      </label>
-      <div class="msg" id="mResp"></div>
+      <div class="msg" id="gMsg"></div>
+      <p class="suave">O nº de membro aparece no perfil de cada um ("Nº 10002").</p>
+      <div class="linha-acoes"><button class="btn vermelho" id="dApagar" type="button">Apagar evento</button></div>
     </div>
 
-    <div class="titulo-secao" id="tQuem">Quem vai</div>
-    <div class="cartao">
-      <div class="quem-vai" id="quemVai"></div>
-      <p class="suave oculto" id="ninguem" style="margin:0">Ninguém confirmou publicamente ainda. Seja o primeiro!</p>
+    <div class="abas" id="abasDet" style="grid-template-columns:repeat(3,1fr)">
+      <button type="button" data-aba="chat" class="sel" id="tChat">Chat do evento</button>
+      <button type="button" data-aba="confirmado" id="tConf">Confirmados</button>
+      <button type="button" data-aba="pendente" id="tPend">Pendentes</button>
+    </div>
+    <div id="abaChat">
+      <div class="cartao oculto" id="chatEnvio">
+        <div class="novo-recado">
+          <textarea id="cTexto" maxlength="1000" placeholder="Escreva no chat do evento…"></textarea>
+          <button class="btn" id="cEnviar" type="button">Enviar</button>
+        </div>
+      </div>
+      <div id="chatLista"></div>
+    </div>
+    <div id="abaPessoas" class="oculto">
+      <div class="lista-pessoas" id="pessoas" style="padding:0 0 8px"></div>
     </div>
   </div>
 </main>
 
-<footer><a href="regras.html">Regras e privacidade</a> · eventos.html v1.0</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · eventos.html v2.0</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="base.js?v=2.5"></script>
-<script src="eventos.js?v=1.0"></script>
+<script src="eventos.js?v=2.0"></script>
 </body>
 </html>
