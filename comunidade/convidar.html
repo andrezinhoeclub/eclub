@@ -9,6 +9,7 @@
 <title>Convidar amigos</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilo.css?v=2.6">
+<style>.lnk-excluir{background:none;border:0;color:#dc2626;font:inherit;font-size:.85rem;padding:4px 0;cursor:pointer;text-decoration:underline}</style>
 </head>
 <body>
 
@@ -36,6 +37,7 @@
     </div>
 
     <div class="titulo-secao">Meus convites</div>
+    <p class="suave" style="margin:0 16px 8px;font-size:.85rem">Convite que ainda não foi aceito pode ser excluído: o link do e-mail para de funcionar e você pode convidar de novo.</p>
     <div class="cartao">
       <div class="lista-pessoas" id="lista"></div>
       <p class="suave oculto" id="vazio">Você ainda não convidou ninguém.</p>
@@ -43,11 +45,11 @@
   </div>
 </main>
 
-<footer><a href="regras.html">Regras e privacidade</a> · convidar.html v1.4</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · convidar.html v1.5</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="base.js?v=2.6"></script>
-<script src="convidar.js?v=1.0"></script>
+<script src="convidar.js?v=1.1"></script>
 </body>
 </html>
