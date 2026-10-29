@@ -1,8 +1,12 @@
-// entrar.js — v1.0 — login, cadastro (casal / solteira / solteiro) e recuperação de senha
+// entrar.js — v1.1 — login, cadastro (casal / solteira / solteiro) e recuperação de senha
 (function () {
   'use strict';
 
   const A = window.APP || {};
+  try {
+    const e = localStorage.getItem('pref_escuro') || 'desliga', h = new Date().getHours();
+    if (e === 'liga' || (e === 'noite' && (h >= 19 || h < 7))) document.documentElement.dataset.tema = 'escuro';
+  } catch (x) {}
   const $ = (id) => document.getElementById(id);
   document.title = 'Entrar · ' + A.NOME;
   $('nomeApp').textContent = A.NOME;
