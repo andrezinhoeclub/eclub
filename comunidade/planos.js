@@ -1,4 +1,4 @@
-// planos.js — v1.0 — situação da assinatura e planos (pagamento por Pix entra na próxima fase)
+// planos.js — v1.1 — situação da assinatura e planos (pagamento por Pix entra na próxima fase)
 (async function () {
   'use strict';
   const { sb, $, msg, moldura, exigirMembro, emBreve } = window.BASE;
@@ -17,8 +17,11 @@
       el('p', null, 'Restam ' + a.dias_restantes + ' dia(s) — até ' + new Date(a.acesso_ate).toLocaleDateString('pt-BR') + '.'),
       el('p', 'suave', 'Se assinar de novo agora, os dias são somados ao que ainda resta.'));
   } else {
-    s.append(el('h2', null, a.acesso_ate ? '⏰ Sua assinatura venceu' : '👋 Falta só a assinatura'),
-      el('p', null, 'Seu perfil está verificado. Escolha um plano para entrar na comunidade.'));
+    const acabou = new URLSearchParams(location.search).get('tempo') === 'acabou';
+    s.append(el('h2', null, acabou ? '⏰ Seu tempo grátis de hoje acabou' : (a.acesso_ate ? '⏰ Sua assinatura venceu' : '👋 Falta só a assinatura')),
+      el('p', null, 'Sem assinatura, você pode usar a comunidade por 5 minutos por dia. Assine para usar à vontade.'));
+    if (!acabou) { const v = el('a', 'btn secundario', 'Usar meus 5 minutos grátis de hoje'); v.href = 'inicio.html'; v.style.marginTop = '8px'; s.appendChild(v); }
+    else s.appendChild(el('p', 'suave', 'Amanhã você ganha mais 5 minutos.'));
   }
 
   // Planos

@@ -1,4 +1,4 @@
-// base.js — v2.5 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v2.6 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -267,9 +267,54 @@
     if (perfil.status !== 'aprovado') { location.replace('verificacao.html'); throw new Error('nao aprovado'); }
     const { data: ass } = await sb.rpc('minha_assinatura');
     const assinatura = (ass && ass[0]) || { ativa: false };
-    if (!assinatura.ativa && !o.semAssinatura) { location.replace('planos.html'); throw new Error('sem assinatura'); }
+    if (!assinatura.ativa && !o.semAssinatura) {
+      // Sem assinatura: usa o tempo grátis do dia (o servidor conta e corta)
+      const r = await tempoGratis();
+      if (!r || r.restante <= 0) { location.replace('planos.html?tempo=acabou'); throw new Error('tempo acabou'); }
+      assinatura.gratis = r;
+    }
     definirMarca(perfil);
     return { user, perfil, assinatura };
+  }
+
+  // ---------- Tempo grátis diário (quem não é assinante) ----------
+  let relogio = null, fimTempo = 0, pingTimer = null;
+  async function avisarUso(pausa) {
+    const { data, error } = await sb.rpc('registrar_uso', { p_pausa: !!pausa });
+    if (error || !data || !data[0]) return null;
+    return data[0];
+  }
+  function tempoAcabou() { location.replace('planos.html?tempo=acabou'); }
+  function desenharRelogio() {
+    if (!relogio) return;
+    const s = Math.max(0, Math.round((fimTempo - Date.now()) / 1000));
+    relogio.querySelector('b').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    relogio.classList.toggle('acabando', s <= 60);
+    if (s <= 0) tempoAcabou();
+  }
+  async function tempoGratis() {
+    const r = await avisarUso(false);
+    if (!r || r.ilimitado) return r ? { restante: Infinity } : null;
+    fimTempo = Date.now() + r.restante * 1000;
+    if (r.restante > 0 && !relogio) {
+      relogio = document.createElement('a');
+      relogio.className = 'tempo-gratis'; relogio.href = 'planos.html';
+      relogio.innerHTML = '⏱ Tempo grátis hoje: <b></b> · <u>Assinar</u>';
+      document.body.appendChild(relogio);
+      setInterval(desenharRelogio, 1000);
+      const ping = async () => {
+        if (document.hidden) return;
+        const x = await avisarUso(false);
+        if (x && !x.ilimitado) { fimTempo = Date.now() + x.restante * 1000; if (x.restante <= 0) tempoAcabou(); }
+      };
+      pingTimer = setInterval(ping, 20000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) avisarUso(true); else ping();
+      });
+      window.addEventListener('pagehide', () => { avisarUso(true); });
+    }
+    desenharRelogio();
+    return r;
   }
 
   // ---------- Ícones ----------

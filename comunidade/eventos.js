@@ -1,4 +1,4 @@
-// eventos.js — v2.0 — eventos no modelo do CRS: agenda por estado, criar (evento/agenda/viagem),
+// eventos.js — v2.2 — eventos no modelo do CRS: agenda por estado, criar (evento/agenda/viagem),
 //                      lista aberta/fechada/secreta, chat do evento, confirmados/pendentes, gerenciar convidados
 (async function () {
   'use strict';
@@ -103,9 +103,24 @@
   }));
   $('filtroUf').addEventListener('change', () => { try { localStorage.setItem('filtroUf', $('filtroUf').value); } catch (e) {} lista(); });
   $('atalhoAgenda').addEventListener('click', (ev) => { ev.preventDefault(); aba = 'agenda'; history.replaceState({}, '', 'eventos.html?aba=agenda'); lista(); });
-  $('atalhoCriar').addEventListener('click', (ev) => { ev.preventDefault(); $('escolherTipo').classList.toggle('oculto'); });
-  document.querySelectorAll('#escolherTipo a').forEach(a => a.addEventListener('click', (ev) => {
+  // Regra do CRS: só cria EVENTO quem tem mais de N seguidores (agenda e viagem são livres)
+  let regraEvento = null;
+  async function podeCriarEvento() {
+    if (!regraEvento) { const { data } = await sb.rpc('posso_criar_evento'); regraEvento = (data && data[0]) || { pode: false, seguidores: 0, minimo: 10 }; }
+    return regraEvento;
+  }
+  const textoRegra = (r) => '🔒 Para criar eventos é preciso ter mais de ' + r.minimo + ' seguidores (você tem ' + r.seguidores + '). Agenda e Viagem estão liberadas.';
+  $('atalhoCriar').addEventListener('click', async (ev) => {
+    ev.preventDefault(); $('escolherTipo').classList.toggle('oculto');
+    const r = await podeCriarEvento();
+    const a = $('escolherTipo').querySelector('a[href*="criar=evento"]');
+    a.classList.toggle('bloqueado', !r.pode);
+    let n = a.querySelector('.aviso-regra');
+    if (!r.pode && !n) { n = el('div', 'aviso-regra', textoRegra(r)); a.appendChild(n); }
+  });
+  document.querySelectorAll('#escolherTipo a').forEach(a => a.addEventListener('click', async (ev) => {
     ev.preventDefault(); const tipo = new URL(a.href).searchParams.get('criar');
+    if (tipo === 'evento' && !(await podeCriarEvento()).pode) { toast(textoRegra(regraEvento)); return; }
     history.pushState({}, '', 'eventos.html?criar=' + tipo); formulario(tipo, null);
   }));
   document.querySelectorAll('.lnk-voltar').forEach(a => a.addEventListener('click', (ev) => { ev.preventDefault(); history.pushState({}, '', 'eventos.html'); lista(); }));
@@ -135,7 +150,7 @@
     $('blocoVolta').classList.toggle('oculto', tipo !== 'viagem');
     $('blocoLink').classList.toggle('oculto', tipo !== 'evento');
     $('opcoesEvento').classList.toggle('oculto', tipo !== 'evento');
-    $('fLugarBusca').classList.toggle('oculto', tipo === 'viagem');
+    $('fLugarBusca').placeholder = tipo === 'viagem' ? 'Digite a cidade ou o hotel para procurar…' : 'Digite o nome do local para procurar…';
     $('fLocal').placeholder = tipo === 'viagem' ? 'Destino (ex.: Florianópolis, hotel…)' : 'Nome do local';
     // Opções fixas: travadas na edição
     document.querySelectorAll('#opcoesFixas input').forEach(i => { i.disabled = !!ev; });
@@ -163,27 +178,105 @@
     msg('fMsg');
   }
 
-  // Procurar lugar já cadastrado
+  // ---------- Google (preenchimento automático do local) ----------
+  // Só liga se a chave GOOGLE_MAPS_CHAVE estiver no config.js. Sem ela, fica só a busca interna.
+  const CHAVE_GOOGLE = (window.APP && APP.GOOGLE_MAPS_CHAVE) || '';
+  let google_ = null, sessaoGoogle = null;
+  function carregarGoogle() {
+    if (!CHAVE_GOOGLE) return Promise.resolve(null);
+    if (google_) return google_;
+    google_ = new Promise((ok) => {
+      window.__gmPronto = async () => {
+        try { const lib = await google.maps.importLibrary('places'); ok(lib); } catch (e) { console.warn('Google Places', e); ok(null); }
+      };
+      const sc = document.createElement('script');
+      sc.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(CHAVE_GOOGLE) +
+        '&v=weekly&loading=async&language=pt-BR&region=BR&callback=__gmPronto';
+      sc.async = true; sc.onerror = () => ok(null);
+      document.head.appendChild(sc);
+      setTimeout(() => ok(null), 10000);
+    });
+    return google_;
+  }
+  if (CHAVE_GOOGLE) $('fLugarBusca').addEventListener('focus', carregarGoogle, { once: true });
+
+  function comp(lista, tipo, curto) {
+    const c = (lista || []).find(x => (x.types || []).includes(tipo));
+    return c ? (curto ? c.shortText : c.longText) : '';
+  }
+  function avisoLugar(tipo, texto) {
+    const c = $('fSugestoes'); c.innerHTML = '';
+    const p = el('p', 'msg ' + (tipo || ''), texto); p.style.margin = '0'; c.appendChild(p);
+  }
+  async function escolherGoogle(pred) {
+    $('fLugarBusca').value = '';
+    avisoLugar(null, 'Buscando endereço…');
+    try {
+      const place = pred.toPlace();
+      await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'addressComponents'] });
+      sessaoGoogle = null;   // a sessão termina ao escolher
+      const ac = place.addressComponents || [];
+      const rua = [comp(ac, 'route'), comp(ac, 'street_number')].filter(Boolean).join(', ');
+      const bairro = comp(ac, 'sublocality_level_1') || comp(ac, 'sublocality');
+      const cidade = comp(ac, 'administrative_area_level_2') || comp(ac, 'locality');
+      const uf = comp(ac, 'administrative_area_level_1', true);
+      const tipo = $('telaForm').dataset.tipo;
+      $('fLocal').value = (tipo === 'viagem' && !rua) ? (cidade || place.displayName || '') : (place.displayName || '');
+      $('fEndereco').value = [rua, bairro].filter(Boolean).join(' - ') || (place.formattedAddress || '');
+      if (cidade) $('fCidade').value = cidade;
+      if (uf && [...$('fUf').options].some(o => o.value === uf)) $('fUf').value = uf;
+      lugarEscolhido = null;
+      avisoLugar('ok', '✓ Local preenchido pelo Google. Confira os campos abaixo.');
+    } catch (e) {
+      console.warn(e); avisoLugar('erro', 'Não foi possível buscar no Google. Preencha o endereço à mão.');
+    }
+  }
+
+  function linhaSugestao(titulo, sub, selo, aoClicar) {
+    const b = el('div', 'pessoa'); b.style.cursor = 'pointer';
+    const t = el('div'); t.append(el('b', null, titulo), el('div', 'suave', sub || ''));
+    b.appendChild(t);
+    if (selo) { const s = el('span', 'suave', selo); s.style.cssText = 'margin-left:auto;font-size:.75rem;white-space:nowrap'; b.appendChild(s); }
+    b.addEventListener('click', aoClicar);
+    return b;
+  }
+
+  // Procurar lugar: primeiro os já usados na comunidade, depois o Google
   $('fLugarBusca').addEventListener('input', () => {
     clearTimeout(timerLugar);
     timerLugar = setTimeout(async () => {
       const q = $('fLugarBusca').value.trim();
-      $('fSugestoes').innerHTML = '';
-      if (q.length < 2) return;
-      const { data } = await sb.rpc('buscar_lugares', { p_texto: q });
-      (data || []).forEach(l => {
-        const b = el('div', 'pessoa'); b.style.cursor = 'pointer';
-        const t = el('div'); t.append(el('b', null, l.nome), el('div', 'suave', [l.endereco, l.cidade && (l.cidade + ' - ' + (l.uf || ''))].filter(Boolean).join(' · ')));
-        b.appendChild(t);
-        b.addEventListener('click', () => {
+      const caixa = $('fSugestoes');
+      if (q.length < 3) { caixa.innerHTML = ''; return; }
+      const tipo = $('telaForm').dataset.tipo;
+      const [interno, lib] = await Promise.all([
+        tipo === 'viagem' ? Promise.resolve({ data: [] }) : sb.rpc('buscar_lugares', { p_texto: q }),
+        carregarGoogle()
+      ]);
+      let google = [];
+      if (lib) {
+        try {
+          if (!sessaoGoogle) sessaoGoogle = new lib.AutocompleteSessionToken();
+          const r = await lib.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+            input: q, sessionToken: sessaoGoogle, includedRegionCodes: ['br'], language: 'pt-BR', region: 'br'
+          });
+          google = (r.suggestions || []).map(x => x.placePrediction).filter(Boolean).slice(0, 5);
+        } catch (e) { console.warn('Google', e); }
+      }
+      if ($('fLugarBusca').value.trim() !== q) return;   // o usuário já digitou outra coisa
+      caixa.innerHTML = '';
+      (interno.data || []).forEach(l => caixa.appendChild(linhaSugestao(l.nome,
+        [l.endereco, l.cidade && (l.cidade + ' - ' + (l.uf || ''))].filter(Boolean).join(' · '), 'já usado aqui', () => {
           lugarEscolhido = l.id;
           $('fLocal').value = l.nome; $('fEndereco').value = l.endereco || ''; $('fCidade').value = l.cidade || ''; if (l.uf) $('fUf').value = l.uf;
-          $('fSugestoes').innerHTML = ''; $('fLugarBusca').value = '';
-        });
-        $('fSugestoes').appendChild(b);
-      });
-      if (!(data || []).length) $('fSugestoes').appendChild(el('p', 'suave', 'Não encontrado. Preencha o nome e o endereço abaixo para cadastrar o local.'));
-    }, 350);
+          caixa.innerHTML = ''; $('fLugarBusca').value = '';
+        })));
+      google.forEach(p => caixa.appendChild(linhaSugestao(
+        p.mainText ? p.mainText.toString() : p.text.toString(),
+        p.secondaryText ? p.secondaryText.toString() : '', '📍 Google', () => escolherGoogle(p))));
+      if (google.length) { const g = el('p', 'suave', 'powered by Google'); g.style.cssText = 'text-align:right;font-size:.7rem;margin:2px 0 0'; caixa.appendChild(g); }
+      if (!caixa.children.length) caixa.appendChild(el('p', 'suave', 'Não encontrado. Preencha o nome e o endereço abaixo.'));
+    }, 400);
   });
   ['fLocal', 'fEndereco', 'fCidade'].forEach(i => $(i).addEventListener('input', () => { lugarEscolhido = null; }));
 
@@ -425,7 +518,10 @@
   async function rota() {
     const p = new URLSearchParams(location.search);
     if (p.get('id')) return detalhe(Number(p.get('id')));
-    if (p.get('criar')) return formulario(p.get('criar'), null);
+    if (p.get('criar')) {
+      if (p.get('criar') === 'evento' && !(await podeCriarEvento()).pode) { toast(textoRegra(regraEvento)); history.replaceState({}, '', 'eventos.html'); return lista(); }
+      return formulario(p.get('criar'), null);
+    }
     if (p.get('editar')) {
       const { data } = await sb.from('eventos').select('*').eq('id', Number(p.get('editar'))).single();
       if (data && (data.criado_por === eu.id || assinatura.admin)) return formulario(data.tipo, data);

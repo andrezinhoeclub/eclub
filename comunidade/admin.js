@@ -1,4 +1,4 @@
-// admin.js — v2.3 — verificações, membros (privilégios), planos e destaques
+// admin.js — v2.4 — verificações, membros (privilégios), planos e destaques
 (async function () {
   'use strict';
   const { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, moldura, toast } = window.BASE;
@@ -49,7 +49,12 @@
       .order('criado_em', { ascending: false }).limit(50);
     const busca = $('mBusca').value.trim().replace(/[%_\\,()]/g, '');
     if (busca) q = q.ilike('apelido', '%' + busca + '%');
-    if (filtroM === 'isento') q = q.eq('isento', true); else if (filtroM) q = q.eq('status', filtroM);
+    const { data: adms } = await sb.from('admins').select('user_id, criado_em').order('criado_em');
+    const ADM = new Set((adms || []).map(x => x.user_id));
+    const dono = adms && adms[0] ? adms[0].user_id : null;
+    if (filtroM === 'isento') q = q.eq('isento', true);
+    else if (filtroM === 'admin') q = q.in('id', [...ADM].length ? [...ADM] : ['00000000-0000-0000-0000-000000000000']);
+    else if (filtroM) q = q.eq('status', filtroM);
     const { data, error } = await q;
     $('mLista').innerHTML = '';
     if (error) { $('mLista').textContent = 'Erro: ' + error.message; return; }
@@ -59,19 +64,25 @@
       const info = novoEl('div');
       const a = novoEl('a', null, m.apelido + ' · nº ' + m.numero); a.href = 'perfil.html?id=' + encodeURIComponent(m.id);
       const ativo = m.isento || (m.acesso_ate && new Date(m.acesso_ate) > new Date());
-      const situ = m.isento ? '👑 isento' : (m.acesso_ate ? (ativo ? 'acesso até ' : 'venceu em ') + new Date(m.acesso_ate).toLocaleDateString('pt-BR') : 'sem assinatura');
+      const situ = ADM.has(m.id) ? '🛡️ admin' : m.isento ? '👑 isento (sem mensalidade)' : (m.acesso_ate ? (ativo ? 'acesso até ' : 'venceu em ') + new Date(m.acesso_ate).toLocaleDateString('pt-BR') : 'sem assinatura');
       info.append(a, novoEl('div', 'suave', formacao(m) + ' · ' + m.cidade + '/' + m.uf + ' · ' + m.status + ' · ' + situ));
       const bt = novoEl('div', 'botoes');
-      const botao = (t, cls, acao) => { const b = novoEl('button', cls, t); b.type = 'button'; b.addEventListener('click', async () => { b.disabled = true; await acao(); carregarMembros(); }); bt.appendChild(b); };
+      const botao = (t, cls, acao) => { const b = novoEl('button', cls, t); b.type = 'button'; b.addEventListener('click', async () => { b.disabled = true; const r = await acao(); if (r === false) { b.disabled = false; return; } carregarMembros(); }); bt.appendChild(b); };
       const rpc = async (isento, dias) => { const { error: e } = await sb.rpc('admin_definir_acesso', { p_id: m.id, p_isento: isento, p_somar_dias: dias }); toast(e ? 'Erro: ' + e.message : 'Feito ✓'); };
       const status = async (st) => { const { error: e } = await sb.from('perfis').update({ status: st }).eq('id', m.id); toast(e ? 'Erro: ' + e.message : 'Feito ✓'); };
-      botao(m.isento ? 'Tirar privilégio' : '👑 Isentar', m.isento ? '' : 'sim', () => rpc(!m.isento, 0));
+      const confirmar = (texto) => { if (linha.dataset.confirma === texto) return true; linha.dataset.confirma = texto; toast(texto); setTimeout(() => delete linha.dataset.confirma, 5000); return false; };
+      const admin = async (sim) => { const { error: e } = await sb.rpc('admin_definir_admin', { p_id: m.id, p_admin: sim }); toast(e ? 'Erro: ' + e.message : (sim ? m.apelido + ' agora é admin ✓' : 'Admin removido ✓')); };
+      if (!ADM.has(m.id)) botao(m.isento ? 'Voltar a cobrar' : '👑 Isentar mensalidade', m.isento ? '' : 'sim', () => rpc(!m.isento, 0));
+      if (m.status === 'aprovado' && !ADM.has(m.id)) botao('🛡️ Tornar admin', '', async () => {
+        if (!confirmar('Admin vê tudo, inclusive álbuns privados e conversas. Toque de novo para confirmar.')) return false; await admin(true); });
+      if (ADM.has(m.id) && m.id !== eu.id && m.id !== dono) botao('Tirar admin', 'nao', async () => {
+        if (!confirmar('Toque de novo em Tirar admin para confirmar.')) return false; await admin(false); });
       botao('+30 dias', '', () => rpc(null, 30));
       botao('−30 dias', '', () => rpc(null, -30));
       if (m.status === 'aprovado') botao('Suspender', '', () => status('suspenso'));
       if (m.status === 'suspenso') botao('Reativar', 'sim', () => status('aprovado'));
-      if (m.status !== 'banido') botao('Banir', 'nao', async () => {
-        if (!linha.dataset.confirma) { linha.dataset.confirma = '1'; toast('Toque em Banir de novo para confirmar.'); setTimeout(() => delete linha.dataset.confirma, 4000); return; }
+      if (m.status !== 'banido' && !ADM.has(m.id)) botao('Banir', 'nao', async () => {
+        if (!confirmar('Toque em Banir de novo para confirmar.')) return false;
         await status('banido');
       });
       linha.append(info, bt); $('mLista').appendChild(linha);
