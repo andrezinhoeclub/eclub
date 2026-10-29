@@ -1,0 +1,26 @@
+{
+  "name": "Comunidade",
+  "short_name": "Comunidade",
+  "description": "Comunidade liberal só para maiores de 18 anos, com perfis verificados.",
+  "lang": "pt-BR",
+  "start_url": "./inicio.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef0f3",
+  "theme_color": "#c2255c",
+  "icons": [
+    {
+      "src": "icone-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

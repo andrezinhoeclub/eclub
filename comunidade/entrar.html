@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c2255c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icone-180.png">
+<link rel="icon" type="image/png" href="icone-192.png">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
@@ -38,6 +45,13 @@
   .dica{font-size:.78rem;color:var(--suave);margin-top:5px}
   .dica.ok{color:var(--ok)} .dica.ruim{color:var(--erro)}
   .selo-seg{text-align:center;margin-top:16px;color:var(--suave);font-size:.78rem}
+  .caixa input:not([type=checkbox]),.caixa select{font-size:16px}
+  .marca{padding-top:calc(34px + env(safe-area-inset-top))}
+  @media (max-width:520px){
+    body{padding:0 0 30px;background:linear-gradient(180deg,var(--marca2) 0,var(--marca) 190px,var(--cartao) 190px)}
+    .caixa{border:0;border-radius:18px 18px 0 0;box-shadow:none;max-width:none;padding:18px 16px;min-height:calc(100vh - 150px)}
+    .marca{padding-bottom:18px}
+  }
 </style>
 </head>
 <body>
@@ -143,7 +157,7 @@
 </div>
 
 <footer>
-  <a href="regras.html">Regras e privacidade</a> · entrar.html v2.1
+  <a href="regras.html">Regras e privacidade</a> · entrar.html v2.2
 </footer>
 
 <script src="config.js?v=1.1"></script>

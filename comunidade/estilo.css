@@ -1,4 +1,4 @@
-/* estilo.css — v2.0 — visual padrão (claro, com modo escuro) */
+/* estilo.css — v2.1 — visual padrão estilo aplicativo (claro, com modo escuro) */
 :root{
   --marca:#c2255c; --marca2:#e64980; --marca-txt:#ffffff;
   --fundo:#eef0f3; --cartao:#ffffff; --cartao2:#f6f7f9; --linha:#e1e4e9;
@@ -244,3 +244,89 @@ footer a{color:var(--suave)}
 .numero-membro{display:inline-block;font-weight:800;color:#d9480f;background:#fff4e6;border:1px solid #ffd8a8;border-radius:8px;padding:6px 14px}
 .editor-pratica{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--linha);font-size:.9rem}
 @media (max-width:520px){ .botoes-perfil{grid-template-columns:repeat(4,1fr)} .info-pessoas{grid-template-columns:1fr} }
+
+/* =====================================================================
+   v2.1 — ESTILO APLICATIVO: sem bordas, de ponta a ponta
+   ===================================================================== */
+:root{ --raio:0px; --sombra:none; }
+html{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+body{padding:0 0 calc(64px + env(safe-area-inset-bottom));overscroll-behavior-y:none}
+
+/* Topo colado em cima, largura total */
+.barra-topo{max-width:none;padding:0;background:none}
+.barra-topo .icones{border-radius:0;box-shadow:0 1px 6px rgba(0,0,0,.12);padding-top:env(safe-area-inset-top)}
+.barra-topo button,.barra-topo a{height:52px}
+
+/* Barra de baixo colada no rodapé, largura total */
+.barra-baixo{padding:0;pointer-events:auto}
+.barra-baixo nav{max-width:none;border:0;border-radius:0;border-top:1px solid var(--linha);box-shadow:0 -2px 10px rgba(16,24,40,.06);padding-bottom:env(safe-area-inset-bottom)}
+.barra-baixo a,.barra-baixo button{flex-direction:column;gap:2px;font-size:.72rem;height:58px}
+.barra-baixo .bolinha{position:absolute;top:5px;left:calc(50% + 8px)}
+
+/* Conteúdo: blocos brancos sem borda, separados por uma faixa fina de fundo */
+main,.conteudo{max-width:680px;margin:0 auto}
+.estreito{max-width:680px}
+.cartao,.post,.contadores,.aovivo,.abas,.acoes-postar button,.plano,.atividade,.membro,.titulo-secao{border:0;box-shadow:none;border-radius:0}
+.cartao,.post,.plano,.atividade{margin-bottom:8px}
+.destaque{border-radius:0;margin-bottom:0}
+.aovivo{margin-bottom:0;border-bottom:1px solid var(--linha)}
+.stories{background:var(--cartao);padding:12px 12px;margin-bottom:8px;scrollbar-width:none}
+.stories::-webkit-scrollbar{display:none}
+.acoes-postar{background:var(--cartao);gap:0;margin-bottom:8px;border-bottom:1px solid var(--linha)}
+.acoes-postar button{border-right:1px solid var(--linha);padding:13px 6px}
+.acoes-postar button:last-child{border-right:0}
+.abas{margin-bottom:8px}
+.titulo-secao{background:none;margin:12px 0 6px;padding:4px 12px;text-align:left}
+.contadores{margin-bottom:8px}
+
+/* Publicações de ponta a ponta (fotos encostam nas laterais) */
+.post .fotos{padding:0 0 8px;gap:2px}
+.post .fotos .f{border-radius:0}
+.post .rodape button{padding:12px}
+
+/* Grade de membros e fotos colada, estilo galeria */
+.membros{gap:2px}
+.membro .info{padding:8px 10px}
+.fotos-grade{gap:2px}
+.fotos-grade .item{border-radius:0}
+
+/* Botões e campos: cantos suaves, tamanho bom para o dedo */
+.btn{border-radius:10px;padding:14px}
+select,input[type=text],input[type=search],input[type=number],input[type=date],input[type=email],input[type=password],textarea{border-radius:10px;font-size:16px}
+.chip{padding:9px 14px}
+.lista-pessoas .pessoa{border-radius:10px}
+
+/* Menu lateral como tela cheia no celular */
+.menu-lateral .item,.menu-lateral .eu{border:0;border-radius:0;margin-bottom:1px}
+.menu-lateral .secao{border:0;background:none;margin:16px 0 6px}
+.menu-lateral{padding:0 0 30px}
+.menu-lateral .fechar{border-radius:0;height:52px;padding-top:env(safe-area-inset-top);box-sizing:content-box}
+.menu-lateral .eu{margin:0 0 1px}
+.menu-lateral .menu-rodape{padding:0 12px}
+
+/* Telas antigas (verificação) */
+.topo{padding:14px 12px}
+.foto-slot{border-radius:10px}
+
+/* Computador: mantém a coluna central do "app" com um leve contorno */
+@media (min-width:700px){
+  body{background:var(--fundo)}
+  main,.conteudo{padding:0}
+  .cartao,.post,.plano{border-radius:12px}
+  .destaque{border-radius:12px;margin:10px 0 8px}
+  .stories,.acoes-postar,.abas,.aovivo,.contadores{border-radius:12px}
+  .aovivo{margin-bottom:8px;border-bottom:0}
+  .barra-baixo nav{max-width:680px;margin:0 auto;border-radius:14px 14px 0 0}
+  .membros{gap:8px} .membro{border-radius:12px}
+}
+
+/* Celular */
+@media (max-width:699px){
+  footer{padding:0 12px}
+  .cartao{padding:14px 14px}
+  .post .cab{padding:10px 12px}
+  .info-pessoas{grid-template-columns:1fr}
+  .perfil-topo{padding-top:20px}
+  .visor{padding:0}
+  .visor canvas{border-radius:0}
+}

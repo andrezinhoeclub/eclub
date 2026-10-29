@@ -1,4 +1,4 @@
-// base.js — v2.1 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v2.2 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -208,6 +208,19 @@
     if (document.body) document.body.classList.toggle('discreta', pref('discreta', 'desligada') === 'ligada');
   }
   aplicarPrefs();
+
+  // ---------- Aparência de aplicativo (instalar na tela inicial) ----------
+  (function modoApp() {
+    const add = (tag, attrs) => { const e = document.createElement(tag); Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v)); document.head.appendChild(e); };
+    if (!document.querySelector('link[rel=manifest]')) add('link', { rel: 'manifest', href: 'manifest.json' });
+    if (!document.querySelector('meta[name=theme-color]')) add('meta', { name: 'theme-color', content: '#c2255c' });
+    add('meta', { name: 'mobile-web-app-capable', content: 'yes' });
+    add('meta', { name: 'apple-mobile-web-app-capable', content: 'yes' });
+    add('meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' });
+    add('meta', { name: 'apple-mobile-web-app-title', content: A.NOME || 'Comunidade' });
+    add('link', { rel: 'apple-touch-icon', href: 'icone-180.png' });
+    add('link', { rel: 'icon', type: 'image/png', href: 'icone-192.png' });
+  })();
 
   // ---------- Pequenas utilidades ----------
   function toast(texto) {
