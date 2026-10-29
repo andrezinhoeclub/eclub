@@ -1,4 +1,4 @@
-// base.js — v2.3 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v2.4 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -303,6 +303,18 @@
   };
   function icone(nome) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONE[nome] || '') + '</svg>'; }
 
+  // Aviso de mensagem nova (aparece no alto da tela; tocar abre a conversa)
+  function avisoMensagem(apelido, de, texto) {
+    document.querySelectorAll('.aviso-msg').forEach(x => x.remove());
+    const a = document.createElement('a');
+    a.className = 'aviso-msg'; a.href = 'chat.html?com=' + encodeURIComponent(de);
+    const b = document.createElement('b'); b.textContent = '💬 ' + apelido;
+    const t = document.createElement('span'); t.textContent = texto ? texto.slice(0, 80) : '📷 Foto';
+    a.append(b, t); document.body.appendChild(a);
+    try { if (navigator.vibrate) navigator.vibrate(120); } catch (e) {}
+    setTimeout(() => a.remove(), 6000);
+  }
+
   // ---------- Moldura das telas: topo, menu lateral e barra de baixo ----------
   // ativo: 'sigame' | 'ultimas' | 'radar' | 'perfil' | 'busca' | ...
   async function moldura(perfil, assinatura, ativo) {
@@ -341,6 +353,9 @@
       const a = (data && data[0]) || {};
       $('b_chat').textContent = a.mensagens ? (a.mensagens > 99 ? '99+' : a.mensagens) : '';
       $('b_recado').textContent = a.recados ? (a.recados > 99 ? '99+' : a.recados) : '';
+      const total = (a.mensagens || 0) + (a.recados || 0);
+      document.title = document.title.replace(/^\(\d+\+?\) /, '');
+      if (total) document.title = '(' + total + ') ' + document.title;
     }
     window.BASE.avisos = avisos;
     avisos();
@@ -349,7 +364,15 @@
     try {
       sb.channel('avisos-' + perfil.id)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensagens', filter: 'para=eq.' + perfil.id },
-            () => { avisos(); document.dispatchEvent(new CustomEvent('mensagem-nova')); })
+            async (ev) => {
+              avisos();
+              document.dispatchEvent(new CustomEvent('mensagem-nova'));
+              // Aviso na tela (fora da conversa aberta)
+              const naConversa = /chat\.html/.test(location.pathname) && new URLSearchParams(location.search).get('com') === ev.new.de;
+              if (naConversa) return;
+              const { data: q } = await sb.from('perfis_publicos').select('apelido').eq('id', ev.new.de).maybeSingle();
+              avisoMensagem((q && q.apelido) || 'um membro', ev.new.de, ev.new.texto);
+            })
         .subscribe();
     } catch (e) {}
 

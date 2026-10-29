@@ -1,4 +1,4 @@
-/* estilo.css — v2.2 — visual padrão estilo aplicativo (claro, com modo escuro) */
+/* estilo.css — v2.3 — visual padrão estilo aplicativo (claro, com modo escuro) */
 :root{
   --marca:#c2255c; --marca2:#e64980; --marca-txt:#ffffff;
   --fundo:#eef0f3; --cartao:#ffffff; --cartao2:#f6f7f9; --linha:#e1e4e9;
@@ -380,3 +380,7 @@ body.em-conversa .barra-baixo,body.em-conversa footer{display:none}
 .novo-recado{display:flex;gap:8px;align-items:flex-end}
 .novo-recado textarea{min-height:44px;flex:1}
 .novo-recado .btn{width:auto;padding:12px 16px}
+.aviso-msg{position:fixed;left:10px;right:10px;top:calc(60px + env(safe-area-inset-top));z-index:80;max-width:480px;margin:0 auto;display:block;background:var(--cartao);color:var(--texto);text-decoration:none;border-radius:14px;padding:12px 14px;box-shadow:0 8px 28px rgba(0,0,0,.22);border-left:4px solid var(--marca);animation:desce .25s ease-out}
+.aviso-msg b{display:block;font-size:.92rem}
+.aviso-msg span{display:block;color:var(--suave);font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@keyframes desce{from{transform:translateY(-20px);opacity:0}to{transform:none;opacity:1}}
