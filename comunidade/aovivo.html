@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Membros</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=2.0">
+</head>
+<body>
+
+<main>
+  <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
+
+  <div class="oculto" id="tela">
+    <div class="cartao">
+      <h1 id="titulo">Radar · membros por estado</h1>
+      <input type="search" id="fBusca" placeholder="Buscar por apelido…" maxlength="24" autocomplete="off">
+      <div class="filtros" style="margin-top:8px">
+        <select id="fTipo">
+          <option value="">Todos</option>
+          <option value="casal">Casais</option>
+          <option value="solteira">Solteiras</option>
+          <option value="solteiro">Solteiros</option>
+        </select>
+        <select id="fUf"><option value="">Todos os estados</option></select>
+      </div>
+      <div class="chips" style="margin-top:10px">
+        <div class="chip" id="fOnline">🟢 Só quem está online</div>
+      </div>
+    </div>
+
+    <div class="membros" id="lista"></div>
+    <div class="cartao oculto" id="vazio" style="margin-top:10px"><p class="suave">Ninguém encontrado com esses filtros.</p></div>
+    <button class="btn secundario oculto" id="bMais" type="button" style="margin-top:12px">Carregar mais</button>
+  </div>
+</main>
+
+<footer><a href="regras.html">Regras e privacidade</a> · aovivo.html v1.0</footer>
+
+<script src="config.js?v=1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="base.js?v=2.0"></script>
+<script src="aovivo.js?v=1.0"></script>
+</body>
+</html>

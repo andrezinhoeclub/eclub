@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Início</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=2.0">
+</head>
+<body>
+
+<main>
+  <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
+
+  <div class="oculto" id="tela">
+    <!-- Faixa de destaque (eventos, avisos) -->
+    <div id="destaques"></div>
+
+    <!-- Ao Vivo -->
+    <div class="aovivo">
+      <a href="aovivo.html?online=1" id="linkAoVivo">Ao Vivo</a>
+      <select id="ufAoVivo" aria-label="Estado"><option value="">todos estados</option></select>
+    </div>
+
+    <!-- Stories (quem está ativo) -->
+    <div class="stories" id="stories"></div>
+
+    <!-- Publicar -->
+    <div class="acoes-postar">
+      <button type="button" id="bTexto">✏️ Texto</button>
+      <button type="button" id="bFoto">🖼️ Foto</button>
+      <button type="button" id="bVideo">🎬 Vídeo</button>
+    </div>
+
+    <div class="cartao compor oculto" id="compor">
+      <textarea id="cTexto" maxlength="2000" placeholder="O que vocês querem compartilhar?"></textarea>
+      <div class="previas" id="cPrevias"></div>
+      <input type="file" id="cArquivos" accept="image/*" multiple class="oculto">
+      <div class="linha-acoes">
+        <button type="button" class="btn secundario" id="cAddFoto">🖼️ Adicionar foto (até 4)</button>
+        <button type="button" class="btn" id="cPublicar">Publicar</button>
+      </div>
+      <p class="suave">Só publique fotos suas. Se aparecer outra pessoa, ela precisa ter concordado.</p>
+      <div class="msg" id="mCompor"></div>
+    </div>
+
+    <!-- Abas -->
+    <div class="abas" id="abas">
+      <button type="button" data-aba="pub" class="sel" id="abaPub">Publicações</button>
+      <button type="button" data-aba="hist">Histórico</button>
+      <button type="button" data-aba="ativ">Atividades</button>
+    </div>
+
+    <div id="lista"></div>
+  </div>
+</main>
+
+<footer><a href="regras.html">Regras e privacidade</a> · inicio.html v2.0</footer>
+
+<script src="config.js?v=1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="base.js?v=2.0"></script>
+<script src="feed.js?v=1.0"></script>
+<script src="inicio.js?v=2.0"></script>
+</body>
+</html>

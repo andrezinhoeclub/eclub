@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Entrar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --fundo:#0f0d12; --cartao:#19161d; --cartao2:#221e27; --linha:#2f2a35;
+    --texto:#f3eef5; --suave:#a79fae; --rosa:#d6336c; --rosa2:#ff5c8d; --ok:#2fbf71; --erro:#ff6b6b;
+    --raio:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--fundo);color:var(--texto);font-family:Inter,-apple-system,Helvetica,sans-serif;font-size:15px}
+  body{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:28px 16px 40px;
+       background:radial-gradient(1000px 500px at 50% -10%,#3a1426 0%,transparent 60%),var(--fundo)}
+  .marca{text-align:center;margin:10px 0 22px}
+  .marca h1{font-family:Fraunces,Georgia,serif;font-size:34px;margin:0;letter-spacing:.5px}
+  .marca p{margin:6px 0 0;color:var(--suave);font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+  .caixa{width:100%;max-width:440px;background:var(--cartao);border:1px solid var(--linha);border-radius:20px;padding:22px}
+  .abas{display:grid;grid-template-columns:1fr 1fr;background:var(--cartao2);border-radius:12px;padding:4px;margin-bottom:20px}
+  .abas button{border:0;background:none;color:var(--suave);font:600 14px Inter,sans-serif;padding:10px;border-radius:9px;cursor:pointer}
+  .abas button.ativa{background:var(--rosa);color:#fff}
+  label{display:block;font-size:13px;color:var(--suave);margin:14px 0 6px}
+  input,select{width:100%;background:var(--cartao2);border:1px solid var(--linha);color:var(--texto);
+       border-radius:10px;padding:12px 13px;font:15px Inter,sans-serif;outline:none}
+  input:focus,select:focus{border-color:var(--rosa2)}
+  .linha2{display:grid;grid-template-columns:1fr 90px;gap:10px}
+  .tipos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .tipo{border:1px solid var(--linha);background:var(--cartao2);border-radius:12px;padding:14px 6px;text-align:center;cursor:pointer;user-select:none}
+  .tipo .ic{font-size:24px;display:block;margin-bottom:4px}
+  .tipo b{font-size:13px}
+  .tipo.sel{border-color:var(--rosa2);background:#3a1426}
+  .marcas{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{border:1px solid var(--linha);background:var(--cartao2);border-radius:999px;padding:8px 14px;cursor:pointer;font-size:13px;user-select:none}
+  .chip.sel{border-color:var(--rosa2);background:#3a1426}
+  .aceite{display:flex;gap:10px;align-items:flex-start;margin:12px 0;font-size:13px;color:var(--suave);line-height:1.45}
+  .aceite input{width:20px;height:20px;flex:0 0 20px;margin-top:1px;accent-color:var(--rosa)}
+  .aceite a{color:var(--rosa2)}
+  .btn{width:100%;margin-top:18px;border:0;border-radius:12px;padding:14px;font:700 15px Inter,sans-serif;
+       background:linear-gradient(90deg,var(--rosa),var(--rosa2));color:#fff;cursor:pointer}
+  .btn:disabled{opacity:.5;cursor:default}
+  .link{display:block;text-align:center;margin-top:16px;color:var(--suave);font-size:13px;background:none;border:0;cursor:pointer;width:100%;text-decoration:underline}
+  .msg{margin-top:14px;padding:12px;border-radius:10px;font-size:13px;line-height:1.45;display:none}
+  .msg.erro{display:block;background:#3a1717;color:#ffb3b3;border:1px solid #5e2424}
+  .msg.ok{display:block;background:#123222;color:#9be7bf;border:1px solid #1e5236}
+  .dica{font-size:12px;color:var(--suave);margin-top:5px}
+  .dica.ok{color:var(--ok)} .dica.ruim{color:var(--erro)}
+  .oculto{display:none!important}
+  .selo{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:18px;color:var(--suave);font-size:12px}
+  footer{margin-top:24px;color:#6f6776;font-size:11px;text-align:center}
+  footer a{color:#8d8594}
+</style>
+</head>
+<body>
+
+<div class="marca">
+  <h1 id="nomeApp">…</h1>
+  <p>Comunidade liberal · somente maiores de 18 anos</p>
+</div>
+
+<div class="caixa">
+
+  <div class="abas" id="abas">
+    <button type="button" data-aba="entrar" class="ativa">Entrar</button>
+    <button type="button" data-aba="cadastro">Criar conta</button>
+  </div>
+
+  <!-- ============ ENTRAR ============ -->
+  <form id="fEntrar" autocomplete="on" novalidate>
+    <label for="eEmail">E-mail</label>
+    <input id="eEmail" type="email" autocomplete="username" required>
+    <label for="eSenha">Senha</label>
+    <input id="eSenha" type="password" autocomplete="current-password" required>
+    <button class="btn" id="bEntrar" type="submit">Entrar</button>
+    <button class="link" type="button" id="bEsqueci">Esqueci minha senha</button>
+    <div class="msg" id="mEntrar"></div>
+  </form>
+
+  <!-- ============ CADASTRO ============ -->
+  <form id="fCadastro" class="oculto" autocomplete="off" novalidate>
+    <label>Vocês são</label>
+    <div class="tipos" id="tipos">
+      <div class="tipo" data-tipo="casal"><span class="ic">💑</span><b>Casal</b></div>
+      <div class="tipo" data-tipo="solteira"><span class="ic">👩</span><b>Solteira</b></div>
+      <div class="tipo" data-tipo="solteiro"><span class="ic">👨</span><b>Solteiro</b></div>
+    </div>
+
+    <div id="blocoCasal" class="oculto">
+      <label for="cComp">Formação do casal</label>
+      <select id="cComp">
+        <option value="M-F">Ele e Ela</option>
+        <option value="F-F">Ela e Ela</option>
+        <option value="M-M">Ele e Ele</option>
+      </select>
+    </div>
+
+    <div id="blocoDados" class="oculto">
+      <label for="cNasc1" id="lNasc1">Data de nascimento</label>
+      <input id="cNasc1" type="date">
+      <div id="blocoNasc2" class="oculto">
+        <label for="cNasc2" id="lNasc2">Data de nascimento</label>
+        <input id="cNasc2" type="date">
+      </div>
+      <div class="dica">Nunca aparece no perfil. Os outros membros só veem a idade.</div>
+
+      <label for="cApelido">Apelido (como vão te ver)</label>
+      <input id="cApelido" maxlength="24" autocomplete="off" spellcheck="false">
+      <div class="dica" id="dApelido">3 a 24 caracteres: letras, números, ponto ou _. Não use seu nome verdadeiro.</div>
+
+      <div class="linha2">
+        <div><label for="cCidade">Cidade</label><input id="cCidade" maxlength="60"></div>
+        <div><label for="cUf">UF</label><select id="cUf"></select></div>
+      </div>
+
+      <label>Procuram</label>
+      <div class="marcas" id="procura">
+        <div class="chip" data-v="casal">Casais</div>
+        <div class="chip" data-v="solteira">Solteiras</div>
+        <div class="chip" data-v="solteiro">Solteiros</div>
+      </div>
+
+      <label for="cEmail">E-mail (não aparece para ninguém)</label>
+      <input id="cEmail" type="email" autocomplete="email">
+      <label for="cSenha">Senha</label>
+      <input id="cSenha" type="password" autocomplete="new-password">
+      <div class="dica" id="dSenha">Mínimo 10 caracteres, com letras e números.</div>
+      <label for="cSenha2">Repita a senha</label>
+      <input id="cSenha2" type="password" autocomplete="new-password">
+
+      <label class="aceite"><input type="checkbox" id="a18">
+        <span id="t18">Declaro que tenho 18 anos ou mais e vou comprovar com documento na verificação.</span></label>
+      <label class="aceite"><input type="checkbox" id="aRegras">
+        <span>Li e aceito as <a href="regras.html" target="_blank" rel="noopener">Regras, Termos de Uso e Política de Privacidade</a>.</span></label>
+      <label class="aceite"><input type="checkbox" id="aDados">
+        <span>Autorizo o uso dos meus dados, inclusive dados sensíveis sobre vida sexual e fotos, só para funcionar a comunidade, como explicado na Política de Privacidade (LGPD, art. 11). Posso apagar minha conta quando quiser.</span></label>
+
+      <button class="btn" id="bCadastrar" type="submit">Criar conta</button>
+    </div>
+    <div class="msg" id="mCadastro"></div>
+  </form>
+
+  <!-- ============ NOVA SENHA (link do e-mail) ============ -->
+  <form id="fNovaSenha" class="oculto" novalidate>
+    <label for="nSenha">Nova senha</label>
+    <input id="nSenha" type="password" autocomplete="new-password">
+    <label for="nSenha2">Repita a nova senha</label>
+    <input id="nSenha2" type="password" autocomplete="new-password">
+    <div class="dica">Mínimo 10 caracteres, com letras e números.</div>
+    <button class="btn" id="bNovaSenha" type="submit">Salvar nova senha</button>
+    <div class="msg" id="mNovaSenha"></div>
+  </form>
+
+  <div class="selo">🔒 Perfis verificados · fotos protegidas · dados criptografados</div>
+</div>
+
+<footer>
+  <a href="regras.html">Regras e privacidade</a> · entrar.html v1.1
+</footer>
+
+<script src="config.js?v=1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="entrar.js?v=1.0"></script>
+</body>
+</html>

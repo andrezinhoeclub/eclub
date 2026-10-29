@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Perfil</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=2.0">
+</head>
+<body>
+
+<main>
+  <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
+  <div class="cartao oculto" id="naoAchado"><h1>Perfil indisponível</h1><p>Este perfil não existe, não está ativo ou existe um bloqueio entre vocês.</p><a class="btn secundario" href="inicio.html">Voltar</a></div>
+
+  <div class="oculto" id="tela">
+    <div class="cartao oculto" id="avisoPrevia"><p class="suave" style="margin:0">👁️ Assim os outros membros veem o seu perfil. <a href="meu-perfil.html">Voltar para editar</a></p></div>
+
+    <!-- Topo do perfil -->
+    <div class="cartao perfil-topo">
+      <div class="avatar" id="avatar"></div>
+      <h1><span id="txtNome"></span> <span class="uf" id="txtUf"></span></h1>
+      <div class="status" id="txtStatus"></div>
+      <div class="suave" id="txtCidade"></div>
+
+      <div class="badges" id="badges"></div>
+      <div class="badges" id="badgesIdade"></div>
+      <div class="suave" id="txtLiberdade" style="margin-top:6px"></div>
+
+      <div class="botoes-perfil" id="botoes">
+        <button type="button" id="bSeguir"><span class="ic">➕</span><span>Seguir</span></button>
+        <button type="button" data-breve><span class="ic">💘</span><span>Paquerar</span></button>
+        <button type="button" data-breve><span class="ic">⭐</span><span>Favoritar</span></button>
+        <button type="button" data-breve><span class="ic">👥</span><span>Add Amigo</span></button>
+        <button type="button" data-breve><span class="ic">💬</span><span>Chat</span></button>
+        <button type="button" data-breve><span class="ic">✉️</span><span>Recado</span></button>
+        <a href="#fotolog"><span class="ic">📷</span><span>Fotolog</span></a>
+        <button type="button" id="bMaisAcoes"><span class="ic">⋯</span><span>mais…</span></button>
+      </div>
+
+      <div id="caixaMais" class="oculto" style="margin-top:10px">
+        <div class="linha-acoes">
+          <button class="btn secundario" id="bBloquear" type="button">🚫 Bloquear</button>
+          <button class="btn secundario" id="bDenunciar" type="button">⚠️ Denunciar</button>
+        </div>
+      </div>
+      <div id="caixaBloquear" class="oculto" style="margin-top:10px;text-align:left">
+        <p class="suave">Vocês deixam de se ver em toda a comunidade, deixam de se seguir e o acesso a álbum entre vocês é retirado.</p>
+        <button class="btn vermelho" id="bConfirmaBloqueio" type="button">Sim, bloquear</button>
+      </div>
+      <div id="caixaDenuncia" class="oculto" style="margin-top:10px;text-align:left">
+        <label class="campo" for="dMotivo">Motivo</label>
+        <select id="dMotivo">
+          <option value="">Escolha…</option>
+          <option value="perfil_falso">Perfil falso</option>
+          <option value="menor_de_idade">Parece menor de idade</option>
+          <option value="foto_sem_consentimento">Foto de alguém sem permissão</option>
+          <option value="assedio">Assédio ou insistência</option>
+          <option value="cobranca_ou_prostituicao">Cobrança / programa</option>
+          <option value="golpe">Golpe ou pedido de dinheiro</option>
+          <option value="conteudo_ilegal">Conteúdo ilegal</option>
+          <option value="outro">Outro</option>
+        </select>
+        <label class="campo" for="dDetalhes">O que aconteceu (opcional)</label>
+        <textarea id="dDetalhes" maxlength="2000"></textarea>
+        <button class="btn vermelho" id="bEnviarDenuncia" type="button" style="margin-top:8px">Enviar denúncia</button>
+        <p class="suave">A denúncia é sigilosa.</p>
+      </div>
+      <div class="msg" id="mAcoes"></div>
+    </div>
+
+    <!-- Contadores -->
+    <div class="contadores">
+      <div>👥 <b id="nSeguidores">0</b> Seguidores</div>
+      <div>➡️ <b id="nSeguindo">0</b> Seguindo</div>
+      <div>📝 <b id="nPosts">0</b> Publicações</div>
+      <div>📷 <b id="nFotos">0</b> Fotos</div>
+    </div>
+
+    <!-- Informações -->
+    <div class="titulo-secao">Informações do perfil</div>
+    <div class="cartao" style="text-align:center">
+      <span class="numero-membro" id="txtNumero"></span>
+      <p class="suave" id="txtAdesao" style="margin:8px 0 0"></p>
+    </div>
+    <div class="cartao" id="cartaoInfo">
+      <div class="info-pessoas" id="infoGeral"></div>
+      <div class="info-pessoas" id="infoPessoas" style="margin-top:10px"></div>
+    </div>
+
+    <!-- Fotolog -->
+    <div class="titulo-secao" id="fotolog">Fotolog (<span id="qFotos">0</span> fotos)</div>
+    <div class="cartao">
+      <div class="fotos-grade" id="gradePublica"></div>
+      <p class="suave oculto" id="semFotos">Ainda sem fotos.</p>
+    </div>
+
+    <!-- Álbum privado -->
+    <div class="titulo-secao">🔒 Álbum privado</div>
+    <div class="cartao">
+      <div id="albumLiberado" class="oculto"><div class="fotos-grade" id="gradePrivada"></div><p class="suave oculto" id="albumVazio">O álbum ainda está vazio.</p></div>
+      <div id="albumFechado" class="oculto">
+        <p class="suave" id="txtAlbum">Só quem o membro liberar consegue ver.</p>
+        <button class="btn" id="bPedir" type="button">Pedir acesso ao álbum</button>
+        <button class="btn secundario oculto" id="bCancelarPedido" type="button">Cancelar meu pedido</button>
+      </div>
+      <div class="msg" id="mAlbum"></div>
+    </div>
+
+    <!-- Preferências -->
+    <div class="titulo-secao">Preferências</div>
+    <div class="cartao preferencias" id="preferencias"></div>
+
+    <!-- Publicações -->
+    <div class="titulo-secao">Publicações</div>
+    <div id="publicacoes"></div>
+  </div>
+</main>
+
+<footer><a href="regras.html">Regras e privacidade</a> · perfil.html v2.0</footer>
+
+<script src="config.js?v=1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="base.js?v=2.0"></script>
+<script src="feed.js?v=1.0"></script>
+<script src="perfil.js?v=2.0"></script>
+</body>
+</html>

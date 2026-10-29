@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Meu perfil</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=2.0">
+</head>
+<body>
+
+<main>
+  <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
+
+  <div class="oculto" id="tela">
+    <!-- Cabeçalho -->
+    <div class="cartao perfil-topo">
+      <div class="avatar" id="avatar"></div>
+      <h1 id="txtApelido"></h1>
+      <div class="suave" id="txtTipo"></div>
+      <div style="margin-top:8px"><span class="numero-membro" id="txtNumero"></span></div>
+      <div class="linha-acoes">
+        <a class="btn secundario" id="linkPrevia" href="#">👁️ Ver como os outros veem</a>
+      </div>
+    </div>
+
+    <div class="contadores">
+      <div>👥 <b id="nSeguidores">0</b> Seguidores</div>
+      <div>➡️ <b id="nSeguindo">0</b> Seguindo</div>
+      <div>📝 <b id="nPosts">0</b> Publicações</div>
+      <div>📷 <b id="nFotos">0</b> Fotos</div>
+    </div>
+
+    <!-- Pedidos de álbum -->
+    <div class="cartao oculto" id="cartaoPedidos">
+      <h2>Pedidos para ver seu álbum privado</h2>
+      <div class="lista-pessoas" id="listaPedidos"></div>
+    </div>
+
+    <!-- Fotos -->
+    <div class="titulo-secao">Meu Fotolog e álbum privado</div>
+    <div class="cartao">
+      <p class="suave" style="margin-top:0">Toque numa foto para usar como foto de perfil, mudar de álbum ou apagar. Só publique fotos suas; se aparecer outra pessoa, ela precisa ter concordado.</p>
+      <div class="filtros">
+        <select id="upAlbum">
+          <option value="publico">Enviar para: Fotolog (todos os membros veem)</option>
+          <option value="privado">Enviar para: 🔒 Álbum privado (só quem eu liberar)</option>
+        </select>
+        <label class="btn" for="upArquivos" style="padding:10px">📷 Escolher fotos</label>
+      </div>
+      <input id="upArquivos" type="file" accept="image/*" multiple class="oculto">
+      <div class="msg" id="mFotos"></div>
+
+      <div id="painelFoto" class="oculto cartao" style="margin:10px 0;background:var(--cartao2)">
+        <div class="linha-acoes" style="margin-top:0">
+          <button class="btn" id="fPerfil" type="button">⭐ Usar como foto de perfil</button>
+          <button class="btn secundario" id="fMover" type="button">Mover</button>
+          <button class="btn vermelho" id="fApagar" type="button">Apagar</button>
+          <button class="btn secundario" id="fFechar" type="button">Fechar</button>
+        </div>
+      </div>
+
+      <h2 style="margin-top:14px">Fotolog <span class="suave" id="qPub"></span></h2>
+      <div class="fotos-grade" id="gradePub"></div>
+      <h2 style="margin-top:14px">🔒 Álbum privado <span class="suave" id="qPriv"></span></h2>
+      <div class="fotos-grade" id="gradePriv"></div>
+    </div>
+
+    <!-- Dados -->
+    <div class="titulo-secao">Editar meu perfil</div>
+    <div class="cartao">
+      <label class="campo" for="eBio">Proposta / apresentação</label>
+      <textarea id="eBio" maxlength="1000" placeholder="Contem um pouco sobre vocês, o que curtem e o que não curtem."></textarea>
+      <div class="filtros">
+        <div><label class="campo" for="eCidade">Cidade</label><input id="eCidade" type="text" maxlength="60"></div>
+        <div><label class="campo" for="eUf">UF</label><select id="eUf"></select></div>
+      </div>
+      <label class="campo">Procura</label>
+      <div class="chips" id="eProcura">
+        <div class="chip" data-v="casal">Casais</div>
+        <div class="chip" data-v="solteira">Solteiras</div>
+        <div class="chip" data-v="solteiro">Solteiros</div>
+      </div>
+      <label class="campo">Interesse em</label>
+      <div class="chips" id="eInteresse"></div>
+
+      <div id="eGeral" class="filtros" style="margin-top:4px"></div>
+      <div id="eLiberdade" class="oculto" style="margin-top:10px"></div>
+
+      <div class="info-pessoas" id="ePessoas" style="margin-top:12px"></div>
+
+      <label class="campo" style="margin-top:16px">O que curtem</label>
+      <div id="ePraticas"></div>
+
+      <button class="btn" id="bSalvar" type="button" style="margin-top:14px">Salvar</button>
+      <div class="msg" id="mDados"></div>
+      <p class="suave">Apelido, tipo de perfil e data de nascimento só a administração pode alterar. Todos os campos são opcionais.</p>
+    </div>
+
+    <!-- Quem vê o álbum -->
+    <div class="titulo-secao">Quem pode ver meu álbum privado</div>
+    <div class="cartao">
+      <div class="lista-pessoas" id="listaAcessos"></div>
+      <p class="suave oculto" id="semAcessos">Ninguém por enquanto.</p>
+    </div>
+
+    <!-- Bloqueados -->
+    <div class="titulo-secao">Perfis bloqueados</div>
+    <div class="cartao">
+      <div class="lista-pessoas" id="listaBloq"></div>
+      <p class="suave oculto" id="semBloq">Nenhum.</p>
+    </div>
+  </div>
+</main>
+
+<footer><a href="regras.html">Regras e privacidade</a> · meu-perfil.html v2.0</footer>
+
+<script src="config.js?v=1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="base.js?v=2.0"></script>
+<script src="meu-perfil.js?v=2.0"></script>
+</body>
+</html>
