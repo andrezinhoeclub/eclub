@@ -1,4 +1,4 @@
-// admin.js — v2.4 — verificações, membros (privilégios), planos e destaques
+// admin.js — v2.5 — verificações, membros (privilégios), planos e destaques
 (async function () {
   'use strict';
   const { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, moldura, toast } = window.BASE;
@@ -45,7 +45,7 @@
 
   async function carregarMembros() {
     carregarCadastro();
-    let q = sb.from('perfis').select('id, numero, apelido, tipo, sexo_1, sexo_2, cidade, uf, status, isento, acesso_ate, criado_em')
+    let q = sb.from('perfis').select('id, numero, apelido, tipo, sexo_1, sexo_2, cidade, uf, status, isento, acesso_ate, teste_ate, criado_em')
       .order('criado_em', { ascending: false }).limit(50);
     const busca = $('mBusca').value.trim().replace(/[%_\\,()]/g, '');
     if (busca) q = q.ilike('apelido', '%' + busca + '%');
@@ -64,7 +64,9 @@
       const info = novoEl('div');
       const a = novoEl('a', null, m.apelido + ' · nº ' + m.numero); a.href = 'perfil.html?id=' + encodeURIComponent(m.id);
       const ativo = m.isento || (m.acesso_ate && new Date(m.acesso_ate) > new Date());
-      const situ = ADM.has(m.id) ? '🛡️ admin' : m.isento ? '👑 isento (sem mensalidade)' : (m.acesso_ate ? (ativo ? 'acesso até ' : 'venceu em ') + new Date(m.acesso_ate).toLocaleDateString('pt-BR') : 'sem assinatura');
+      const emTeste = !m.isento && m.teste_ate && new Date(m.teste_ate) > new Date() && m.acesso_ate && new Date(m.acesso_ate) > new Date() && new Date(m.acesso_ate) <= new Date(new Date(m.teste_ate).getTime() + 60000);
+      const situ = ADM.has(m.id) ? '🛡️ admin' : m.isento ? '👑 isento (sem mensalidade)' :
+        emTeste ? '🎁 teste grátis até ' + new Date(m.acesso_ate).toLocaleDateString('pt-BR') : (m.acesso_ate ? (ativo ? 'acesso até ' : 'venceu em ') + new Date(m.acesso_ate).toLocaleDateString('pt-BR') : 'sem assinatura');
       info.append(a, novoEl('div', 'suave', formacao(m) + ' · ' + m.cidade + '/' + m.uf + ' · ' + m.status + ' · ' + situ));
       const bt = novoEl('div', 'botoes');
       const botao = (t, cls, acao) => { const b = novoEl('button', cls, t); b.type = 'button'; b.addEventListener('click', async () => { b.disabled = true; const r = await acao(); if (r === false) { b.disabled = false; return; } carregarMembros(); }); bt.appendChild(b); };
@@ -77,7 +79,7 @@
         if (!confirmar('Admin vê tudo, inclusive álbuns privados e conversas. Toque de novo para confirmar.')) return false; await admin(true); });
       if (ADM.has(m.id) && m.id !== eu.id && m.id !== dono) botao('Tirar admin', 'nao', async () => {
         if (!confirmar('Toque de novo em Tirar admin para confirmar.')) return false; await admin(false); });
-      botao('+30 dias', '', () => rpc(null, 30));
+      botao('🎁 +30 dias grátis', '', () => rpc(null, 30));
       botao('−30 dias', '', () => rpc(null, -30));
       if (m.status === 'aprovado') botao('Suspender', '', () => status('suspenso'));
       if (m.status === 'suspenso') botao('Reativar', 'sim', () => status('aprovado'));

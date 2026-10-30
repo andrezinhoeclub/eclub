@@ -1,4 +1,4 @@
-// planos.js — v1.1 — situação da assinatura e planos (pagamento por Pix entra na próxima fase)
+// planos.js — v1.2 — situação da assinatura e planos (pagamento por Pix entra na próxima fase)
 (async function () {
   'use strict';
   const { sb, $, msg, moldura, exigirMembro, emBreve } = window.BASE;
@@ -12,6 +12,11 @@
   const s = $('situacao');
   if (a.admin) { s.append(el('h2', null, '👑 Administração'), el('p', 'suave', 'Sua conta tem acesso total, sem mensalidade.')); }
   else if (a.isento) { s.append(el('h2', null, '👑 Conta isenta'), el('p', 'suave', 'A administração liberou seu acesso sem mensalidade.')); }
+  else if (a.ativa && a.em_teste) {
+    s.append(el('h2', null, '🎁 Período de teste grátis'),
+      el('p', null, 'Você está com acesso completo por mais ' + a.dias_restantes + ' dia(s), até ' + new Date(a.acesso_ate).toLocaleDateString('pt-BR') + '.'),
+      el('p', 'suave', 'Depois disso, sem assinatura, a comunidade fica liberada só 5 minutos por dia. Se assinar agora, os dias de teste são somados.'));
+  }
   else if (a.ativa) {
     s.append(el('h2', null, '✅ Assinatura ativa'),
       el('p', null, 'Restam ' + a.dias_restantes + ' dia(s) — até ' + new Date(a.acesso_ate).toLocaleDateString('pt-BR') + '.'),
