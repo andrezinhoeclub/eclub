@@ -1,4 +1,4 @@
-// admin.js — v2.5 — verificações, membros (privilégios), planos e destaques
+// admin.js — v2.7 — verificações, membros (privilégios), planos e destaques
 (async function () {
   'use strict';
   const { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, moldura, toast } = window.BASE;
@@ -96,19 +96,68 @@
     const { data } = await sb.from('planos').select('*').order('ordem');
     $('pLista').innerHTML = '';
     (data || []).forEach(p => {
-      const l = novoEl('div', 'pessoa');
+      const l = novoEl('div', 'pessoa'); l.style.flexWrap = 'wrap';
       const nome = novoEl('input'); nome.type = 'text'; nome.value = p.nome; nome.style.maxWidth = '150px';
       const dias = novoEl('input'); dias.type = 'number'; dias.value = p.dias; dias.style.maxWidth = '90px'; dias.title = 'dias';
       const valor = novoEl('input'); valor.type = 'number'; valor.step = '0.01'; valor.value = p.valor; valor.style.maxWidth = '110px'; valor.title = 'valor R$';
       const at = novoEl('label', 'suave'); const cb = novoEl('input'); cb.type = 'checkbox'; cb.checked = p.ativo; at.append(cb, ' ativo');
+      const prod = novoEl('input'); prod.type = 'text'; prod.value = p.krowk_produto || ''; prod.maxLength = 160;
+      prod.placeholder = 'Krowk: ID ou nome exato do produto'; prod.style.cssText = 'flex:1 1 100%;margin-top:6px';
+      const link = novoEl('input'); link.type = 'text'; link.inputMode = 'url'; link.value = p.link_pagamento || ''; link.maxLength = 400;
+      link.placeholder = 'Krowk: link de pagamento (https://…)'; link.style.cssText = 'flex:1 1 100%;margin-top:6px';
       const salvar = novoEl('button', 'sim', 'Salvar'); salvar.type = 'button';
       salvar.addEventListener('click', async () => {
-        const { error } = await sb.from('planos').update({ nome: nome.value.trim(), dias: parseInt(dias.value, 10), valor: Number(valor.value), ativo: cb.checked }).eq('id', p.id);
+        const lk = link.value.trim();
+        if (lk && !/^https:\/\//.test(lk)) { msg('pMsg', 'erro', 'O link precisa começar com https://'); return; }
+        const { error } = await sb.from('planos').update({ nome: nome.value.trim(), dias: parseInt(dias.value, 10), valor: Number(valor.value), ativo: cb.checked,
+          krowk_produto: prod.value.trim() || null, link_pagamento: lk || null }).eq('id', p.id);
         msg('pMsg', error ? 'erro' : 'ok', error ? 'Erro: ' + error.message : 'Plano salvo ✓');
       });
-      l.append(nome, dias, novoEl('span', 'suave', 'dias · R$'), valor, at, salvar); $('pLista').appendChild(l);
+      const urlHook = window.APP.SUPABASE_URL + '/functions/v1/krowk?plano=' + p.id;
+      const hook = novoEl('div', 'suave'); hook.style.cssText = 'flex:1 1 100%;margin-top:6px;font-size:.82rem;word-break:break-all';
+      hook.append('Webhook deste plano na Krowk: ', novoEl('b', null, urlHook), ' ');
+      const cp = novoEl('button', '', 'Copiar'); cp.type = 'button';
+      cp.addEventListener('click', async () => { try { await navigator.clipboard.writeText(urlHook); toast('URL copiada ✓'); } catch (e) { toast('Selecione e copie a URL.'); } });
+      hook.appendChild(cp);
+      l.append(nome, dias, novoEl('span', 'suave', 'dias · R$'), valor, at, salvar, prod, link, hook); $('pLista').appendChild(l);
+    });
+    carregarPagamentos();
+  }
+
+  // Pagamentos que chegaram da Krowk
+  async function carregarPagamentos() {
+    const { data, error } = await sb.from('pagamentos')
+      .select('id, venda_id, classe, evento, email, produto, valor, situacao, dias, criado_em, perfis(apelido, numero)')
+      .order('criado_em', { ascending: false }).limit(40);
+    const box = $('pgLista'); box.innerHTML = '';
+    if (error) { box.textContent = 'Erro: ' + error.message; return; }
+    if (!data.length) { box.appendChild(novoEl('p', 'suave', 'Nenhum aviso de pagamento recebido ainda.')); return; }
+    const ROT = { liberado: '✅ liberado', removido: '↩️ dias removidos', sem_membro: '⚠️ e-mail sem conta', sem_plano: '⚠️ produto sem plano',
+                  repetido: '· aviso repetido', registrado: '· só registrado' };
+    data.forEach(g => {
+      const l = novoEl('div', 'pessoa'); l.style.flexWrap = 'wrap';
+      const info = novoEl('div');
+      const quem = (g.classe === 'teste' ? '🧪 TESTE · ' : '') + (g.perfis ? g.perfis.apelido + ' (nº ' + g.perfis.numero + ')' : (g.email || 'sem e-mail'));
+      info.append(novoEl('b', null, (ROT[g.situacao] || g.situacao) + ' · ' + quem),
+        novoEl('div', 'suave', [g.evento, g.produto, g.valor != null ? 'R$ ' + Number(g.valor).toFixed(2) : null, g.dias ? '+' + g.dias + ' dias' : null,
+          new Date(g.criado_em).toLocaleString('pt-BR')].filter(Boolean).join(' · ')));
+      l.appendChild(info);
+      if ((g.classe === 'pago' || g.classe === 'renovacao') && (g.situacao === 'sem_membro' || g.situacao === 'sem_plano')) {
+        const n = novoEl('input'); n.type = 'text'; n.inputMode = 'numeric'; n.placeholder = 'nº do membro'; n.style.maxWidth = '130px';
+        const b = novoEl('button', 'sim', 'Liberar'); b.type = 'button';
+        b.addEventListener('click', async () => {
+          const num = parseInt(n.value.replace(/\D/g, ''), 10); if (!num) { toast('Digite o nº do membro.'); return; }
+          b.disabled = true;
+          const { data: ap, error: e } = await sb.rpc('admin_atribuir_pagamento', { p_id: g.id, p_numero: num });
+          b.disabled = false;
+          toast(e ? 'Erro: ' + e.message : 'Dias liberados para ' + ap + ' ✓'); if (!e) carregarPagamentos();
+        });
+        const bt = novoEl('div', 'botoes'); bt.append(n, b); l.appendChild(bt);
+      }
+      box.appendChild(l);
     });
   }
+
 
 
   // ---------- Eventos (moderação) ----------
