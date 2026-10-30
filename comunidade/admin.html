@@ -57,9 +57,14 @@
     <div class="oculto" id="abaPlanos">
       <div class="cartao">
         <h1>Planos</h1>
-        <p class="suave">Altere nome, dias e valor. Desmarque "ativo" para esconder um plano.</p>
+        <p class="suave">Altere nome, dias e valor. Desmarque "ativo" para esconder um plano. Em cada plano, cole o <b>link de pagamento</b> do produto na Krowk e use a <b>URL do webhook</b> que aparece embaixo (uma por plano).</p>
         <div id="pLista"></div>
         <div class="msg" id="pMsg"></div>
+      </div>
+      <div class="cartao">
+        <h2 style="margin:0 0 4px">Pagamentos recebidos (Krowk)</h2>
+        <p class="suave" style="margin:0 0 8px">Cada pagamento aprovado soma os dias do plano no membro com o mesmo e-mail. Se a pessoa pagou com outro e-mail, digite o nº dela e toque em Liberar. Reembolso e chargeback tiram os dias sozinhos.</p>
+        <div class="lista-pessoas" id="pgLista"></div>
       </div>
     </div>
 
@@ -134,11 +139,11 @@
   </div>
 </template>
 
-<footer>admin.html v2.6</footer>
+<footer>admin.html v2.8</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="base.js?v=2.6"></script>
-<script src="admin.js?v=2.5"></script>
+<script src="admin.js?v=2.7"></script>
 </body>
 </html>
