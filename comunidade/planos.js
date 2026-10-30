@@ -1,9 +1,9 @@
-// planos.js — v1.2 — situação da assinatura e planos (pagamento por Pix entra na próxima fase)
+// planos.js — v1.3 — situação da assinatura e planos (pagamento por Pix entra na próxima fase)
 (async function () {
   'use strict';
   const { sb, $, msg, moldura, exigirMembro, emBreve } = window.BASE;
 
-  const { perfil: eu, assinatura: a } = await exigirMembro({ semAssinatura: true });
+  const { user, perfil: eu, assinatura: a } = await exigirMembro({ semAssinatura: true });
   moldura(eu, a, '');
   const el = (tag, cls, texto) => { const e = document.createElement(tag); if (cls) e.className = cls; if (texto != null) e.textContent = texto; return e; };
   const real = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -30,7 +30,7 @@
   }
 
   // Planos
-  const { data: planos } = await sb.from('planos').select('id, nome, dias, valor').eq('ativo', true).order('ordem');
+  const { data: planos } = await sb.from('planos').select('id, nome, dias, valor, link_pagamento').eq('ativo', true).order('ordem');
   const mensal = (planos || []).find(p => p.dias === 30);
   (planos || []).forEach(p => {
     const c = el('div', 'plano');
@@ -46,7 +46,14 @@
       }
     }
     const b = el('button', 'btn', 'Assinar'); b.type = 'button';
-    b.addEventListener('click', () => msg('mPlanos', 'info', 'O pagamento por Pix será liberado na próxima atualização. Enquanto isso, fale com a administração para liberar seu acesso.'));
+    b.addEventListener('click', () => {
+      if (!p.link_pagamento) { msg('mPlanos', 'info', 'Este plano ainda não está disponível para pagamento. Fale com a administração.'); return; }
+      const u = new URL(p.link_pagamento);
+      if (user && user.email) u.searchParams.set('email', user.email);
+      msg('mPlanos', 'info', 'Abrindo o pagamento… Use o e-mail ' + (user && user.email || 'da sua conta') +
+        ' no pagamento: assim seus dias são liberados sozinhos em instantes.');
+      setTimeout(() => { location.href = u.toString(); }, 1200);
+    });
     c.appendChild(b);
     $('planos').appendChild(c);
   });
