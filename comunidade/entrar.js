@@ -1,4 +1,4 @@
-// entrar.js — v1.4 — login, cadastro, convite (completar cadastro) e recuperação de senha
+// entrar.js — v1.5 — login, cadastro, convite (completar cadastro) e recuperação de senha
 (function () {
   'use strict';
 
@@ -81,16 +81,13 @@
   }
 
   // ---------- Cadastro aberto ou só por convite ----------
+  // Só por convite: a aba de cadastro some da tela (quem foi convidado entra pelo link do e-mail)
   sb.rpc('cadastro_aberto').then(({ data }) => {
     if (data === false && !completando) {
       const b = document.querySelector('#abas [data-aba="cadastro"]');
-      b.textContent = 'Convite';
-      b.addEventListener('click', () => setTimeout(() => {
-        if (completando) return;
-        $('blocoDados').classList.add('oculto'); $('tipos').classList.add('oculto');
-        $('tipos').previousElementSibling.classList.add('oculto');
-        msg('mCadastro', 'info', 'No momento, a entrada é somente por convite. Peça a um membro para te convidar: você vai receber um e-mail com o link.');
-      }, 0));
+      if (b) b.remove();
+      $('abas').style.gridTemplateColumns = '1fr';
+      if (!$('fCadastro').classList.contains('oculto')) mostrar('entrar');
     }
   });
 
