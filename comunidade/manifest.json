@@ -1,26 +1,26 @@
 {
-  "name": "Comunidade",
+  "id": "./inicio.html",
+  "name": "Comunidade Liberal",
   "short_name": "Comunidade",
-  "description": "Comunidade liberal só para maiores de 18 anos, com perfis verificados.",
+  "description": "Comunidade liberal de casais e solteiros, só para maiores de 18 anos, com perfis verificados.",
   "lang": "pt-BR",
+  "dir": "ltr",
   "start_url": "./inicio.html",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
-  "background_color": "#eef0f3",
-  "theme_color": "#c2255c",
+  "background_color": "#0b0a09",
+  "theme_color": "#0b0a09",
+  "categories": ["social", "lifestyle"],
   "icons": [
-    {
-      "src": "icone-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icone-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    { "src": "icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Mensagens", "url": "./chat.html", "icons": [{ "src": "icone-192.png", "sizes": "192x192" }] },
+    { "name": "Eventos", "url": "./eventos.html", "icons": [{ "src": "icone-192.png", "sizes": "192x192" }] },
+    { "name": "Radar", "url": "./aovivo.html", "icons": [{ "src": "icone-192.png", "sizes": "192x192" }] }
   ]
 }

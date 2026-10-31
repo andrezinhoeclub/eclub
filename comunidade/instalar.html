@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR" data-tema="escuro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b0a09">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Comunidade">
+<link rel="apple-touch-icon" href="icone-180.png">
+<link rel="icon" type="image/png" href="favicon-64.png">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Instalar o app · Comunidade Liberal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=3.0">
+<style>
+  body{padding:0 0 40px}
+  .capa{text-align:center;padding:calc(36px + env(safe-area-inset-top)) 20px 26px;background:radial-gradient(70% 90% at 50% 20%,#2a1f12 0%,var(--fundo) 75%)}
+  .capa img{height:120px;width:auto}
+  .lockup{display:flex;flex-direction:column;align-items:center;margin-top:14px;line-height:1}
+  .lockup span{font:600 1.7rem/1 var(--titulo);letter-spacing:.2em;margin-right:-.2em;text-transform:uppercase}
+  .lockup i{font:400 2.6rem/.8 var(--assinatura);font-style:normal;color:var(--marca);margin-top:-2px}
+  .capa p{color:var(--suave);margin:16px auto 0;max-width:34ch}
+  main{max-width:560px;margin:0 auto;padding:0 14px}
+  .cartao{border-radius:14px!important;margin-top:14px}
+  #bInstalar{margin-top:6px}
+  details{background:var(--cartao);border:1px solid var(--linha);border-radius:14px;margin-top:10px;overflow:hidden}
+  summary{cursor:pointer;padding:15px 16px;font-weight:600;display:flex;align-items:center;gap:10px;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";margin-left:auto;color:var(--marca);font-size:1.3rem;line-height:1}
+  details[open] summary::after{content:"−"}
+  ol{margin:0;padding:0 18px 16px 36px;line-height:1.6}
+  ol li{margin-bottom:6px}
+  ol b{color:var(--marca)}
+  .vantagens{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;text-align:center;font-size:.82rem;color:var(--suave)}
+  .vantagens div{background:var(--cartao);border:1px solid var(--linha);border-radius:12px;padding:12px 6px}
+  .vantagens b{display:block;color:var(--texto);font-size:1.3rem;margin-bottom:2px}
+  .voltar{display:block;text-align:center;margin-top:22px}
+</style>
+</head>
+<body>
+  <div class="capa">
+    <img src="logo-ouro.png" alt="Comunidade Liberal">
+    <div class="lockup"><span>Comunidade</span><i>Liberal</i></div>
+    <p>Instale o app no seu celular ou computador: abre em tela cheia, direto pelo ícone, sem barra do navegador.</p>
+  </div>
+  <main>
+    <div class="cartao">
+      <button class="btn oculto" id="bInstalar" type="button">📲 Instalar agora</button>
+      <p class="suave" id="mInstalar" style="margin:8px 0 0;text-align:center"></p>
+    </div>
+
+    <div class="vantagens">
+      <div><b>⚡</b>Abre direto pelo ícone</div>
+      <div><b>🔒</b>Mais discreto, sem histórico do navegador</div>
+      <div><b>📶</b>Leve: não ocupa espaço</div>
+    </div>
+
+    <div id="passos">
+      <details id="p-android">
+        <summary>🤖 Android (Chrome)</summary>
+        <ol>
+          <li>Abra este endereço no <b>Chrome</b>.</li>
+          <li>Toque no botão <b>Instalar agora</b> acima. Se ele não aparecer, toque nos <b>⋮ três pontinhos</b> no canto de cima.</li>
+          <li>Escolha <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>).</li>
+          <li>Pronto: o ícone dourado aparece junto com os seus outros apps.</li>
+        </ol>
+      </details>
+      <details id="p-iphone">
+        <summary>🍎 iPhone (Safari)</summary>
+        <ol>
+          <li>Abra este endereço no <b>Safari</b> (no Chrome do iPhone não funciona).</li>
+          <li>Toque no botão <b>Compartilhar</b> (o quadrado com a setinha para cima, na barra de baixo).</li>
+          <li>Role a lista e toque em <b>Adicionar à Tela de Início</b>.</li>
+          <li>Toque em <b>Adicionar</b>. O ícone aparece na sua tela inicial.</li>
+        </ol>
+      </details>
+      <details id="p-pc">
+        <summary>💻 Computador (Chrome ou Edge)</summary>
+        <ol>
+          <li>Abra este endereço no <b>Chrome</b> ou no <b>Edge</b>.</li>
+          <li>Clique no botão <b>Instalar agora</b> acima, ou no ícone de <b>instalar</b> (um monitor com seta) no fim da barra de endereço.</li>
+          <li>Clique em <b>Instalar</b>. O app abre em janela própria e ganha atalho na área de trabalho.</li>
+        </ol>
+      </details>
+    </div>
+
+    <a class="voltar" href="entrar.html">← Voltar para a entrada</a>
+  </main>
+  <footer><a href="regras.html">Regras e privacidade</a> · instalar.html v1.0</footer>
+  <script src="pwa.js?v=1.0"></script>
+  <script src="instalar.js?v=1.0"></script>
+</body>
+</html>

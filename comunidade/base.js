@@ -1,4 +1,4 @@
-// base.js — v2.6 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v2.7 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -200,7 +200,7 @@
   function pref(chave, padrao) { try { return localStorage.getItem('pref_' + chave) || padrao; } catch (e) { return padrao; } }
   function salvarPref(chave, valor) { try { localStorage.setItem('pref_' + chave, valor); } catch (e) {} aplicarPrefs(); }
   function aplicarPrefs() {
-    const escuro = pref('escuro', 'desliga');
+    const escuro = pref('escuro', 'liga');
     const h = new Date().getHours();
     const ligar = escuro === 'liga' || (escuro === 'noite' && (h >= 19 || h < 7));
     document.documentElement.dataset.tema = ligar ? 'escuro' : 'claro';
@@ -213,13 +213,15 @@
   (function modoApp() {
     const add = (tag, attrs) => { const e = document.createElement(tag); Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v)); document.head.appendChild(e); };
     if (!document.querySelector('link[rel=manifest]')) add('link', { rel: 'manifest', href: 'manifest.json' });
-    if (!document.querySelector('meta[name=theme-color]')) add('meta', { name: 'theme-color', content: '#c2255c' });
+    const tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = '#0b0a09'; else add('meta', { name: 'theme-color', content: '#0b0a09' });
     add('meta', { name: 'mobile-web-app-capable', content: 'yes' });
     add('meta', { name: 'apple-mobile-web-app-capable', content: 'yes' });
     add('meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' });
-    add('meta', { name: 'apple-mobile-web-app-title', content: A.NOME || 'Comunidade' });
+    add('meta', { name: 'apple-mobile-web-app-title', content: 'Comunidade' });
     add('link', { rel: 'apple-touch-icon', href: 'icone-180.png' });
-    add('link', { rel: 'icon', type: 'image/png', href: 'icone-192.png' });
+    add('link', { rel: 'icon', type: 'image/png', href: 'favicon-64.png' });
+    // App instalável: registra o service worker (não guarda dados pessoais, só a tela de "sem internet")
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
   })();
 
   // Endereço público do flyer de um evento
@@ -347,6 +349,7 @@
     escudo: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
     ajuda: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 015 0c0 1.8-2.5 2-2.5 4M12 17h.01"/>',
     admin: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+    baixar: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M12 7v7M9 11l3 3 3-3M10 18h4"/>',
     sair: '<path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/>'
   };
   function icone(nome) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONE[nome] || '') + '</svg>'; }
@@ -371,7 +374,7 @@
       icone(n) + '<span class="bolinha" id="b_' + n + '"></span></' + (href ? 'a' : 'button') + '>';
 
     const topo = document.createElement('div'); topo.className = 'barra-topo';
-    topo.innerHTML = '<div class="icones">' +
+    topo.innerHTML = '<div class="icones"><a class="marca-app" href="inicio.html" aria-label="Início"><img src="logo-ouro.png" alt=""><span>Comunidade</span><i>Liberal</i></a>' +
       pag('menu', 'Menu') + pag('agenda', 'Eventos', 'eventos.html') + pag('perfil', 'Meu perfil', 'meu-perfil.html') +
       pag('recado', 'Recados', 'recados.html') + pag('chat', 'Mensagens', 'chat.html') + pag('camera', 'Publicar foto', 'inicio.html?postar=foto') +
       pag('busca', 'Buscar membros', 'aovivo.html?busca=1') + '</div>';
@@ -476,7 +479,7 @@
       assinatura.admin ? etiqueta('administração') : assinatura.isento ? etiqueta('isento') :
       assinatura.ativa ? etiqueta(assinatura.dias_restantes + ' dias restantes') : etiqueta('vencido', 'vencido'));
     item('olho', 'Navegação Discreta', () => {}, alternador('discreta', [['desligada', 'Desligada'], ['ligada', 'Ligada']], 'desligada'));
-    item('lua', 'Modo Escuro', () => {}, alternador('escuro', [['desliga', 'Desliga'], ['noite', 'só à noite'], ['liga', 'Liga']], 'desliga'));
+    item('lua', 'Modo Escuro', () => {}, alternador('escuro', [['desliga', 'Desliga'], ['noite', 'só à noite'], ['liga', 'Liga']], 'liga'));
     item('letra', 'Letras', () => {}, alternador('letras', [['normais', 'Normais'], ['grandes', 'Grandes']], 'normais'));
 
     secao('Minhas coisas');
@@ -510,6 +513,7 @@
     });
     item('escudo', 'Privacidade e Segurança', 'regras.html#privacidade');
     item('ajuda', 'Ajuda e Regras', 'regras.html');
+    const inst = item('baixar', 'Instalar o App no celular', 'instalar.html'); inst.classList.add('instalar');
     item('chat', 'Falar com a Administração', null);
     if (assinatura.admin) item('admin', 'Painel da Administração', 'admin.html');
     const s = item('sair', 'SAIR', sair); s.classList.add('sair');

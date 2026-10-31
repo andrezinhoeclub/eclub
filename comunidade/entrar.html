@@ -4,25 +4,29 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#c2255c">
+<meta name="theme-color" content="#0b0a09">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icone-180.png">
-<link rel="icon" type="image/png" href="icone-192.png">
+<link rel="icon" type="image/png" href="favicon-64.png">
+<meta name="apple-mobile-web-app-title" content="Comunidade">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
-<title>Entrar</title>
+<title>Entrar · Comunidade Liberal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=2.6">
+<link rel="stylesheet" href="estilo.css?v=3.0">
 <style>
   /* Tela de entrar — mesmo padrão visual do sistema */
   body{padding:0 12px 40px;display:flex;flex-direction:column;align-items:center;
-       background:linear-gradient(180deg,var(--marca2) 0,var(--marca) 230px,var(--fundo) 230px)}
-  .marca{text-align:center;color:#fff;padding:34px 0 22px}
-  .marca h1{font-size:2.1rem;font-weight:800;margin:0;letter-spacing:.02em}
-  .marca p{margin:4px 0 0;font-size:.82rem;opacity:.92}
+       background:radial-gradient(90% 420px at 50% 0%,#2a1f12 0%,var(--fundo) 100%) no-repeat,var(--fundo)}
+  .marca{text-align:center;padding:30px 0 22px}
+  .marca img{height:118px;width:auto;display:block;margin:0 auto 12px}
+  .marca .lockup{display:flex;flex-direction:column;align-items:center;line-height:1}
+  .marca h1{font:600 1.9rem/1 var(--titulo);letter-spacing:.2em;margin:0 -.2em 0 0;text-transform:uppercase;color:#f3ece0}
+  .marca .lockup i{font:400 2.9rem/.8 var(--assinatura);font-style:normal;color:var(--marca);margin-top:-4px}
+  .marca p{margin:12px 0 0;font-size:.74rem;letter-spacing:.28em;text-transform:uppercase;color:var(--suave)}
   .caixa{width:100%;max-width:440px;background:var(--cartao);border:1px solid var(--linha);border-radius:14px;padding:18px;box-shadow:0 6px 24px rgba(16,24,40,.12)}
   .caixa .abas{display:grid;grid-template-columns:1fr 1fr;margin:0 0 16px;overflow:hidden}
   .caixa .abas button{border:0;border-bottom:3px solid transparent;background:none;color:var(--azul);font:600 .95rem Inter,sans-serif;padding:12px;cursor:pointer}
@@ -36,8 +40,7 @@
   .tipo{border:1px solid var(--linha);background:var(--cartao2);border-radius:10px;padding:12px 6px;text-align:center;cursor:pointer;user-select:none}
   .tipo .ic{font-size:1.5rem;display:block;margin-bottom:2px}
   .tipo b{font-size:.85rem}
-  .tipo.sel{border-color:var(--marca);background:#fff0f6}
-  :root[data-tema="escuro"] .tipo.sel{background:#3a1426}
+  .tipo.sel{border-color:var(--marca);background:var(--marca-suave)}
   .marcas{display:flex;gap:8px;flex-wrap:wrap}
   .aceite{display:flex!important;gap:10px;align-items:flex-start;line-height:1.45}
   .aceite input{width:20px;height:20px;flex:0 0 20px;margin-top:1px;accent-color:var(--marca)}
@@ -48,7 +51,7 @@
   .caixa input:not([type=checkbox]),.caixa select{font-size:16px}
   .marca{padding-top:calc(34px + env(safe-area-inset-top))}
   @media (max-width:520px){
-    body{padding:0 0 30px;background:linear-gradient(180deg,var(--marca2) 0,var(--marca) 190px,var(--cartao) 190px)}
+    body{padding:0 0 30px}
     .caixa{border:0;border-radius:18px 18px 0 0;box-shadow:none;max-width:none;padding:18px 16px;min-height:calc(100vh - 150px)}
     .marca{padding-bottom:18px}
   }
@@ -57,8 +60,9 @@
 <body>
 
 <div class="marca">
-  <h1 id="nomeApp">…</h1>
-  <p>Comunidade liberal · somente maiores de 18 anos</p>
+  <img src="logo-ouro.png" alt="">
+  <div class="lockup"><h1 id="nomeApp">Comunidade</h1><i>Liberal</i></div>
+  <p>Perfis verificados · somente +18</p>
 </div>
 
 <div class="caixa">
@@ -167,14 +171,16 @@
   </div>
 
   <div class="selo-seg">🔒 Perfis verificados · fotos protegidas · dados criptografados</div>
+  <a class="link" href="instalar.html" style="text-decoration:none;color:var(--marca)">📲 Instalar o app no celular</a>
 </div>
 
 <footer>
-  <a href="regras.html">Regras e privacidade</a> · entrar.html v2.7
+  <a href="regras.html">Regras e privacidade</a> · entrar.html v3.0
 </footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
-<script src="entrar.js?v=1.3"></script>
+<script src="pwa.js?v=1.0"></script>
+<script src="entrar.js?v=1.4"></script>
 </body>
 </html>

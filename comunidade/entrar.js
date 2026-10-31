@@ -1,4 +1,4 @@
-// entrar.js — v1.3 — login, cadastro, convite (completar cadastro) e recuperação de senha
+// entrar.js — v1.4 — login, cadastro, convite (completar cadastro) e recuperação de senha
 (function () {
   'use strict';
 
@@ -9,7 +9,6 @@
   } catch (x) {}
   const $ = (id) => document.getElementById(id);
   document.title = 'Entrar · ' + A.NOME;
-  $('nomeApp').textContent = A.NOME;
 
   if (!window.supabase || !A.SUPABASE_URL || A.SUPABASE_URL.includes('SEU-PROJETO')) {
     msg('mEntrar', 'erro', 'Site ainda não configurado (arquivo config.js).');
