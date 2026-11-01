@@ -9,6 +9,21 @@
 <title>Eventos</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilo.css?v=3.0">
+<style>
+  .ev-ir{margin-top:8px;border:1px solid var(--marca);background:var(--marca-suave);color:var(--marca);border-radius:999px;padding:6px 14px;font:600 .82rem Inter,sans-serif;cursor:pointer}
+  .ev-ir:disabled{opacity:.5}
+  .ev-aviso{margin:10px 0;padding:14px;background:var(--cartao);color:var(--suave);font-size:.82rem;line-height:1.5;text-align:center}
+  .ev-aviso b{color:var(--marca)}
+  .ev-lugar{display:flex;gap:12px;align-items:center;margin:4px 0;padding:8px;border:1px solid var(--linha);border-radius:12px;background:var(--cartao2);color:var(--texto);text-decoration:none}
+  .ev-lugar .th{width:58px;height:58px;border-radius:8px;overflow:hidden;flex:0 0 58px;background:var(--fundo);display:grid;place-items:center}
+  .ev-lugar .th img{width:100%;height:100%;object-fit:cover}
+  .ev-lugar .th img.sem{width:50%;height:auto;object-fit:contain;opacity:.6}
+  .ev-lugar .tx b{display:block;font-size:1rem}
+  .ev-lugar .tx small{color:var(--marca);font-size:.8rem}
+  .ev-confiavel{background:rgba(81,179,106,.16);color:#8fdca2;text-align:center;font-size:.82rem;font-weight:600;padding:8px;margin-bottom:2px}
+  :root[data-tema="claro"] .ev-confiavel{color:#2b8a3e}
+  .ev-selo.eu{background:var(--ouro-foil);color:#1b1408}
+</style>
 </head>
 <body>
 
@@ -18,6 +33,7 @@
   <!-- ===================== LISTA ===================== -->
   <div class="oculto" id="telaLista">
     <a class="ev-atalho" href="eventos.html?aba=agenda" id="atalhoAgenda">📅 Minha Agenda</a>
+    <a class="ev-atalho" href="lugares.html">📍 Lugares para Avaliar</a>
     <a class="ev-atalho" href="#" id="atalhoCriar">➕ Criar evento, agenda ou viagem</a>
     <div class="ev-tipos oculto" id="escolherTipo">
       <a href="eventos.html?criar=evento"><b>🎉 Evento</b><span>Festa, encontro, show. Os membros confirmam presença.</span></a>
@@ -39,6 +55,7 @@
     <div class="titulo-secao oculto" id="tituloProximos" style="text-align:center">Próximos eventos</div>
     <div id="lista"></div>
     <div class="cartao oculto" id="vazio"><p class="suave" style="margin:0" id="txtVazio"></p></div>
+    <div class="ev-aviso"><b>ATENÇÃO!</b> As informações dos eventos são de responsabilidade dos organizadores. Se tiver problema com algum evento, denuncie à administração com todos os detalhes para apurarmos.</div>
   </div>
 
   <!-- ===================== CRIAR / EDITAR ===================== -->
@@ -131,6 +148,8 @@
       <p id="dLocal" style="margin:0"></p>
       <p class="suave" id="dEndereco" style="margin:2px 0 0"></p>
       <p id="dPublico" style="margin:10px 0 0;font-size:.88rem"></p>
+      <p id="dOrg" style="margin:6px 0 0;font-size:.88rem"></p>
+      <a href="#" id="dCopiar" style="display:inline-block;margin-top:6px;font-size:.85rem">🔗 Copiar link do evento</a>
       <a href="#" id="dMaisInfo" class="oculto" style="display:inline-block;margin-top:8px">mais informações sobre o evento…</a>
       <p id="dDescricao" class="oculto" style="white-space:pre-wrap"></p>
       <a class="btn secundario oculto" id="dLink" target="_blank" rel="noopener noreferrer" style="margin-top:10px">🎟️ Lista / ingressos</a>
@@ -166,16 +185,17 @@
       <div id="chatLista"></div>
     </div>
     <div id="abaPessoas" class="oculto">
+      <div class="ev-confiavel oculto" id="dConfiavel">✓ Essa lista é confiável: o organizador aprova cada participante</div>
       <div class="lista-pessoas" id="pessoas" style="padding:0 0 8px"></div>
     </div>
   </div>
 </main>
 
-<footer><a href="regras.html">Regras e privacidade</a> · eventos.html v2.3</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · eventos.html v2.4</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="base.js?v=2.7"></script>
-<script src="eventos.js?v=2.2"></script>
+<script src="eventos.js?v=2.3"></script>
 </body>
 </html>

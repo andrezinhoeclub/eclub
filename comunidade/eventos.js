@@ -1,4 +1,4 @@
-// eventos.js — v2.2 — eventos no modelo do CRS: agenda por estado, criar (evento/agenda/viagem),
+// eventos.js — v2.3 — eventos no modelo do CRS: agenda por estado, criar (evento/agenda/viagem),
 //                      lista aberta/fechada/secreta, chat do evento, confirmados/pendentes, gerenciar convidados
 (async function () {
   'use strict';
@@ -43,6 +43,7 @@
   for (let h = 0; h < 24; h++) $('fHora').appendChild(new Option(String(h).padStart(2, '0') + ':00h', String(h).padStart(2, '0') + ':00'));
   $('fHora').value = '22:00';
   try { $('filtroUf').value = localStorage.getItem('filtroUf') || eu.uf || ''; } catch (e) { $('filtroUf').value = eu.uf || ''; }
+  if (params.get('uf') !== null) $('filtroUf').value = params.get('uf');
 
   function mostrar(tela) {
     ['telaLista', 'telaForm', 'telaDetalhe'].forEach(t => $(t).classList.toggle('oculto', t !== tela));
@@ -71,6 +72,21 @@
     sel.appendChild(el('span', 'ev-selo', e.confirmados + (e.confirmados === 1 ? ' Confirmado' : ' Confirmados')));
     sel.appendChild(el('span', 'ev-selo leve', '💬 ' + e.mensagens + (e.mensagens === 1 ? ' Mensagem' : ' Mensagens')));
     info.appendChild(sel);
+    // Ir direto da lista (como o "Eu Vou" do CRS)
+    const futuro = new Date(e.fim || (new Date(e.inicio).getTime() + 8 * 3600000)) > new Date();
+    if (!e.meu_status && futuro && e.tipo === 'evento' && e.lista !== 'secreta') {
+      const b = el('button', 'ev-ir', e.lista === 'fechada' ? '♥ Pedir para ir' : '♥ Eu vou'); b.type = 'button';
+      b.addEventListener('click', async (ev) => {
+        ev.preventDefault(); ev.stopPropagation(); b.disabled = true;
+        const { data, error } = await sb.rpc('participar_evento', { p_evento: e.id });
+        if (error) { toast(error.message); b.disabled = false; return; }
+        e.meu_status = data === 'pendente' ? 'pendente' : 'confirmado';
+        if (e.meu_status === 'confirmado') e.confirmados++;
+        toast(data === 'pendente' ? 'Pedido enviado! O organizador vai aprovar.' : 'Presença confirmada ✓ Está na sua agenda.');
+        a.replaceWith(itemEvento(e, destaque));
+      });
+      info.appendChild(b);
+    }
     linha.append(blocoData(e.inicio), info);
     a.appendChild(linha);
     a.addEventListener('click', (ev) => { ev.preventDefault(); history.pushState({}, '', a.href); detalhe(e.id); });
@@ -370,7 +386,14 @@
     const d = new Date(e.inicio);
     $('dQuando').textContent = e.tipo === 'viagem' ? quando(e)
       : (mesmoDia(d, new Date()) ? 'HOJE, ' : '') + DIAS_LONGOS[d.getDay()] + ', ' + d.getDate() + ' de ' + MESES_LONGOS[d.getMonth()] + ', a partir das ' + hora(d);
-    $('dLocal').innerHTML = ''; $('dLocal').appendChild(el('b', null, e.local || ''));
+    $('dLocal').innerHTML = '';
+    if (e.lugar) {
+      const c = el('a', 'ev-lugar'); c.href = 'lugar.html?id=' + e.lugar;
+      const th = el('span', 'th'); const im = el('img'); im.alt = ''; im.src = e.lugar_foto ? flyer(e.lugar_foto) : 'logo-ouro.png'; if (!e.lugar_foto) im.className = 'sem'; th.appendChild(im);
+      const tx = el('span', 'tx'); tx.appendChild(el('b', null, e.local || ''));
+      const nt = el('small'); nt.textContent = e.lugar_total ? '★'.repeat(Math.round(e.lugar_media)) + '☆'.repeat(5 - Math.round(e.lugar_media)) + ' (' + e.lugar_total + ') · ver o lugar ›' : 'ver o lugar e avaliações ›';
+      tx.appendChild(nt); c.append(th, tx); $('dLocal').appendChild(c);
+    } else $('dLocal').appendChild(el('b', null, e.local || ''));
     $('dEndereco').innerHTML = '';
     const end = [e.endereco, e.cidade && (e.cidade + (e.uf ? ' - ' + e.uf : ''))].filter(Boolean).join(', ');
     if (end) {
@@ -382,11 +405,21 @@
     const lista = { aberta: 'Lista aberta', fechada: 'Lista confiável (o organizador aprova)', secreta: '🔒 Evento secreto' }[e.lista];
     $('dPublico').textContent = e.tipo === 'evento'
       ? 'Evento para o público ' + (e.publico === 'liberal' ? 'Liberal' : 'Misto (liberal e não-liberal)') + ' · ' +
-        (e.exclusivo ? 'Exclusivo para membros' : 'Aberto ao público') + ' · ' + lista + (e.criador_apelido ? ' · Criado por ' + e.criador_apelido : '')
-      : lista + (e.criador_apelido ? ' · ' + e.criador_apelido : '');
+        (e.exclusivo ? 'Exclusivo para membros' : 'Aberto ao público') + ' · ' + lista
+      : lista;
+    $('dOrg').innerHTML = '';
+    if (e.criador_apelido) {
+      $('dOrg').append('Organizador: ');
+      const o = el('a', null, e.criador_apelido + (e.criador_uf ? ' . ' + e.criador_uf : ''));
+      o.href = e.criador === eu.id ? 'meu-perfil.html' : 'perfil.html?id=' + encodeURIComponent(e.criador);
+      $('dOrg').appendChild(o);
+    }
+    $('dConfiavel').classList.toggle('oculto', e.lista !== 'fechada');
     $('dDescricao').textContent = e.descricao || '';
     $('dDescricao').classList.add('oculto');
     $('dMaisInfo').classList.toggle('oculto', !e.descricao);
+    $('dDescricao').classList.toggle('oculto', !e.descricao || e.descricao.length > 280);
+    $('dMaisInfo').classList.toggle('oculto', !e.descricao || e.descricao.length <= 280);
     $('dLink').classList.toggle('oculto', !e.link);
     if (e.link) $('dLink').href = e.link;
     pintarParticipar();
@@ -398,6 +431,11 @@
     mostrarAba(abaDet === 'pendente' && $('tPend').classList.contains('oculto') ? 'chat' : abaDet);
     msg('dMsg');
   }
+  $('dCopiar').addEventListener('click', async (ev) => {
+    ev.preventDefault();
+    try { await navigator.clipboard.writeText(location.origin + location.pathname + '?id=' + atual.id); toast('Link do evento copiado ✓'); }
+    catch (e) { toast('Não foi possível copiar.'); }
+  });
   $('dMaisInfo').addEventListener('click', (ev) => { ev.preventDefault(); $('dDescricao').classList.toggle('oculto'); });
 
   function pintarParticipar() {
@@ -520,7 +558,12 @@
     if (p.get('id')) return detalhe(Number(p.get('id')));
     if (p.get('criar')) {
       if (p.get('criar') === 'evento' && !(await podeCriarEvento()).pode) { toast(textoRegra(regraEvento)); history.replaceState({}, '', 'eventos.html'); return lista(); }
-      return formulario(p.get('criar'), null);
+      formulario(p.get('criar'), null);
+      if (p.get('lugar')) {
+        const { data: lg } = await sb.from('lugares').select('id, nome, endereco, cidade, uf').eq('id', Number(p.get('lugar'))).maybeSingle();
+        if (lg) { lugarEscolhido = lg.id; $('fLocal').value = lg.nome; $('fEndereco').value = lg.endereco || ''; $('fCidade').value = lg.cidade || ''; if (lg.uf) $('fUf').value = lg.uf; }
+      }
+      return;
     }
     if (p.get('editar')) {
       const { data } = await sb.from('eventos').select('*').eq('id', Number(p.get('editar'))).single();
