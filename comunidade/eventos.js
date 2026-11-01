@@ -1,4 +1,4 @@
-// eventos.js — v2.3 — eventos no modelo do CRS: agenda por estado, criar (evento/agenda/viagem),
+// eventos.js — v2.4 — eventos no modelo do CRS: agenda por estado, criar (evento/agenda/viagem),
 //                      lista aberta/fechada/secreta, chat do evento, confirmados/pendentes, gerenciar convidados
 (async function () {
   'use strict';
@@ -354,7 +354,7 @@
           exclusivo: tipo === 'evento' ? radio('exclusivo') === 'true' : true,
           divulgacao: tipo === 'evento' ? radio('divulgacao') : 'comunidade' });
         const r = await sb.from('eventos').insert(dados).select('id').single();
-        if (r.error) throw new Error(/Limite|passou|volta/.test(r.error.message) ? r.error.message : 'Não foi possível salvar.');
+        if (r.error) throw new Error(/row-level security/i.test(r.error.message) ? 'Não foi possível salvar (sem permissão). Saia e entre de novo.' : r.error.message);
         id = r.data.id;
       }
       $('fSalvar').disabled = false;
