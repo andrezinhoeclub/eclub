@@ -663,8 +663,8 @@ window.GuardaSessao = (function () {
                 <h2 class="text-cyan-500 font-black uppercase italic text-xl mb-10 tracking-tighter">Listas de Aniversariantes</h2>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
-                        <thead><tr class="text-[10px] text-zinc-500 font-black uppercase border-b border-white/5"><th class="pb-4 pl-4">Data</th><th class="pb-4">Promoter</th><th class="pb-4">Aniversariante</th><th class="pb-4 text-center">Reservas</th><th class="pb-4 text-right pr-4">Ações</th></tr></thead>
-                        <tbody id="tabela-aniversarios-body"><tr><td colspan="5" class="p-10 text-center text-zinc-500 font-bold uppercase italic">Nenhum registro ainda</td></tr></tbody>
+                        <thead><tr class="text-[10px] text-zinc-500 font-black uppercase border-b border-white/5"><th class="pb-4 pl-4">Data</th><th class="pb-4">Promoter</th><th class="pb-4">Aniversariante</th><th class="pb-4 text-center">Reservas</th><th class="pb-4 text-center">Entraram</th><th class="pb-4 text-right pr-4">Ações</th></tr></thead>
+                        <tbody id="tabela-aniversarios-body"><tr><td colspan="6" class="p-10 text-center text-zinc-500 font-bold uppercase italic">Nenhum registro ainda</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -2856,7 +2856,7 @@ window.GuardaSessao = (function () {
             const tb = document.getElementById('tabela-aniversarios-body');
             if (!tb) return;
             if (!dadosLinksAniversario.length) {
-                tb.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-zinc-500 font-bold uppercase italic">Nenhum registro ainda</td></tr>`;
+                tb.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-zinc-500 font-bold uppercase italic">Nenhum registro ainda</td></tr>`;
                 return;
             }
             const linhas = [...dadosLinksAniversario].sort((a, b) => (a.criado_em < b.criado_em ? 1 : -1));
@@ -2864,12 +2864,18 @@ window.GuardaSessao = (function () {
                 const ev = dadosEventos.find(e => e.id === l.evento_id);
                 const dt = ev?.data ? ev.data.split('-').reverse().join('/') : 'S/D';
                 const promoterNome = dadosNomesAcessos.get(l.promoter_user_id) || '---';
-                const q = dadosReservas.filter(r => r.link_aniversario_id === l.id).length;
+                const daLista = dadosReservas.filter(r => r.link_aniversario_id === l.id);
+                const q = daLista.length;
+                // Quantos convidados desta lista já passaram pela portaria
+                // (atualiza sozinho a cada entrada liberada).
+                const entraram = daLista.filter(r => r.entrou && !r.cancelada).length;
+                const pct = q ? Math.round((entraram / q) * 100) : 0;
                 return `<tr class="border-b border-white/5 text-[11px]">
                     <td class="py-4 pl-4">${dt}</td>
                     <td class="py-4 uppercase">${escapeHtml(promoterNome)}</td>
                     <td class="py-4 font-black text-cyan-400 uppercase">${escapeHtml(l.aniversariante)}${ev ? `<br><span class="text-[9px] text-zinc-500 font-bold normal-case">${escapeHtml(ev.nome)}</span>` : ''}</td>
                     <td class="py-4 text-center font-black text-white">${q}</td>
+                    <td class="py-4 text-center font-black ${entraram ? 'text-green-400' : 'text-zinc-500'}">${entraram}${q ? `<br><span class="text-[9px] font-bold text-zinc-500">${pct}%</span>` : ''}</td>
                     <td class="py-4 text-right pr-4"><button onclick="removerAniversariante('${l.id}')" class="text-red-500 text-[9px] font-black uppercase hover:text-red-400">Remover</button></td>
                 </tr>`;
             }).join('');
@@ -3645,6 +3651,6 @@ window.GuardaSessao = (function () {
   .ap-rodape b{color:#e3b94e;font-weight:800}
   @media print{.ap-rodape{display:none!important}}
 </style>
-<div id="ap-rodape" class="ap-rodape" data-tela="Dashboard" data-versao="1.5">Desenvolvido por <b>Abre a Porta</b> · Dashboard v1.5 · 24/10/2026</div>
+<div id="ap-rodape" class="ap-rodape" data-tela="Dashboard" data-versao="1.6">Desenvolvido por <b>Abre a Porta</b> · Dashboard v1.6 · 01/11/2026</div>
 </body>
 </html>
