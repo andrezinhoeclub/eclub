@@ -71,6 +71,7 @@
   .gostou-sim-nao label{border:1px solid var(--linha);border-radius:10px;padding:10px;text-align:center;cursor:pointer}
   .gostou-sim-nao label:has(input:checked){border-color:var(--marca);background:var(--marca-suave)}
   .gostou-sim-nao input,.aspectos input{accent-color:var(--marca)}
+  :root[data-tema="claro"] .btn.secundario{background:none;color:var(--marca);border:1px solid var(--marca)}
 </style>
 </head>
 <body>
@@ -100,9 +101,15 @@
       <a class="bloco-info oculto" id="site" target="_blank" rel="noopener noreferrer"><span class="ic">🌐</span><span id="siteTxt"></span></a>
       <div class="bloco-info oculto" id="func"><span class="ic">🕒</span><pre id="funcTxt"></pre></div>
       <div class="bloco-info oculto" id="sobre"><span class="ic">ℹ️</span><pre id="sobreTxt"></pre></div>
-      <div class="acoes-lugar oculto" id="editarBox"><button class="btn secundario" type="button" id="bEditar">✏️ Completar informações do lugar</button></div>
+      <div class="acoes-lugar oculto" id="editarBox"><button class="btn secundario" type="button" id="bEditar">✏️ Editar informações do lugar</button></div>
       <div class="cartao oculto" id="formEditar">
         <h2>Informações do lugar</h2>
+        <label class="campo" for="eNome">Nome da casa</label>
+        <input type="text" id="eNome" maxlength="120">
+        <div style="display:grid;grid-template-columns:1fr 90px;gap:8px">
+          <div><label class="campo" for="eCidade">Cidade</label><input type="text" id="eCidade" maxlength="60"></div>
+          <div><label class="campo" for="eUf">UF</label><select id="eUf"></select></div>
+        </div>
         <label class="campo" for="eFoto">Foto do lugar (fachada ou ambiente)</label>
         <input type="file" id="eFoto" accept="image/*">
         <label class="campo" for="eEndereco">Endereço</label>
@@ -115,6 +122,16 @@
         <textarea id="eSobre" maxlength="1000"></textarea>
         <button class="btn" type="button" id="eSalvar" style="margin-top:12px">Salvar</button>
         <div class="msg" id="eMsg"></div>
+        <div id="admBox" class="oculto" style="margin-top:18px;border-top:1px solid var(--linha);padding-top:12px">
+          <h2>👑 Administração</h2>
+          <p class="suave" style="margin:0 0 6px">Responsável pela casa (dono ou gerente): ele também pode editar esta página. <span id="respAtual"></span></p>
+          <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px">
+            <input type="text" id="eResp" inputmode="numeric" placeholder="nº do membro">
+            <button class="btn" type="button" id="eRespSalvar" style="width:auto;padding:10px 14px">Definir</button>
+            <button class="btn secundario" type="button" id="eRespTirar" style="width:auto;padding:10px 14px">Tirar</button>
+          </div>
+          <div class="msg" id="eRespMsg"></div>
+        </div>
       </div>
       <div class="titulo-faixa" id="tituloQuem"></div>
       <div id="quem"></div>
@@ -155,10 +172,10 @@
   </div>
 </div>
 
-<footer><a href="regras.html">Regras e privacidade</a> · lugar.html v1.0</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · lugar.html v1.1</footer>
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="base.js?v=2.7"></script>
-<script src="lugar.js?v=1.0"></script>
+<script src="lugar.js?v=1.1"></script>
 </body>
 </html>

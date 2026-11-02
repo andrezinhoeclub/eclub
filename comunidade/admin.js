@@ -1,4 +1,4 @@
-// admin.js — v2.7 — verificações, membros (privilégios), planos e destaques
+// admin.js — v2.8 — verificações, membros (privilégios), planos e destaques
 (async function () {
   'use strict';
   const { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, moldura, toast } = window.BASE;
@@ -12,7 +12,7 @@
   $('painel').classList.remove('oculto');
 
   // ---------- Abas ----------
-  const ABAS = { verif: 'abaVerif', eventos: 'abaEventos', membros: 'abaMembros', planos: 'abaPlanos', destaques: 'abaDestaques' };
+  const ABAS = { verif: 'abaVerif', eventos: 'abaEventos', membros: 'abaMembros', planos: 'abaPlanos', destaques: 'abaDestaques', lugares: 'abaLugares' };
   document.querySelectorAll('#abasAdmin button').forEach(b => b.addEventListener('click', () => {
     document.querySelectorAll('#abasAdmin button').forEach(x => x.classList.toggle('sel', x === b));
     Object.entries(ABAS).forEach(([k, id]) => $(id).classList.toggle('oculto', k !== b.dataset.aba));
@@ -20,6 +20,7 @@
     if (b.dataset.aba === 'planos') carregarPlanos();
     if (b.dataset.aba === 'destaques') carregarDestaques();
     if (b.dataset.aba === 'eventos') carregarEventos();
+    if (b.dataset.aba === 'lugares') carregarLugares();
   }));
   const novoEl = (tag, cls, texto) => { const e = document.createElement(tag); if (cls) e.className = cls; if (texto != null) e.textContent = texto; return e; };
 
@@ -92,6 +93,40 @@
   }
 
   // ---------- Planos ----------
+  // ---------- Lugares (casas) ----------
+  let timerL;
+  (window.BASE.UFS || []).forEach(u => $('lUf').appendChild(new Option(u, u)));
+  async function carregarLugares() {
+    const busca = $('lBusca').value.trim().replace(/[%_\\,()]/g, '');
+    const { data, error } = await sb.rpc('admin_lugares', { p_busca: busca || null, p_uf: $('lUf').value || null });
+    const box = $('lLista'); box.innerHTML = '';
+    if (error) { box.textContent = 'Erro: ' + error.message; return; }
+    if (!data.length) { box.appendChild(novoEl('p', 'suave', 'Nenhum lugar encontrado.')); return; }
+    data.forEach(l => {
+      const linha = novoEl('div', 'pessoa'); linha.style.flexWrap = 'wrap';
+      const info = novoEl('div'); info.style.flex = '1';
+      const a = novoEl('a', null, l.nome + ' · nº ' + l.id); a.href = 'lugar.html?id=' + l.id;
+      info.append(a, novoEl('div', 'suave', [l.cidade, l.uf].filter(Boolean).join(' - ') + ' · ' + l.eventos + ' evento(s) · ' +
+        (l.avaliacoes ? l.avaliacoes + ' avaliação(ões), nota ' + l.media : 'sem avaliações') +
+        (l.responsavel_apelido ? ' · 🔑 ' + l.responsavel_apelido + ' (nº ' + l.responsavel_numero + ')' : '')));
+      const bt = novoEl('div', 'botoes');
+      const abrir = novoEl('a', 'sim', 'Abrir / editar'); abrir.href = 'lugar.html?id=' + l.id; abrir.style.cssText = 'text-decoration:none;padding:6px 12px;border-radius:8px';
+      const dest = novoEl('input'); dest.type = 'text'; dest.inputMode = 'numeric'; dest.placeholder = 'juntar com nº…'; dest.style.maxWidth = '130px';
+      const j = novoEl('button', '', 'Juntar'); j.type = 'button';
+      j.addEventListener('click', async () => {
+        const d = parseInt(dest.value.replace(/\D/g, ''), 10);
+        if (!d) { toast('Digite o nº do lugar certo (aparece ao lado do nome).'); return; }
+        if (!linha.dataset.ok) { linha.dataset.ok = '1'; toast('Toque em Juntar de novo: "' + l.nome + '" será apagado e tudo passa para o lugar nº ' + d + '.'); setTimeout(() => delete linha.dataset.ok, 5000); return; }
+        const { error: e } = await sb.rpc('admin_juntar_lugares', { p_origem: l.id, p_destino: d });
+        toast(e ? 'Erro: ' + e.message : 'Lugares juntados ✓'); if (!e) carregarLugares();
+      });
+      bt.append(abrir, dest, j);
+      linha.append(info, bt); box.appendChild(linha);
+    });
+  }
+  $('lBusca').addEventListener('input', () => { clearTimeout(timerL); timerL = setTimeout(carregarLugares, 400); });
+  $('lUf').addEventListener('change', carregarLugares);
+
   async function carregarPlanos() {
     const { data } = await sb.from('planos').select('*').order('ordem');
     $('pLista').innerHTML = '';

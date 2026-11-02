@@ -19,12 +19,26 @@
 
   <div class="oculto" id="painel">
     <div class="titulo-secao">Painel da administração</div>
-    <div class="abas" style="grid-template-columns:repeat(5,1fr)" id="abasAdmin">
+    <div class="abas" style="grid-template-columns:repeat(3,1fr)" id="abasAdmin">
       <button type="button" class="sel" data-aba="verif">Verificar</button>
       <button type="button" data-aba="eventos">Eventos</button>
       <button type="button" data-aba="membros">Membros</button>
       <button type="button" data-aba="planos">Planos</button>
       <button type="button" data-aba="destaques">Destaques</button>
+      <button type="button" data-aba="lugares">Lugares</button>
+    </div>
+
+    <!-- LUGARES -->
+    <div class="oculto" id="abaLugares">
+      <div class="cartao">
+        <h1>Lugares (casas) de todo o Brasil</h1>
+        <p class="suave">Os lugares são criados quando alguém cria um evento num local novo. Aqui você encontra todos, abre a página para <b>editar</b> (nome, endereço, foto, site, funcionamento) e define o <b>responsável</b> da casa. Se houver lugar repetido, junte com o certo: eventos e avaliações passam para ele.</p>
+        <div style="display:grid;grid-template-columns:1fr 90px;gap:8px">
+          <input type="search" id="lBusca" placeholder="Nome, cidade ou nº do lugar…" maxlength="60">
+          <select id="lUf" aria-label="Estado"><option value="">Brasil</option></select>
+        </div>
+      </div>
+      <div class="lista-pessoas" id="lLista"></div>
     </div>
 
     <!-- MEMBROS -->
@@ -139,11 +153,11 @@
   </div>
 </template>
 
-<footer>admin.html v2.9</footer>
+<footer>admin.html v2.10</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="base.js?v=2.7"></script>
-<script src="admin.js?v=2.7"></script>
+<script src="admin.js?v=2.8"></script>
 </body>
 </html>

@@ -1,11 +1,12 @@
-// lugar.js — v1.0 — página do lugar: informações, quem já esteve, avaliações e fotos
+// lugar.js — v1.1 — página do lugar: informações, quem já esteve, avaliações e fotos
 (async function () {
   'use strict';
-  const { sb, $, msg, moldura, exigirMembro, flyer, avatar, sexos, toast, prepararFoto } = window.BASE;
+  const { sb, $, msg, moldura, exigirMembro, flyer, avatar, sexos, toast, prepararFoto, UFS } = window.BASE;
   const { perfil: eu, assinatura } = await exigirMembro();
   moldura(eu, assinatura, 'agenda');
   const el = (tag, cls, texto) => { const e = document.createElement(tag); if (cls) e.className = cls; if (texto != null) e.textContent = texto; return e; };
   const id = Number(new URLSearchParams(location.search).get('id'));
+  UFS.forEach(u => $('eUf').appendChild(new Option(u, u)));
   const ROTULOS = ['', 'Fraco', 'Regular', 'Bom', 'Ótimo', 'Fantástico'];
   const ASPECTOS = { estrutura: ['🏛️', 'Estrutura', 'da'], atendimento: ['🤝', 'Atendimento', 'do'], musica: ['🎵', 'Música', 'da'],
                      frequentadores: ['👥', 'Frequentadores', 'dos'], custo: ['💰', 'Custo-benefício', 'do'] };
@@ -179,13 +180,18 @@
   // ---------- Completar informações (quem cadastrou o lugar ou admin) ----------
   $('bEditar').addEventListener('click', () => {
     $('formEditar').classList.toggle('oculto');
+    $('eNome').value = L.nome || ''; $('eCidade').value = L.cidade || ''; $('eUf').value = L.uf || '';
     $('eEndereco').value = L.endereco || ''; $('eSite').value = L.site || ''; $('eFunc').value = L.funcionamento || ''; $('eSobre').value = L.sobre || '';
+    $('admBox').classList.toggle('oculto', !L.sou_admin);
+    $('respAtual').textContent = L.responsavel_apelido ? 'Hoje: ' + L.responsavel_apelido + ' (nº ' + L.responsavel_numero + ').' : 'Hoje: ninguém.';
   });
   $('eSalvar').addEventListener('click', async () => {
     const site = $('eSite').value.trim();
     if (site && !/^https?:\/\//.test(site)) { msg('eMsg', 'erro', 'O site precisa começar com https://'); return; }
     $('eSalvar').disabled = true; msg('eMsg', 'info', 'Salvando…');
-    const dados = { endereco: $('eEndereco').value.trim() || null, site: site || null, funcionamento: $('eFunc').value.trim() || null, sobre: $('eSobre').value.trim() || null };
+    const nomeNovo = $('eNome').value.trim();
+    if (nomeNovo.length < 2) { msg('eMsg', 'erro', 'Preencha o nome da casa.'); $('eSalvar').disabled = false; return; }
+    const dados = { nome: nomeNovo, cidade: $('eCidade').value.trim() || null, uf: $('eUf').value || null, endereco: $('eEndereco').value.trim() || null, site: site || null, funcionamento: $('eFunc').value.trim() || null, sobre: $('eSobre').value.trim() || null };
     try {
       const arq = $('eFoto').files[0];
       if (arq) {
@@ -197,13 +203,26 @@
         dados.foto = caminho;
       }
       const { error } = await sb.from('lugares').update(dados).eq('id', id);
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(/duplicate|unique/i.test(error.message) ? 'Já existe um lugar com esse nome nesta cidade.' : error.message);
       msg('eMsg', 'ok', 'Informações salvas ✓'); $('eFoto').value = '';
       setTimeout(() => $('formEditar').classList.add('oculto'), 900);
       carregar();
     } catch (e) { msg('eMsg', 'erro', e.message); }
     $('eSalvar').disabled = false;
   });
+
+  async function definirResp(numero) {
+    const { data, error } = await sb.rpc('admin_responsavel_lugar', { p_lugar: id, p_numero: numero });
+    if (error) { msg('eRespMsg', 'erro', error.message); return; }
+    msg('eRespMsg', 'ok', numero ? data + ' agora é o responsável ✓' : 'Responsável removido ✓');
+    $('eResp').value = ''; carregar();
+  }
+  $('eRespSalvar').addEventListener('click', () => {
+    const n = parseInt($('eResp').value.replace(/\D/g, ''), 10);
+    if (!n) { msg('eRespMsg', 'erro', 'Digite o nº do membro.'); return; }
+    definirResp(n);
+  });
+  $('eRespTirar').addEventListener('click', () => definirResp(null));
 
   await carregar();
   mostrarAba(new URLSearchParams(location.search).get('aba') === 'aval' ? 'aval' : 'info');
