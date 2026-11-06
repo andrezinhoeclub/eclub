@@ -1,4 +1,4 @@
-// base.js — v2.8 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v2.9 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -347,6 +347,7 @@
     lapis: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/>',
     chave: '<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M16 6l3 3"/>',
     escudo: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+    bloqueio: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
     ajuda: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 015 0c0 1.8-2.5 2-2.5 4M12 17h.01"/>',
     admin: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
     baixar: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M12 7v7M9 11l3 3 3-3M10 18h4"/>',
@@ -517,6 +518,7 @@
       toast('Enviamos um link para o seu e-mail para criar a nova senha.');
     });
     item('escudo', 'Privacidade e Segurança', 'regras.html#privacidade');
+    item('bloqueio', 'Perfis Bloqueados', 'meu-perfil.html#bloqueados');
     item('ajuda', 'Ajuda e Regras', 'regras.html');
     const inst = item('baixar', 'Instalar o App no celular', 'instalar.html'); inst.classList.add('instalar');
     const sup = item('chat', 'Falar com a Administração', 'suporte.html');

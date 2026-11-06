@@ -1,4 +1,4 @@
-// admin.js — v2.9 — verificações, membros (privilégios), planos, destaques, lugares e suporte
+// admin.js — v2.10 — verificações, membros (privilégios), planos, destaques, lugares, denúncias e suporte
 (async function () {
   'use strict';
   const { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, moldura, toast } = window.BASE;
@@ -12,7 +12,7 @@
   $('painel').classList.remove('oculto');
 
   // ---------- Abas ----------
-  const ABAS = { verif: 'abaVerif', eventos: 'abaEventos', membros: 'abaMembros', planos: 'abaPlanos', destaques: 'abaDestaques', lugares: 'abaLugares', suporte: 'abaSuporte' };
+  const ABAS = { verif: 'abaVerif', eventos: 'abaEventos', membros: 'abaMembros', planos: 'abaPlanos', destaques: 'abaDestaques', lugares: 'abaLugares', suporte: 'abaSuporte', denuncias: 'abaDenuncias' };
   document.querySelectorAll('#abasAdmin button').forEach(b => b.addEventListener('click', () => {
     document.querySelectorAll('#abasAdmin button').forEach(x => x.classList.toggle('sel', x === b));
     Object.entries(ABAS).forEach(([k, id]) => $(id).classList.toggle('oculto', k !== b.dataset.aba));
@@ -22,6 +22,7 @@
     if (b.dataset.aba === 'eventos') carregarEventos();
     if (b.dataset.aba === 'lugares') carregarLugares();
     if (b.dataset.aba === 'suporte') carregarSuporte();
+    if (b.dataset.aba === 'denuncias') carregarDenuncias();
   }));
   const novoEl = (tag, cls, texto) => { const e = document.createElement(tag); if (cls) e.className = cls; if (texto != null) e.textContent = texto; return e; };
 
@@ -90,6 +91,62 @@
         await status('banido');
       });
       linha.append(info, bt); $('mLista').appendChild(linha);
+    });
+  }
+
+  // ---------- Denúncias ----------
+  let filtroD = 'abertas';
+  const MOTIVO = { perfil_falso: 'Perfil falso', menor_de_idade: '🚨 Menor de idade', foto_sem_consentimento: '🚨 Foto sem consentimento',
+    assedio: 'Assédio', cobranca_ou_prostituicao: 'Cobrança / prostituição', golpe: 'Golpe', conteudo_ilegal: '🚨 Conteúdo ilegal', outro: 'Outro' };
+  const ROT_D = { aberta: 'Nova', em_analise: 'Em análise', resolvida: 'Procedente', descartada: 'Descartada' };
+  async function pendentesDenuncias() {
+    const { data } = await sb.rpc('admin_denuncias_abertas');
+    $('denPend').textContent = data ? data : '';
+  }
+  pendentesDenuncias(); setInterval(() => { if (!document.hidden) pendentesDenuncias(); }, 60000);
+  document.querySelectorAll('#denFiltro .chip').forEach(c => c.addEventListener('click', () => {
+    document.querySelectorAll('#denFiltro .chip').forEach(x => x.classList.toggle('sel', x === c));
+    filtroD = c.dataset.f; carregarDenuncias();
+  }));
+  async function carregarDenuncias() {
+    pendentesDenuncias();
+    const { data, error } = await sb.rpc('admin_denuncias', { p_status: filtroD });
+    const box = $('denLista'); box.innerHTML = '';
+    if (error) { box.textContent = 'Erro: ' + error.message; return; }
+    if (!data.length) { box.appendChild(novoEl('div', 'cartao suave', filtroD === 'abertas' ? 'Nenhuma denúncia para analisar. ✓' : 'Nada por aqui.')); return; }
+    data.forEach(d => {
+      const card = novoEl('div', 'cartao sup-card' + (d.status === 'aberta' ? ' novo' : ''));
+      const topo = novoEl('div', 'sup-topo');
+      const alvo = novoEl('a', null, '⚠️ ' + d.alvo_apelido + ' · nº ' + d.alvo_numero + (d.alvo_uf ? ' · ' + d.alvo_uf : '')); alvo.href = 'perfil.html?id=' + d.alvo;
+      topo.append(alvo, novoEl('span', 'selo sup-' + (d.status === 'aberta' ? 'aberto' : d.status === 'resolvida' ? 'respondido' : d.status === 'descartada' ? 'fechado' : 'aberto'), ROT_D[d.status] || d.status));
+      const mot = novoEl('div', 'sup-assunto', (MOTIVO[d.motivo] || d.motivo) + ' · ' + quando(d.criado_em));
+      const det = novoEl('div', null, d.detalhes || '(sem detalhes)'); det.style.cssText = 'white-space:pre-wrap;margin:4px 0';
+      const info = novoEl('div', 'suave', 'Denunciado por ' + (d.denunciante_apelido ? d.denunciante_apelido + ' (nº ' + d.denunciante_numero + ')' : 'conta apagada') +
+        ' · este perfil tem ' + d.total_contra + ' denúncia(s) · situação do perfil: ' + d.alvo_status +
+        (d.tratada_por_apelido ? ' · tratada por ' + d.tratada_por_apelido + ' em ' + quando(d.tratada_em) : '') +
+        (d.nota_admin ? ' · nota: ' + d.nota_admin : ''));
+      info.style.fontSize = '.82rem';
+      const bt = novoEl('div', 'botoes'); bt.style.cssText = 'margin-top:8px;flex-wrap:wrap';
+      const tratar = (st, rot, cls) => { const b = novoEl('button', cls || '', rot); b.type = 'button';
+        b.addEventListener('click', async () => {
+          const { error: e } = await sb.rpc('admin_tratar_denuncia', { p_id: d.id, p_status: st });
+          toast(e ? 'Erro: ' + e.message : 'Denúncia marcada como ' + ROT_D[st].toLowerCase() + ' ✓'); if (!e) carregarDenuncias();
+        }); bt.appendChild(b); };
+      const perfilSt = (st, rot, cls) => { const b = novoEl('button', cls || '', rot); b.type = 'button';
+        b.addEventListener('click', async () => {
+          if (st === 'banido' && !card.dataset.ok) { card.dataset.ok = '1'; toast('Toque em Banir de novo para confirmar.'); setTimeout(() => delete card.dataset.ok, 5000); return; }
+          const { error: e } = await sb.from('perfis').update({ status: st }).eq('id', d.alvo);
+          if (e) { toast('Erro: ' + e.message); return; }
+          await sb.rpc('admin_tratar_denuncia', { p_id: d.id, p_status: 'resolvida', p_nota: st === 'aprovado' ? 'perfil reativado' : 'perfil ' + st });
+          toast('Perfil ' + (st === 'aprovado' ? 'reativado' : st) + ' ✓'); carregarDenuncias();
+        }); bt.appendChild(b); };
+      if (d.status === 'aberta') tratar('em_analise', 'Estou analisando');
+      if (d.status !== 'resolvida') tratar('resolvida', 'Procede', 'sim');
+      if (d.status !== 'descartada') tratar('descartada', 'Descartar');
+      if (d.alvo_status === 'aprovado') perfilSt('suspenso', 'Suspender perfil');
+      if (d.alvo_status === 'suspenso') perfilSt('aprovado', 'Reativar perfil', 'sim');
+      if (d.alvo_status !== 'banido') perfilSt('banido', 'Banir', 'nao');
+      card.append(topo, mot, det, info, bt); box.appendChild(card);
     });
   }
 

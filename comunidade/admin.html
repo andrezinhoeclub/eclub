@@ -26,7 +26,23 @@
       <button type="button" data-aba="planos">Planos</button>
       <button type="button" data-aba="destaques">Destaques</button>
       <button type="button" data-aba="lugares">Lugares</button>
+      <button type="button" data-aba="denuncias">Denúncias <span class="bolinha" id="denPend" style="position:static;display:inline-block"></span></button>
       <button type="button" data-aba="suporte" style="position:relative">Suporte <span class="bolinha" id="supPend" style="position:static;display:inline-block"></span></button>
+    </div>
+
+    <!-- DENÚNCIAS -->
+    <div class="oculto" id="abaDenuncias">
+      <div class="cartao">
+        <h1>Denúncias de perfis</h1>
+        <p class="suave">Denúncias que os membros fizeram pelo botão <b>⚠️ Denunciar</b> do perfil. Quem foi denunciado nunca sabe quem denunciou. Perfis com 3 denúncias graves (menor de idade, foto sem consentimento, conteúdo ilegal) são suspensos sozinhos até você olhar.</p>
+        <div class="chips" id="denFiltro">
+          <span class="chip sel" data-f="abertas">Para analisar</span>
+          <span class="chip" data-f="resolvidas">Procedentes</span>
+          <span class="chip" data-f="descartadas">Descartadas</span>
+          <span class="chip" data-f="todas">Todas</span>
+        </div>
+      </div>
+      <div id="denLista"></div>
     </div>
 
     <!-- SUPORTE (Falar com a Administração) -->
@@ -169,11 +185,11 @@
   </div>
 </template>
 
-<footer>admin.html v2.11</footer>
+<footer>admin.html v2.12</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
-<script src="base.js?v=2.8"></script>
-<script src="admin.js?v=2.9"></script>
+<script src="base.js?v=2.9"></script>
+<script src="admin.js?v=2.10"></script>
 </body>
 </html>
