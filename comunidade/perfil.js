@@ -1,4 +1,4 @@
-// perfil.js — v2.3 — perfil de um membro (layout em cartão central)
+// perfil.js — v2.4 — perfil de um membro (layout em cartão central)
 (async function () {
   'use strict';
   const { sb, $, msg, idades, visto, avatar, sexos, gradeFotos, moldura, exigirMembro, emBreve, toast,
@@ -126,7 +126,7 @@
     .eq('dono', id).eq('album', 'publico').order('criado_em', { ascending: false });
   $('qFotos').textContent = (publicas || []).length;
   $('nFotos').textContent = (publicas || []).length;
-  if (publicas && publicas.length) await gradeFotos($('gradePublica'), publicas);
+  if (publicas && publicas.length) await gradeFotos($('gradePublica'), publicas, { dono: id });
   else $('semFotos').classList.remove('oculto');
 
   // ---------- Álbum privado ----------
@@ -138,7 +138,7 @@
     if (acesso === true) {
       const { data: priv } = await sb.from('fotos').select('caminho, album')
         .eq('dono', id).eq('album', 'privado').order('criado_em', { ascending: false });
-      if (priv && priv.length) await gradeFotos($('gradePrivada'), priv);
+      if (priv && priv.length) await gradeFotos($('gradePrivada'), priv, { dono: id, vistoPor: true });
       $('albumVazio').classList.toggle('oculto', !!(priv && priv.length));
       return;
     }

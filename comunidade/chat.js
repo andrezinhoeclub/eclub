@@ -1,4 +1,4 @@
-// chat.js — v1.0 — mensagens privadas em tempo real
+// chat.js — v1.1 — mensagens privadas em tempo real
 (async function () {
   'use strict';
   const { sb, $, moldura, exigirMembro, avatar, sexos, tempo, toast, fotoProtegida, abrirVisor, prepararFoto } = window.BASE;
@@ -41,7 +41,7 @@
     lista.forEach(c => {
       const a = el('a', 'conv' + (c.nao_lidas ? ' nova' : ''));
       a.href = 'chat.html?com=' + encodeURIComponent(c.outro);
-      const av = el('span', 'av'); avatar(av, { tipo: c.tipo, foto_perfil: c.foto_perfil }, 120);
+      const av = el('span', 'av'); avatar(av, { tipo: c.tipo, foto_perfil: c.foto_perfil, outro: c.outro }, 120);
       if (c.online) av.appendChild(el('span', 'ponto'));
       const meio = el('div', 'meio');
       const b = el('b'); b.append(sexos(c), ' ' + c.apelido);
@@ -66,8 +66,8 @@
       b.style.padding = '4px';
       linksChat([m.foto]).then(u => {
         if (!u[m.foto]) return;
-        const c = fotoProtegida(u[m.foto], { largura: 600 });
-        c.addEventListener('click', () => abrirVisor(u[m.foto]));
+        const c = fotoProtegida(u[m.foto], { largura: 600, dono: m.de });
+        c.addEventListener('click', () => abrirVisor(u[m.foto], m.de));
         b.insertBefore(c, b.firstChild);
       });
     }

@@ -1,4 +1,4 @@
-// aovivo.js — v1.0 — Ao Vivo / Radar / Busca: grade de membros com filtros
+// aovivo.js — v1.1 — Ao Vivo / Radar / Busca: grade de membros com filtros
 (async function () {
   'use strict';
   const { sb, $, formacao, idades, links, fotoProtegida, moldura, exigirMembro, UFS } = window.BASE;
@@ -46,7 +46,7 @@
       const a = document.createElement('a'); a.className = 'membro';
       a.href = 'perfil.html?id=' + encodeURIComponent(p.id);
       const capa = document.createElement('div'); capa.className = 'capa';
-      if (p.foto_perfil && urls[p.foto_perfil]) capa.appendChild(fotoProtegida(urls[p.foto_perfil], { cortar: true, largura: 400, alt: p.apelido }));
+      if (p.foto_perfil && urls[p.foto_perfil]) capa.appendChild(fotoProtegida(urls[p.foto_perfil], { cortar: true, largura: 400, alt: p.apelido, dono: p.id }));
       else capa.textContent = p.tipo === 'casal' ? '💑' : (p.tipo === 'solteira' ? '👩' : '👨');
       if (p.ultimo_acesso && new Date(p.ultimo_acesso).getTime() > limiteOnline) {
         const o = document.createElement('span'); o.className = 'online'; o.title = 'online agora'; capa.appendChild(o);

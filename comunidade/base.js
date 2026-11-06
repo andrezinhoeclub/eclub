@@ -1,4 +1,4 @@
-// base.js — v2.9 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v3.0 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -97,10 +97,34 @@
     return r;
   }
 
-  // Desenha a foto num quadro com a marca d'água de QUEM ESTÁ VENDO (nº + apelido).
-  // Se alguém vazar um print, dá para saber de quem foi.
-  let marcaTexto = '';
-  function definirMarca(perfil) { marcaTexto = 'nº ' + perfil.numero + ' · ' + perfil.apelido; }
+  // Desenha a foto num quadro com a marca d'água do DONO DA FOTO (nº + apelido).
+  // opcoes.dono = id do dono (o nº e o apelido são buscados uma vez e guardados)
+  // Sem dono informado, usa a marca de quem está vendo (proteção contra print).
+  let marcaTexto = '', marcaVisitante = '';
+  function definirMarca(perfil) {
+    marcaTexto = 'nº ' + perfil.numero + ' · ' + perfil.apelido;
+    marcaVisitante = marcaTexto;
+    marcas[perfil.id] = Promise.resolve(marcaTexto);
+  }
+  const marcas = {};
+  let filaMarcas = null;
+  function marcaDe(id) {
+    if (!id) return Promise.resolve(marcaTexto);
+    if (marcas[id]) return marcas[id];
+    if (!filaMarcas) {
+      filaMarcas = { ids: [], esperando: {} };
+      setTimeout(async () => {
+        const f = filaMarcas; filaMarcas = null;
+        const { data } = await sb.from('perfis_publicos').select('id, numero, apelido').in('id', f.ids);
+        const achou = {}; (data || []).forEach(p => { achou[p.id] = 'nº ' + p.numero + ' · ' + p.apelido; });
+        f.ids.forEach(i => f.esperando[i](achou[i] || ''));
+      }, 40);
+    }
+    const fila = filaMarcas;
+    marcas[id] = new Promise(ok => { fila.esperando[id] = ok; });
+    fila.ids.push(id);
+    return marcas[id];
+  }
 
   function fotoProtegida(url, opcoes) {
     const o = Object.assign({ largura: 900, cortar: false, alt: '' }, opcoes || {});
@@ -129,6 +153,8 @@
       c.width = w; c.height = h;
       const g = c.getContext('2d');
       g.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+      if (o.semMarca) return;
+      Promise.resolve(o.marca || (o.dono ? marcaDe(o.dono) : marcaTexto)).then(marcaTexto => {
       if (marcaTexto) {
         const fonte = Math.max(11, Math.round(w / 26));
         g.save();
@@ -146,6 +172,15 @@
         }
         g.restore();
       }
+      // Álbum privado: além da marca do dono, um aviso pequeno de quem está vendo (se vazar print, dá para saber)
+      if (o.vistoPor && o.dono && marcaVisitante && marcaVisitante !== marcaTexto) {
+        const f2 = Math.max(10, Math.round(w / 34));
+        g.font = '600 ' + f2 + 'px Inter, Helvetica, sans-serif'; g.textAlign = 'right';
+        g.fillStyle = 'rgba(255,255,255,0.55)'; g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 2;
+        const t = 'visto por ' + marcaVisitante;
+        g.strokeText(t, w - f2 * 0.6, h - f2 * 0.6); g.fillText(t, w - f2 * 0.6, h - f2 * 0.6);
+      }
+      });
     };
     img.src = url;
     return c;
@@ -168,7 +203,7 @@
   const UFS = 'AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ');
 
   // Abre a foto em tela cheia (com marca d'água)
-  function abrirVisor(url) {
+  function abrirVisor(url, dono, vistoPor) {
     const v = document.createElement('div'); v.className = 'visor';
     const fechar = document.createElement('button'); fechar.className = 'fechar'; fechar.type = 'button'; fechar.textContent = '✕ Fechar';
     const fim = () => { v.remove(); document.removeEventListener('keydown', tecla); };
@@ -176,7 +211,7 @@
     fechar.addEventListener('click', fim);
     v.addEventListener('click', (e) => { if (e.target === v) fim(); });
     document.addEventListener('keydown', tecla);
-    v.append(fotoProtegida(url, { largura: 1400 }), fechar);
+    v.append(fotoProtegida(url, { largura: 1400, dono, vistoPor }), fechar);
     document.body.appendChild(v);
   }
 
@@ -188,9 +223,10 @@
     fotos.forEach(f => {
       if (!urls[f.caminho]) return;
       const item = document.createElement('div'); item.className = 'item';
-      item.appendChild(fotoProtegida(urls[f.caminho], { cortar: true, largura: 360 }));
+      const dono = o.dono || f.dono;
+      item.appendChild(fotoProtegida(urls[f.caminho], { cortar: true, largura: 360, dono, vistoPor: o.vistoPor }));
       if (o.etiqueta) { const e = o.etiqueta(f); if (e) { const t = document.createElement('span'); t.className = 'etiqueta'; t.textContent = e; item.appendChild(t); } }
-      item.addEventListener('click', () => (o.aoClicar ? o.aoClicar(f, urls[f.caminho]) : abrirVisor(urls[f.caminho])));
+      item.addEventListener('click', () => (o.aoClicar ? o.aoClicar(f, urls[f.caminho]) : abrirVisor(urls[f.caminho], dono, o.vistoPor)));
       container.appendChild(item);
     });
   }
@@ -259,7 +295,8 @@
     el.textContent = p.tipo === 'casal' ? '💑' : (p.tipo === 'solteira' ? '👩' : '👨');
     if (!p.foto_perfil) return;
     const u = await links([p.foto_perfil]);
-    if (u[p.foto_perfil]) { el.textContent = ''; el.appendChild(fotoProtegida(u[p.foto_perfil], { cortar: true, largura: largura || 200 })); }
+    const dono = p.autor || p.membro || p.outro || p.id;
+    if (u[p.foto_perfil]) { el.textContent = ''; el.appendChild(fotoProtegida(u[p.foto_perfil], { cortar: true, largura: largura || 200, dono })); }
   }
 
   // ---------- Acesso: precisa estar aprovado e com assinatura ativa ----------

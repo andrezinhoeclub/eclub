@@ -1,4 +1,4 @@
-// meu-perfil.js — v2.3 — editar perfil (com detalhes Ele/Ela), fotos, álbum privado e bloqueios
+// meu-perfil.js — v2.4 — editar perfil (com detalhes Ele/Ela), fotos, álbum privado e bloqueios
 (async function () {
   'use strict';
   const { sb, $, msg, formacao, links, fotoProtegida, gradeFotos, sexos,
@@ -136,6 +136,7 @@
         $('painelFoto').dataset.url = url;
       }
     };
+    opc.dono = eu.id;
     await gradeFotos($('gradePub'), pub, opc);
     await gradeFotos($('gradePriv'), priv, opc);
     mostrarAvatar();

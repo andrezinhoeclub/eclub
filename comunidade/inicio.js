@@ -1,4 +1,4 @@
-// inicio.js — v2.1 — Siga-me / Últimas: destaques, Ao Vivo, stories, publicar e feed
+// inicio.js — v2.2 — Siga-me / Últimas: destaques, Ao Vivo, stories, publicar e feed
 (async function () {
   'use strict';
   const { sb, $, msg, links, fotoProtegida, avatar, tempo, prepararFoto, moldura, exigirMembro, emBreve, UFS } = window.BASE;
@@ -55,7 +55,7 @@
       if (!urls[p.foto_perfil]) return;
       const a = document.createElement('a'); a.className = 'story'; a.href = 'perfil.html?id=' + encodeURIComponent(p.id); a.title = p.apelido;
       const d = document.createElement('span'); d.className = 'dentro';
-      d.appendChild(fotoProtegida(urls[p.foto_perfil], { cortar: true, largura: 140 }));
+      d.appendChild(fotoProtegida(urls[p.foto_perfil], { cortar: true, largura: 140, dono: p.id }));
       a.appendChild(d); box.appendChild(a);
     });
   }

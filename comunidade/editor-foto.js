@@ -1,4 +1,4 @@
-// editor-foto.js — v1.0 — esconder rostos antes de publicar (borrar / tarja), girar, detecção automática de rosto
+// editor-foto.js — v1.1 — esconder rostos antes de publicar (borrar / tarja), girar, detecção automática de rosto
 // Uso: const r = await window.EDITOR_FOTO.editar(blob, estadoAnterior)  →  { blob, estado } ou null (cancelou)
 (function () {
   'use strict';
@@ -21,6 +21,11 @@
 .ef-ferr{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 10px}
 .ef-ferr button{border:1px solid var(--linha,#2b251c);background:var(--cartao2,#1e1a14);color:inherit;border-radius:999px;padding:8px 13px;font:500 .86rem Inter,sans-serif;cursor:pointer}
 .ef-ferr button.sel{background:var(--marca,#c9a45c);border-color:var(--marca,#c9a45c);color:var(--marca-txt,#1a1408)}
+.ef-tam{display:flex;align-items:center;gap:10px;padding:0 14px 10px;font-size:.86rem}
+.ef-tam input{flex:1;accent-color:var(--marca,#c9a45c)}
+.ef-tam b{min-width:42px;text-align:right;font-weight:600}
+.ef-tam button{border:1px solid var(--linha,#2b251c);background:var(--cartao2,#1e1a14);color:inherit;border-radius:999px;padding:6px 11px;font:500 .82rem Inter,sans-serif;cursor:pointer}
+.ef-tam button:disabled{opacity:.35}
 .ef-dica{font-size:.8rem;color:var(--suave,#a8998a);padding:0 14px 10px;line-height:1.4}
 .ef-conf{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;margin:0 14px 10px;border:1px solid var(--linha,#2b251c);border-radius:10px;font-size:.88rem;cursor:pointer}
 .ef-conf input{width:20px;height:20px;flex:0 0 20px;margin:1px 0 0;accent-color:var(--marca,#c9a45c)}
@@ -62,8 +67,8 @@
     // aumenta a caixa (testa, queixo, cabelo) e junta as repetidas
     const out = [];
     caixas.forEach(b => {
-      const mx = b.width * 0.35, my = b.height * 0.45;
-      const r = { x: b.x - mx, y: b.y - my * 0.9, w: b.width + 2 * mx, h: b.height + my * 1.6, auto: true };
+      const mx = b.width * 0.12, my = b.height * 0.2;
+      const r = { x: b.x - mx, y: b.y - my * 1.2, w: b.width + 2 * mx, h: b.height + my * 1.9, auto: true, s: 1 };
       if (!out.some(o => sobrepoe(o, r) > 0.4)) out.push(r);
     });
     return out;
@@ -102,13 +107,28 @@
       ctx.drawImage(p, 0, 0, pw, ph, r.x, r.y, r.w, r.h);
     }
   }
+  // Tamanho escolhido no controle (s = 0.4 a 1.5), mantendo o centro
+  function efetivo(r) {
+    const s = r.s || 1, cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+    return { x: cx - r.w * s / 2, y: cy - r.h * s / 2, w: r.w * s, h: r.h * s };
+  }
+  function forma(ctx, r, oval) {
+    ctx.beginPath();
+    if (oval) ctx.ellipse(r.x + r.w / 2, r.y + r.h / 2, r.w / 2, r.h / 2, 0, 0, Math.PI * 2);
+    else ctx.rect(r.x, r.y, r.w, r.h);
+  }
   function aplicar(base, estado) {
     const c = document.createElement('canvas'); c.width = base.width; c.height = base.height;
     const x = c.getContext('2d'); x.drawImage(base, 0, 0);
+    const oval = estado.forma !== 'quadrado';
     estado.rects.forEach(r0 => {
-      const r = limitar(r0, c.width, c.height);
-      if (estado.modo === 'tarja') { x.fillStyle = '#000'; x.fillRect(r.x, r.y, r.w, r.h); }
-      else borrar(x, r);
+      const r = limitar(efetivo(r0), c.width, c.height);
+      if (r.w < 2 || r.h < 2) return;
+      if (estado.modo === 'tarja') { x.fillStyle = '#000'; forma(x, r, oval); x.fill(); return; }
+      // borra numa cópia e cola só dentro do formato
+      const t = document.createElement('canvas'); t.width = c.width; t.height = c.height;
+      const tx = t.getContext('2d'); tx.drawImage(c, 0, 0); borrar(tx, r);
+      x.save(); forma(x, r, oval); x.clip(); x.drawImage(t, r.x, r.y, r.w, r.h, r.x, r.y, r.w, r.h); x.restore();
     });
     return c;
   }
@@ -120,7 +140,9 @@
     const img = new Image(); img.src = url;
     try { await img.decode(); } catch (e) { URL.revokeObjectURL(url); throw new Error('Não consegui abrir esta foto.'); }
 
-    const estado = anterior ? JSON.parse(JSON.stringify(anterior)) : { rot: 0, rects: [], modo: 'borrar', procurou: false };
+    const estado = anterior ? JSON.parse(JSON.stringify(anterior)) : { rot: 0, rects: [], modo: 'borrar', forma: 'oval', procurou: false };
+    if (!estado.forma) estado.forma = 'oval';
+    let sel = -1;   // borrão escolhido
     let base = girarCanvas(img, estado.rot);
 
     const fundo = document.createElement('div'); fundo.className = 'ef-fundo';
@@ -129,14 +151,20 @@
       <div class="ef-proibido"><b>🚫 PROIBIDO ROSTO À MOSTRA</b>Nem olho, nem nariz, nem boca, de frente ou de lado, nem parcialmente. Fotos com rosto são apagadas pela administração.</div>
       <div class="ef-palco"><canvas></canvas></div>
       <div class="ef-status"></div>
+      <div class="ef-tam">
+        <span>Tamanho</span><input type="range" min="40" max="150" step="5" value="100" aria-label="Tamanho do borrão"><b>100%</b>
+        <button type="button" class="ef-tirar">🗑 Tirar</button>
+      </div>
       <div class="ef-ferr">
         <button type="button" data-m="borrar">Borrado</button>
         <button type="button" data-m="tarja">Tarja preta</button>
+        <button type="button" data-f="oval">◯ Oval</button>
+        <button type="button" data-f="quadrado">▢ Quadrado</button>
         <button type="button" class="ef-girar">↻ Girar</button>
         <button type="button" class="ef-desfazer">↶ Desfazer</button>
         <button type="button" class="ef-achar">🔎 Achar rostos</button>
       </div>
-      <div class="ef-dica">Passe o dedo sobre cada rosto (arraste formando um quadrado) para escondê-lo. Toque num quadrado para tirar.</div>
+      <div class="ef-dica">Arraste o dedo sobre um rosto para escondê-lo. <b>Toque num borrão</b> para escolher e ajuste o <b>Tamanho</b> (ou toque em Tirar). Sem nenhum escolhido, o tamanho muda todos.</div>
       <label class="ef-conf"><input type="checkbox"><span>Conferi a foto e <b>nenhum rosto aparece</b> (nem parte dele).</span></label>
       <div class="ef-erro"></div>
       <div class="ef-botoes"><button type="button" class="cancelar">Cancelar</button><button type="button" class="usar">Usar esta foto</button></div>
@@ -154,10 +182,22 @@
       ctx.drawImage(pronta, 0, 0);
       const esp = Math.max(2, Math.round(Math.max(tela.width, tela.height) / 300));
       ctx.lineWidth = esp; ctx.setLineDash([esp * 4, esp * 3]);
-      estado.rects.forEach(r => { ctx.strokeStyle = r.auto ? '#51b36a' : '#f1d999'; ctx.strokeRect(r.x, r.y, r.w, r.h); });
-      if (temp) { ctx.strokeStyle = '#fff'; ctx.strokeRect(temp.x, temp.y, temp.w, temp.h); }
+      const oval = estado.forma !== 'quadrado';
+      estado.rects.forEach((r, i) => {
+        ctx.strokeStyle = i === sel ? '#ffffff' : (r.auto ? '#51b36a' : '#f1d999');
+        ctx.lineWidth = i === sel ? esp * 2 : esp;
+        forma(ctx, efetivo(r), oval); ctx.stroke();
+      });
+      ctx.lineWidth = esp;
+      if (temp) { ctx.strokeStyle = '#fff'; forma(ctx, temp, oval); ctx.stroke(); }
       ctx.setLineDash([]);
       fundo.querySelectorAll('[data-m]').forEach(b => b.classList.toggle('sel', b.dataset.m === estado.modo));
+      fundo.querySelectorAll('[data-f]').forEach(b => b.classList.toggle('sel', b.dataset.f === estado.forma));
+      // controle de tamanho: do escolhido, ou de todos
+      const alvo = sel >= 0 ? estado.rects[sel] : estado.rects[0];
+      const v = Math.round(((alvo && alvo.s) || 1) * 100);
+      q('.ef-tam input').value = v; q('.ef-tam b').textContent = v + '%';
+      q('.ef-tam input').disabled = !estado.rects.length; q('.ef-tirar').disabled = sel < 0;
     }
 
     // Arrastar para marcar / tocar para tirar
@@ -172,15 +212,17 @@
     const soltar = (e) => {
       if (!ini) return; const p = ponto(e), k = ini.k;
       const w = Math.abs(p.x - ini.x), h = Math.abs(p.y - ini.y);
-      if (w < 14 * k && h < 14 * k) {      // foi um toque: tira o quadrado tocado
+      if (w < 14 * k && h < 14 * k) {      // foi um toque: escolhe o borrão tocado (ou desmarca)
+        let achou = -1;
         for (let i = estado.rects.length - 1; i >= 0; i--) {
-          const r = estado.rects[i];
-          if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) { estado.rects.splice(i, 1); break; }
+          const r = efetivo(estado.rects[i]);
+          if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) { achou = i; break; }
         }
+        sel = achou === sel ? -1 : achou;
       } else {
         const min = 30 * k;
-        const r = { x: Math.min(ini.x, p.x), y: Math.min(ini.y, p.y), w: Math.max(w, min), h: Math.max(h, min), auto: false };
-        estado.rects.push(r);
+        const r = { x: Math.min(ini.x, p.x), y: Math.min(ini.y, p.y), w: Math.max(w, min), h: Math.max(h, min), auto: false, s: 1 };
+        estado.rects.push(r); sel = estado.rects.length - 1;
       }
       ini = null; temp = null; q('.ef-conf input').checked = false; desenhar();
     };
@@ -188,10 +230,17 @@
     tela.addEventListener('pointercancel', () => { ini = null; temp = null; desenhar(); });
 
     fundo.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => { estado.modo = b.dataset.m; desenhar(); }));
-    q('.ef-desfazer').addEventListener('click', () => { estado.rects.pop(); desenhar(); });
+    fundo.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => { estado.forma = b.dataset.f; desenhar(); }));
+    q('.ef-desfazer').addEventListener('click', () => { estado.rects.pop(); sel = -1; desenhar(); });
+    q('.ef-tirar').addEventListener('click', () => { if (sel >= 0) { estado.rects.splice(sel, 1); sel = -1; q('.ef-conf input').checked = false; desenhar(); } });
+    q('.ef-tam input').addEventListener('input', (e) => {
+      const s = e.target.value / 100;
+      if (sel >= 0) estado.rects[sel].s = s; else estado.rects.forEach(r => { r.s = s; });
+      q('.ef-conf input').checked = false; desenhar();
+    });
     q('.ef-girar').addEventListener('click', () => {
       const H = base.height;   // gira os quadrados junto (90° no sentido do relógio)
-      estado.rects = estado.rects.map(r => ({ x: H - r.y - r.h, y: r.x, w: r.h, h: r.w, auto: r.auto }));
+      estado.rects = estado.rects.map(r => ({ x: H - r.y - r.h, y: r.x, w: r.h, h: r.w, auto: r.auto, s: r.s }));
       estado.rot = (estado.rot + 1) % 4; base = girarCanvas(img, estado.rot); desenhar();
     });
 
@@ -203,7 +252,7 @@
         const novos = achados.filter(a => !estado.rects.some(r => sobrepoe(r, a) > 0.5));
         estado.rects.push(...novos);
         desenhar();
-        if (achados.length) status('✓ ' + achados.length + (achados.length > 1 ? ' rostos escondidos' : ' rosto escondido') + ' automaticamente (quadrado verde). Confira se não ficou nada à mostra: olho, boca, rosto de lado ou no espelho.', 'ok');
+        if (achados.length) status('✓ ' + achados.length + (achados.length > 1 ? ' rostos escondidos' : ' rosto escondido') + ' automaticamente (contorno verde). Ajuste o tamanho se quiser e confira se não ficou nada à mostra: olho, boca, rosto de lado ou no espelho.', 'ok');
         else status(manual ? 'Nenhum rosto encontrado. Se aparecer algum rosto, passe o dedo sobre ele.' : 'Não achei rosto nesta foto. Se aparecer algum rosto (mesmo de lado ou no espelho), passe o dedo sobre ele.', 'alerta');
       } catch (e) {
         status('Não consegui procurar rostos automaticamente agora. Passe o dedo sobre cada rosto para esconder.', 'alerta');
