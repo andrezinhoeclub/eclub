@@ -1,4 +1,4 @@
-// meu-perfil.js — v2.2 — editar perfil (com detalhes Ele/Ela), fotos, álbum privado e bloqueios
+// meu-perfil.js — v2.3 — editar perfil (com detalhes Ele/Ela), fotos, álbum privado e bloqueios
 (async function () {
   'use strict';
   const { sb, $, msg, formacao, links, fotoProtegida, gradeFotos, sexos,
@@ -155,6 +155,12 @@
   $('fMover').addEventListener('click', async () => {
     if (!selecionada) return;
     const destino = selecionada.album === 'publico' ? 'privado' : 'publico';
+    if (destino === 'publico' && !$('fMover').dataset.ok) {
+      $('fMover').dataset.ok = '1';
+      msg('mFotos', 'erro', '🚫 No Fotolog é proibido rosto à mostra. Se esta foto mostra rosto, não mova: envie de novo pela Galeria com o Fotolog escolhido, para esconder o rosto. Se não tem rosto, toque em Mover de novo.');
+      setTimeout(() => delete $('fMover').dataset.ok, 8000); return;
+    }
+    delete $('fMover').dataset.ok;
     const { error } = await sb.from('fotos').update({ album: destino }).eq('id', selecionada.id);
     if (error) { msg('mFotos', 'erro', error.message); return; }
     if (destino === 'privado' && fotoPerfil === selecionada.caminho) fotoPerfil = null;
@@ -174,16 +180,21 @@
     fecharPainel(); msg('mFotos', 'ok', 'Foto apagada.'); carregarFotos();
   });
 
-  $('upArquivos').addEventListener('change', async () => {
-    const arquivos = [...$('upArquivos').files];
-    $('upArquivos').value = '';
+  async function enviarFotos(input) {
+    const arquivos = [...input.files];
+    input.value = '';
     if (!arquivos.length) return;
     const album = $('upAlbum').value;
     let ok = 0, falhas = [];
     for (let i = 0; i < arquivos.length; i++) {
       msg('mFotos', 'info', 'Enviando ' + (i + 1) + ' de ' + arquivos.length + '…');
       try {
-        const blob = await prepararFoto(arquivos[i]);
+        let blob = await prepararFoto(arquivos[i]);
+        if (album === 'publico') {   // Fotolog é visto por todos: esconder rostos antes
+          const r = await window.EDITOR_FOTO.editar(blob);
+          if (!r) continue;
+          blob = r.blob;
+        }
         const caminho = eu.id + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
         const up = await sb.storage.from('fotos').upload(caminho, blob, { contentType: 'image/jpeg', upsert: false });
         if (up.error) throw new Error('Falha no envio.');
@@ -199,7 +210,10 @@
     msg('mFotos', falhas.length ? 'erro' : 'ok',
       ok + ' foto(s) enviada(s).' + (falhas.length ? ' Problemas: ' + [...new Set(falhas)].join(' ') : ''));
     carregarFotos();
-  });
+  }
+  $('upArquivos').addEventListener('change', () => enviarFotos($('upArquivos')));
+  $('upCamera').addEventListener('change', () => enviarFotos($('upCamera')));
+  $('upAlbum').addEventListener('change', () => { if ($('upAlbum').value === 'publico' && window.EDITOR_FOTO) window.EDITOR_FOTO.carregarDetector().catch(() => {}); });
 
   carregarFotos();
 

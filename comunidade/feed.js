@@ -1,4 +1,4 @@
-// feed.js — v1.2 — publicações (curtir, comentar, seguir) e mural de recados
+// feed.js — v1.3 — publicações (curtir, comentar, seguir) e mural de recados
 (function () {
   'use strict';
   const { sb, links, fotoProtegida, abrirVisor, sexos, avatar, tempo, toast, flyer } = window.BASE;
@@ -45,7 +45,24 @@
         if (aoMudar) aoMudar();
       });
       opcao('Ver perfil', () => { location.href = av.href; });
-      opcao('⚠️ Denunciar', () => { location.href = av.href + '#denunciar'; });
+      if (p.fotos && p.fotos.length) opcao('📷 Denunciar foto com rosto', () => {
+        if (c.querySelector('.den-post')) return;
+        const box = el('div', 'den-post');
+        box.style.cssText = 'margin:8px 0;padding:10px 12px;border:1px solid #e5484d66;border-radius:10px;background:#e5484d14;font-size:.88rem';
+        box.appendChild(el('div', null, 'Denunciar esta publicação por mostrar rosto? A administração confere e apaga se for o caso. Quem publicou não fica sabendo quem denunciou.'));
+        const bt = el('div'); bt.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+        const sim = el('button', 'btn', 'Denunciar'); sim.type = 'button'; sim.style.cssText = 'flex:1;padding:9px';
+        const nao = el('button', 'btn secundario', 'Cancelar'); nao.type = 'button'; nao.style.cssText = 'flex:1;padding:9px';
+        nao.addEventListener('click', () => box.remove());
+        sim.addEventListener('click', async () => {
+          sim.disabled = true;
+          const { error } = await sb.rpc('denunciar_post', { p_post: p.id, p_motivo: 'rosto_a_mostra' });
+          box.remove(); toast(error ? 'Não foi possível denunciar: ' + error.message : 'Denúncia enviada ✓ Obrigado por cuidar da comunidade.');
+        });
+        bt.append(sim, nao); box.appendChild(bt);
+        cab.after(box);
+      });
+      opcao('⚠️ Denunciar perfil', () => { location.href = av.href + '#denunciar'; });
     }
     bOpc.addEventListener('click', (e) => { e.stopPropagation(); lista.classList.toggle('oculto'); });
     document.addEventListener('click', () => lista.classList.add('oculto'));

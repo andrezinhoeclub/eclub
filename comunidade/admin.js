@@ -1,4 +1,4 @@
-// admin.js — v2.10 — verificações, membros (privilégios), planos, destaques, lugares, denúncias e suporte
+// admin.js — v2.11 — verificações, membros (privilégios), planos, destaques, lugares, denúncias e suporte
 (async function () {
   'use strict';
   const { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, moldura, toast } = window.BASE;
@@ -97,7 +97,7 @@
   // ---------- Denúncias ----------
   let filtroD = 'abertas';
   const MOTIVO = { perfil_falso: 'Perfil falso', menor_de_idade: '🚨 Menor de idade', foto_sem_consentimento: '🚨 Foto sem consentimento',
-    assedio: 'Assédio', cobranca_ou_prostituicao: 'Cobrança / prostituição', golpe: 'Golpe', conteudo_ilegal: '🚨 Conteúdo ilegal', outro: 'Outro' };
+    assedio: 'Assédio', cobranca_ou_prostituicao: 'Cobrança / prostituição', golpe: 'Golpe', conteudo_ilegal: '🚨 Conteúdo ilegal', rosto_a_mostra: '📷 Foto com rosto à mostra', outro: 'Outro' };
   const ROT_D = { aberta: 'Nova', em_analise: 'Em análise', resolvida: 'Procedente', descartada: 'Descartada' };
   async function pendentesDenuncias() {
     const { data } = await sb.rpc('admin_denuncias_abertas');
@@ -120,7 +120,20 @@
       const alvo = novoEl('a', null, '⚠️ ' + d.alvo_apelido + ' · nº ' + d.alvo_numero + (d.alvo_uf ? ' · ' + d.alvo_uf : '')); alvo.href = 'perfil.html?id=' + d.alvo;
       topo.append(alvo, novoEl('span', 'selo sup-' + (d.status === 'aberta' ? 'aberto' : d.status === 'resolvida' ? 'respondido' : d.status === 'descartada' ? 'fechado' : 'aberto'), ROT_D[d.status] || d.status));
       const mot = novoEl('div', 'sup-assunto', (MOTIVO[d.motivo] || d.motivo) + ' · ' + quando(d.criado_em));
-      const det = novoEl('div', null, d.detalhes || '(sem detalhes)'); det.style.cssText = 'white-space:pre-wrap;margin:4px 0';
+      const det = novoEl('div', null, d.detalhes || (d.post ? '' : '(sem detalhes)')); det.style.cssText = 'white-space:pre-wrap;margin:4px 0';
+      // Publicação denunciada: mostra as fotos para conferir
+      const pub = novoEl('div');
+      if (d.post) {
+        pub.style.cssText = 'margin:6px 0;padding:8px;border:1px solid var(--linha);border-radius:10px';
+        if (d.post_texto) pub.appendChild(novoEl('div', 'suave', '“' + d.post_texto.slice(0, 200) + '”'));
+        const g = novoEl('div'); g.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px'; pub.appendChild(g);
+        window.BASE.links(d.post_fotos || []).then(L => (d.post_fotos || []).forEach(c => {
+          if (!L[c]) return;
+          const a = novoEl('a'); a.href = L[c]; a.target = '_blank'; a.rel = 'noopener';
+          const im = novoEl('img'); im.src = L[c]; im.alt = 'Foto denunciada'; im.style.cssText = 'width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px';
+          a.appendChild(im); g.appendChild(a);
+        }));
+      } else if (d.motivo === 'rosto_a_mostra') pub.appendChild(novoEl('div', 'suave', 'A publicação já foi apagada.'));
       const info = novoEl('div', 'suave', 'Denunciado por ' + (d.denunciante_apelido ? d.denunciante_apelido + ' (nº ' + d.denunciante_numero + ')' : 'conta apagada') +
         ' · este perfil tem ' + d.total_contra + ' denúncia(s) · situação do perfil: ' + d.alvo_status +
         (d.tratada_por_apelido ? ' · tratada por ' + d.tratada_por_apelido + ' em ' + quando(d.tratada_em) : '') +
@@ -140,13 +153,26 @@
           await sb.rpc('admin_tratar_denuncia', { p_id: d.id, p_status: 'resolvida', p_nota: st === 'aprovado' ? 'perfil reativado' : 'perfil ' + st });
           toast('Perfil ' + (st === 'aprovado' ? 'reativado' : st) + ' ✓'); carregarDenuncias();
         }); bt.appendChild(b); };
+      if (d.post) {
+        const ap = novoEl('button', 'nao', 'Apagar publicação'); ap.type = 'button';
+        ap.addEventListener('click', async () => {
+          if (!ap.dataset.ok) { ap.dataset.ok = '1'; toast('Toque de novo em "Apagar publicação" para confirmar.'); setTimeout(() => delete ap.dataset.ok, 5000); return; }
+          const fotos = d.post_fotos || [];
+          const { error: e } = await sb.from('posts').delete().eq('id', d.post);
+          if (e) { toast('Erro: ' + e.message); return; }
+          if (fotos.length) { await sb.from('fotos').delete().in('caminho', fotos); await sb.storage.from('fotos').remove(fotos); }
+          await sb.rpc('admin_tratar_denuncia', { p_id: d.id, p_status: 'resolvida', p_nota: 'publicação apagada' });
+          toast('Publicação apagada ✓'); carregarDenuncias();
+        });
+        bt.appendChild(ap);
+      }
       if (d.status === 'aberta') tratar('em_analise', 'Estou analisando');
       if (d.status !== 'resolvida') tratar('resolvida', 'Procede', 'sim');
       if (d.status !== 'descartada') tratar('descartada', 'Descartar');
       if (d.alvo_status === 'aprovado') perfilSt('suspenso', 'Suspender perfil');
       if (d.alvo_status === 'suspenso') perfilSt('aprovado', 'Reativar perfil', 'sim');
       if (d.alvo_status !== 'banido') perfilSt('banido', 'Banir', 'nao');
-      card.append(topo, mot, det, info, bt); box.appendChild(card);
+      card.append(topo, mot, det, pub, info, bt); box.appendChild(card);
     });
   }
 

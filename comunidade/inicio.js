@@ -1,4 +1,4 @@
-// inicio.js — v2.0 — Siga-me / Últimas: destaques, Ao Vivo, stories, publicar e feed
+// inicio.js — v2.1 — Siga-me / Últimas: destaques, Ao Vivo, stories, publicar e feed
 (async function () {
   'use strict';
   const { sb, $, msg, links, fotoProtegida, avatar, tempo, prepararFoto, moldura, exigirMembro, emBreve, UFS } = window.BASE;
@@ -66,30 +66,45 @@
   function abrirCompor(comFoto) {
     $('compor').classList.remove('oculto');
     $('compor').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    if (comFoto) $('cArquivos').click(); else $('cTexto').focus();
+    if (comFoto) { if (window.EDITOR_FOTO) window.EDITOR_FOTO.carregarDetector().catch(() => {}); } else $('cTexto').focus();
   }
   $('bTexto').addEventListener('click', () => abrirCompor(false));
   $('bFoto').addEventListener('click', () => abrirCompor(true));
   $('bVideo').addEventListener('click', emBreve);
   $('cAddFoto').addEventListener('click', () => $('cArquivos').click());
+  $('cTirar').addEventListener('click', () => $('cCamera').click());
 
+  // Cada foto: { orig (sem edição, fica só no celular), estado (quadrados), blob (com os rostos escondidos) }
   function desenharPrevias() {
     $('cPrevias').innerHTML = '';
-    escolhidas.forEach((b, i) => {
-      const img = document.createElement('img'); img.src = URL.createObjectURL(b); img.alt = 'Foto ' + (i + 1);
-      img.title = 'Toque para tirar';
-      img.addEventListener('click', () => { escolhidas.splice(i, 1); desenharPrevias(); });
-      $('cPrevias').appendChild(img);
+    escolhidas.forEach((f, i) => {
+      const pv = document.createElement('div'); pv.className = 'pv';
+      const img = document.createElement('img'); img.src = URL.createObjectURL(f.blob); img.alt = 'Foto ' + (i + 1);
+      img.title = 'Toque para editar';
+      img.addEventListener('click', async () => {
+        const r = await window.EDITOR_FOTO.editar(f.orig, f.estado);
+        if (r) { f.blob = r.blob; f.estado = r.estado; desenharPrevias(); }
+      });
+      const x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'Tirar foto');
+      x.addEventListener('click', () => { escolhidas.splice(i, 1); desenharPrevias(); });
+      pv.append(img, x); $('cPrevias').appendChild(pv);
     });
   }
-  $('cArquivos').addEventListener('change', async () => {
-    const arqs = [...$('cArquivos').files]; $('cArquivos').value = '';
+  async function receberFotos(input) {
+    const arqs = [...input.files]; input.value = '';
+    msg('mCompor');
     for (const a of arqs) {
       if (escolhidas.length >= 4) { msg('mCompor', 'info', 'No máximo 4 fotos por publicação.'); break; }
-      try { escolhidas.push(await prepararFoto(a)); } catch (e) { msg('mCompor', 'erro', e.message); }
+      try {
+        const orig = await prepararFoto(a);
+        const r = await window.EDITOR_FOTO.editar(orig);
+        if (r) escolhidas.push({ orig, estado: r.estado, blob: r.blob });
+      } catch (e) { msg('mCompor', 'erro', e.message); }
+      desenharPrevias();
     }
-    desenharPrevias();
-  });
+  }
+  $('cArquivos').addEventListener('change', () => receberFotos($('cArquivos')));
+  $('cCamera').addEventListener('change', () => receberFotos($('cCamera')));
 
   $('cPublicar').addEventListener('click', async () => {
     const texto = $('cTexto').value.trim();
@@ -97,7 +112,8 @@
     $('cPublicar').disabled = true; msg('mCompor', 'info', 'Publicando…');
     const caminhos = [];
     try {
-      for (const b of escolhidas) {
+      for (const f of escolhidas) {
+        const b = f.blob;
         const caminho = eu.id + '/post-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
         const up = await sb.storage.from('fotos').upload(caminho, b, { contentType: 'image/jpeg', upsert: false });
         if (up.error) throw new Error('Falha ao enviar a foto.');
