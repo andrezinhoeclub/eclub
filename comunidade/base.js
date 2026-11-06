@@ -1,4 +1,4 @@
-// base.js — v2.7 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v2.8 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -368,6 +368,7 @@
 
   // ---------- Moldura das telas: topo, menu lateral e barra de baixo ----------
   // ativo: 'sigame' | 'ultimas' | 'radar' | 'perfil' | 'busca' | ...
+  let suporteNovas = 0;
   async function moldura(perfil, assinatura, ativo) {
     const pag = (n, rotulo, href, extra) =>
       '<' + (href ? 'a href="' + href + '"' : 'button type="button"') + ' data-id="' + n + '" aria-label="' + rotulo + '"' + (extra || '') + '>' +
@@ -407,6 +408,10 @@
       const total = (a.mensagens || 0) + (a.recados || 0);
       document.title = document.title.replace(/^\(\d+\+?\) /, '');
       if (total) document.title = '(' + total + ') ' + document.title;
+      // Respostas novas da administração (aparece no ícone do menu)
+      const { data: sn } = await sb.rpc('suporte_avisos');
+      suporteNovas = sn || 0;
+      $('b_menu').textContent = suporteNovas ? '!' : '';
     }
     window.BASE.avisos = avisos;
     avisos();
@@ -514,7 +519,8 @@
     item('escudo', 'Privacidade e Segurança', 'regras.html#privacidade');
     item('ajuda', 'Ajuda e Regras', 'regras.html');
     const inst = item('baixar', 'Instalar o App no celular', 'instalar.html'); inst.classList.add('instalar');
-    item('chat', 'Falar com a Administração', null);
+    const sup = item('chat', 'Falar com a Administração', 'suporte.html');
+    if (suporteNovas) sup.appendChild(etiqueta(suporteNovas + (suporteNovas > 1 ? ' respostas' : ' resposta'), 'vencido'));
     if (assinatura.admin) item('admin', 'Painel da Administração', 'admin.html');
     const s = item('sair', 'SAIR', sair); s.classList.add('sair');
 
@@ -560,6 +566,17 @@
   }
   const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   const mesDe = (mmdd) => (mmdd ? MESES[Number(mmdd.slice(0, 2)) - 1] : '');
+
+  // ---------- Conversa do suporte (membro e admin usam a mesma) ----------
+  function conversaSuporte(box, msgs, quando) {
+    (msgs || []).forEach(m => {
+      const b = document.createElement('div'); b.className = 'sup-msg' + (m.de_admin ? ' adm' : '');
+      const q = document.createElement('small'); q.textContent = (m.de_admin ? '👑 Administração' : m.autor_apelido || 'Membro') + ' · ' + quando(m.criado_em);
+      const t = document.createElement('div'); t.textContent = m.texto;
+      b.append(q, t); box.appendChild(b);
+    });
+  }
+  window.SUPORTE_conversa = conversaSuporte;
 
   window.BASE = { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, sair, prepararFoto,
                   links, definirMarca, moldura, abrirVisor, gradeFotos, fotoProtegida, visto, idades, tempo,

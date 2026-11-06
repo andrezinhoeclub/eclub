@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Falar com a Administração</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=3.1">
+</head>
+<body>
+
+<main>
+  <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
+  <div class="oculto" id="tela">
+    <p id="voltarVerif" class="oculto" style="margin:4px 0 10px"><a href="verificacao.html">← Voltar para a verificação</a></p>
+
+    <div class="cartao">
+      <div class="adm-cab">
+        <img src="logo-ouro.png" alt="">
+        <div><b>👑 Administração</b><span class="suave" style="display:block;font-size:.85rem">Comunidade Liberal · respondemos o quanto antes, normalmente em até 24 horas</span></div>
+      </div>
+    </div>
+
+    <!-- Resposta nova / conversa aberta -->
+    <div class="cartao oculto" id="caixaConversa">
+      <div class="sup-topo"><b id="cAssunto"></b><span class="selo" id="cStatus"></span></div>
+      <div class="sup-conversa" id="cMsgs"></div>
+      <div id="cResponder">
+        <textarea id="cTexto" rows="3" maxlength="3000" placeholder="Escreva aqui para continuar a conversa…" style="margin-top:10px"></textarea>
+        <button class="btn" id="cEnviar" type="button">Enviar</button>
+      </div>
+      <p class="suave oculto" id="cFechado">Este atendimento foi encerrado. Se precisar, mande um novo recado abaixo.</p>
+      <div class="msg" id="mConversa"></div>
+      <p style="margin:10px 0 0"><a href="#" id="cFechar">Fechar conversa</a></p>
+    </div>
+
+    <div class="titulo-secao">Perguntas frequentes</div>
+    <p class="suave" style="margin:-4px 0 10px">Toque na pergunta para ver a resposta. Muitas dúvidas se resolvem aqui na hora.</p>
+    <div class="faq" id="faq"></div>
+
+    <div class="titulo-secao">Mandar recado para a Administração</div>
+    <div class="cartao">
+      <label for="nAssunto">Assunto</label>
+      <select id="nAssunto">
+        <option value="">Escolha o assunto…</option>
+        <option>Denúncia de perfil ou golpe</option>
+        <option>Verificação do perfil</option>
+        <option>Assinatura e pagamento</option>
+        <option>Problema para entrar ou senha</option>
+        <option>Fotos e álbum</option>
+        <option>Eventos e lugares</option>
+        <option>Erro no app</option>
+        <option>Sugestão</option>
+        <option>Outro assunto</option>
+      </select>
+      <label for="nTexto">Mensagem</label>
+      <textarea id="nTexto" rows="5" maxlength="3000" placeholder="Escreva aqui o seu recado para a Administração…"></textarea>
+      <p class="suave" style="font-size:.82rem">Se for sobre um perfil, diga o <b>nº</b> ou o apelido. Nunca mande senha ou dados de cartão.</p>
+      <button class="btn" id="nEnviar" type="button">Enviar recado</button>
+      <div class="msg" id="mNovo"></div>
+    </div>
+
+    <div class="oculto" id="secMeus">
+      <div class="titulo-secao">Meus atendimentos</div>
+      <div class="cartao" id="meus"></div>
+    </div>
+  </div>
+</main>
+
+<footer><a href="regras.html">Regras e privacidade</a> · suporte.html v1.0</footer>
+
+<script src="config.js?v=1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="base.js?v=2.8"></script>
+<script src="suporte.js?v=1.0"></script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-// admin.js — v2.8 — verificações, membros (privilégios), planos e destaques
+// admin.js — v2.9 — verificações, membros (privilégios), planos, destaques, lugares e suporte
 (async function () {
   'use strict';
   const { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, moldura, toast } = window.BASE;
@@ -12,7 +12,7 @@
   $('painel').classList.remove('oculto');
 
   // ---------- Abas ----------
-  const ABAS = { verif: 'abaVerif', eventos: 'abaEventos', membros: 'abaMembros', planos: 'abaPlanos', destaques: 'abaDestaques', lugares: 'abaLugares' };
+  const ABAS = { verif: 'abaVerif', eventos: 'abaEventos', membros: 'abaMembros', planos: 'abaPlanos', destaques: 'abaDestaques', lugares: 'abaLugares', suporte: 'abaSuporte' };
   document.querySelectorAll('#abasAdmin button').forEach(b => b.addEventListener('click', () => {
     document.querySelectorAll('#abasAdmin button').forEach(x => x.classList.toggle('sel', x === b));
     Object.entries(ABAS).forEach(([k, id]) => $(id).classList.toggle('oculto', k !== b.dataset.aba));
@@ -21,6 +21,7 @@
     if (b.dataset.aba === 'destaques') carregarDestaques();
     if (b.dataset.aba === 'eventos') carregarEventos();
     if (b.dataset.aba === 'lugares') carregarLugares();
+    if (b.dataset.aba === 'suporte') carregarSuporte();
   }));
   const novoEl = (tag, cls, texto) => { const e = document.createElement(tag); if (cls) e.className = cls; if (texto != null) e.textContent = texto; return e; };
 
@@ -90,6 +91,67 @@
       });
       linha.append(info, bt); $('mLista').appendChild(linha);
     });
+  }
+
+  // ---------- Suporte (Falar com a Administração) ----------
+  let filtroS = 'pendentes';
+  const quando = (d) => { const x = new Date(d); return x.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' + x.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
+  async function pendentesSuporte() {
+    const { data } = await sb.rpc('admin_suporte_pendentes');
+    $('supPend').textContent = data ? data : '';
+  }
+  pendentesSuporte(); setInterval(() => { if (!document.hidden) pendentesSuporte(); }, 60000);
+  document.querySelectorAll('#supFiltro .chip').forEach(c => c.addEventListener('click', () => {
+    document.querySelectorAll('#supFiltro .chip').forEach(x => x.classList.toggle('sel', x === c));
+    filtroS = c.dataset.f; carregarSuporte();
+  }));
+  const ROT_ST = { aberto: 'Aguardando resposta', respondido: 'Respondido', fechado: 'Encerrado' };
+  async function carregarSuporte() {
+    pendentesSuporte();
+    const { data, error } = await sb.rpc('admin_chamados', { p_status: filtroS });
+    const box = $('supLista'); box.innerHTML = '';
+    if (error) { box.textContent = 'Erro: ' + error.message; return; }
+    if (!data.length) { box.appendChild(novoEl('div', 'cartao suave', filtroS === 'pendentes' ? 'Nenhum recado esperando resposta. ✓' : 'Nada por aqui.')); return; }
+    data.forEach(c => {
+      const card = novoEl('div', 'cartao sup-card' + (c.lido_admin ? '' : ' novo'));
+      const topo = novoEl('div', 'sup-topo');
+      const quem = novoEl('a', null, c.apelido + ' · nº ' + c.numero + (c.uf ? ' · ' + c.uf : '')); quem.href = 'perfil.html?id=' + c.membro;
+      topo.append(quem, novoEl('span', 'selo sup-' + c.status, ROT_ST[c.status] || c.status));
+      const ass = novoEl('div', 'sup-assunto', c.assunto + ' · ' + quando(c.atualizado_em) + ' · ' + c.total + ' msg');
+      const ult = novoEl('div', 'suave', c.ultima);
+      const conv = novoEl('div', 'sup-conversa oculto');
+      const bt = novoEl('div', 'botoes'); bt.style.marginTop = '8px';
+      const abrir = novoEl('button', 'sim', 'Abrir e responder'); abrir.type = 'button';
+      abrir.addEventListener('click', () => abrirConversa(c, conv, abrir, ult));
+      bt.appendChild(abrir);
+      card.append(topo, ass, ult, conv, bt); box.appendChild(card);
+    });
+  }
+  async function abrirConversa(c, conv, botao, ult) {
+    if (!conv.classList.contains('oculto')) { conv.classList.add('oculto'); ult.classList.remove('oculto'); botao.textContent = 'Abrir e responder'; return; }
+    const { data, error } = await sb.rpc('mensagens_chamado', { p_chamado: c.id });
+    if (error) { toast('Erro: ' + error.message); return; }
+    conv.innerHTML = ''; ult.classList.add('oculto'); botao.textContent = 'Fechar conversa';
+    window.SUPORTE_conversa(conv, data, quando);
+    const txt = novoEl('textarea'); txt.rows = 3; txt.maxLength = 3000; txt.placeholder = 'Escreva a resposta da Administração…';
+    const env = novoEl('button', 'btn', 'Enviar resposta'); env.type = 'button';
+    const linha = novoEl('div', 'botoes'); linha.style.marginTop = '8px';
+    env.addEventListener('click', async () => {
+      if (!txt.value.trim()) { toast('Escreva a resposta.'); return; }
+      env.disabled = true;
+      const { error: e } = await sb.rpc('responder_chamado', { p_chamado: c.id, p_texto: txt.value });
+      env.disabled = false;
+      if (e) { toast('Erro: ' + e.message); return; }
+      toast('Resposta enviada ✓'); carregarSuporte();
+    });
+    const fe = novoEl('button', '', c.status === 'fechado' ? 'Reabrir' : 'Encerrar atendimento'); fe.type = 'button';
+    fe.addEventListener('click', async () => {
+      const { error: e } = await sb.rpc('admin_fechar_chamado', { p_chamado: c.id, p_fechar: c.status !== 'fechado' });
+      toast(e ? 'Erro: ' + e.message : (c.status === 'fechado' ? 'Reaberto ✓' : 'Atendimento encerrado ✓')); if (!e) carregarSuporte();
+    });
+    linha.append(fe);
+    conv.append(txt, env, linha); conv.classList.remove('oculto');
+    pendentesSuporte();
   }
 
   // ---------- Planos ----------

@@ -1,4 +1,4 @@
-/* estilo.css — v3.0 — Comunidade Liberal: preto noite e ouro (padrão), modo claro em marfim */
+/* estilo.css — v3.1 — Comunidade Liberal: preto noite e ouro (padrão), modo claro em marfim */
 @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Great+Vibes&display=swap");
 :root{
   --marca:#d6b26e; --marca2:#f1dca6; --marca-txt:#1b1408; --marca-suave:rgba(214,178,110,.14);
@@ -529,3 +529,33 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--marca)!i
 :root:not([data-tema="claro"]) .ev-card.destaque-semana{background:linear-gradient(180deg,rgba(214,178,110,.12),var(--cartao));border-top-color:var(--marca)}
 :root:not([data-tema="claro"]) .aviso-regra{background:rgba(214,178,110,.1);border-color:rgba(214,178,110,.4);color:#f1dca6}
 .ev-card.destaque-semana .destaque-titulo,.destaque-semana-titulo{color:var(--marca)}
+
+/* ---------- Falar com a Administração (suporte) ---------- v3.1 */
+.faq{border:1px solid var(--linha);border-radius:12px;overflow:hidden;background:var(--cartao)}
+.faq details{border-bottom:1px solid var(--linha)}
+.faq details:last-child{border-bottom:0}
+.faq summary{list-style:none;cursor:pointer;padding:14px 40px 14px 14px;font-weight:600;position:relative}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:1.3rem;color:var(--marca)}
+.faq details[open] summary::after{content:"–"}
+.faq details[open] summary{color:var(--marca)}
+.faq .resp{padding:0 14px 14px;color:var(--suave);line-height:1.55}
+.faq .resp a{color:var(--marca)}
+.adm-cab{display:flex;gap:12px;align-items:center}
+.adm-cab img{width:58px;height:58px;border-radius:50%;background:#0b0a09;border:1px solid var(--marca);padding:6px;object-fit:contain}
+.adm-cab b{font-size:1.1rem;display:block}
+.sup-card.novo{border-left:4px solid var(--marca)}
+.sup-topo{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.sup-topo a{font-weight:700;color:var(--texto)}
+.sup-assunto{font-size:.85rem;font-weight:600;margin:6px 0 4px}
+.selo.sup-aberto{color:var(--aviso);border-color:var(--aviso)}
+.selo.sup-respondido{color:var(--ok);border-color:var(--ok)}
+.selo.sup-fechado{color:var(--suave)}
+.sup-conversa{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.sup-msg{max-width:88%;align-self:flex-end;background:var(--cartao2);border:1px solid var(--linha);border-radius:12px 12px 2px 12px;padding:8px 12px;white-space:pre-wrap;word-wrap:break-word}
+.sup-msg.adm{align-self:flex-start;border-color:var(--marca);border-radius:12px 12px 12px 2px}
+.sup-msg small{display:block;color:var(--suave);font-size:.72rem;margin-bottom:3px}
+.sup-msg.adm small{color:var(--marca)}
+.sup-item{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--linha);padding:12px 0;color:inherit;font:inherit;cursor:pointer}
+.sup-item:first-of-type{border-top:0}
+.sup-item .novo-r{background:var(--erro);color:#fff;font-size:.68rem;font-weight:700;border-radius:5px;padding:2px 6px;margin-left:6px}

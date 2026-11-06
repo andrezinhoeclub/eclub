@@ -8,7 +8,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Administração</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=3.0">
+<link rel="stylesheet" href="estilo.css?v=3.1">
 </head>
 <body>
 
@@ -19,13 +19,29 @@
 
   <div class="oculto" id="painel">
     <div class="titulo-secao">Painel da administração</div>
-    <div class="abas" style="grid-template-columns:repeat(3,1fr)" id="abasAdmin">
+    <div class="abas" style="grid-template-columns:repeat(4,1fr)" id="abasAdmin">
       <button type="button" class="sel" data-aba="verif">Verificar</button>
       <button type="button" data-aba="eventos">Eventos</button>
       <button type="button" data-aba="membros">Membros</button>
       <button type="button" data-aba="planos">Planos</button>
       <button type="button" data-aba="destaques">Destaques</button>
       <button type="button" data-aba="lugares">Lugares</button>
+      <button type="button" data-aba="suporte" style="position:relative">Suporte <span class="bolinha" id="supPend" style="position:static;display:inline-block"></span></button>
+    </div>
+
+    <!-- SUPORTE (Falar com a Administração) -->
+    <div class="oculto" id="abaSuporte">
+      <div class="cartao">
+        <h1>Falar com a Administração</h1>
+        <p class="suave">Recados que os membros mandaram pela central de suporte. Qualquer admin pode responder; o membro vê a resposta assinada como <b>Administração</b> e recebe um aviso no menu.</p>
+        <div class="chips" id="supFiltro">
+          <span class="chip sel" data-f="pendentes">Aguardando resposta</span>
+          <span class="chip" data-f="respondidos">Respondidos</span>
+          <span class="chip" data-f="fechados">Encerrados</span>
+          <span class="chip" data-f="todos">Todos</span>
+        </div>
+      </div>
+      <div id="supLista"></div>
     </div>
 
     <!-- LUGARES -->
@@ -153,11 +169,11 @@
   </div>
 </template>
 
-<footer>admin.html v2.10</footer>
+<footer>admin.html v2.11</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
-<script src="base.js?v=2.7"></script>
-<script src="admin.js?v=2.8"></script>
+<script src="base.js?v=2.8"></script>
+<script src="admin.js?v=2.9"></script>
 </body>
 </html>
