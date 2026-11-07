@@ -1,4 +1,4 @@
-// lugar.js — v1.2 — página do lugar: check-in por GPS, informações, quem já esteve, avaliações e fotos
+// lugar.js — v1.3 — página do lugar: check-in por GPS, informações, quem já esteve, avaliações e fotos
 (async function () {
   'use strict';
   const { sb, $, msg, moldura, exigirMembro, flyer, avatar, sexos, toast, prepararFoto, UFS } = window.BASE;
@@ -83,8 +83,8 @@
     visivel = c.dataset.v; pintarVis();
     // já fez check-in nas últimas horas? muda a visibilidade na hora
     if (CK && CK.meu_ultimo && Date.now() - new Date(CK.meu_ultimo).getTime() < 6 * 3600e3) {
-      await sb.rpc('mudar_visibilidade_checkin', { p_lugar: id, p_visivel: visivel });
-      toast(visivel === 'publico' ? 'Agora você aparece na página do lugar' : 'Seu check-in agora é só seu'); carregarCheckin(); carregarQuem();
+      await sb.rpc('mudar_visibilidade_checkin', { p_lugar: id, p_visivel: visivel === 'feed' ? 'publico' : visivel });
+      toast(visivel !== 'privado' ? 'Agora você aparece na página do lugar' : 'Seu check-in agora é só seu'); carregarCheckin(); carregarQuem();
     }
   }));
 
@@ -92,7 +92,7 @@
     const { data } = await sb.rpc('lugar_checkin_info', { p_lugar: id });
     CK = data && data[0]; if (!CK) return;
     const temLocal = CK.lat != null && CK.lng != null;
-    if (CK.meu_visivel) { visivel = CK.meu_visivel; pintarVis(); }
+    if (CK.meu_visivel && !(visivel === 'feed' && CK.meu_visivel === 'publico')) { visivel = CK.meu_visivel; pintarVis(); }
     $('ckAgora').textContent = CK.agora_total ? '🔥 ' + CK.agora_total + (CK.agora_total === 1 ? ' perfil fez' : ' perfis fizeram') + ' check-in nas últimas 12h' : '';
     if (!temLocal) $('ckStatus').textContent = 'Este lugar ainda não tem a localização marcada, então o check-in ainda não funciona aqui.';
     else if (CK.meu_ultimo) $('ckStatus').textContent = '✓ Seu último check-in aqui: ' + hora(CK.meu_ultimo) + '. O check-in vale como "estive aqui" e libera avaliar o lugar.';

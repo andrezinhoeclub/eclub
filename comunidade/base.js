@@ -1,4 +1,4 @@
-// base.js — v3.2 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v3.3 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -556,6 +556,7 @@
     lapis: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/>',
     chave: '<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M16 6l3 3"/>',
     escudo: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+    pin: '<path d="M12 21s-7-6.2-7-11.5A7 7 0 0119 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
     cadeado: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
     celular: '<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18h2"/>',
     bloqueio: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
@@ -718,6 +719,7 @@
     item('forum', 'Fórum', null);
     item('grupos', 'Círculos', null);
     item('agenda', 'Eventos', 'eventos.html');
+    item('pin', 'Fazer Check-in', 'checkin.html');
     item('trofeu', 'Ranking', null);
 
     secao('Conta');

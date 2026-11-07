@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Check-in</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=3.1">
+</head>
+<body>
+<style>
+.ck-hero{text-align:center;padding:22px 16px}
+.ck-hero .ic{font-size:2.4rem}
+.ck-hero h1{margin:6px 0 4px}
+.lp{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--linha)}
+.lp:first-child{border-top:0}
+.lp .th{width:56px;height:56px;border-radius:10px;overflow:hidden;flex:0 0 56px;background:var(--cartao2);display:grid;place-items:center}
+.lp .th img{width:100%;height:100%;object-fit:cover}
+.lp .th img.sem{width:60%;height:60%;object-fit:contain}
+.lp .tx{flex:1;min-width:0}
+.lp .tx a{font-weight:700;color:var(--texto);text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lp .tx small{color:var(--suave);font-size:.8rem;display:block}
+.lp button{flex:0 0 auto;padding:9px 12px;border-radius:10px;border:0;font:700 .85rem Inter,sans-serif;cursor:pointer;background:linear-gradient(135deg,#f1d999,#c9a45c 45%,#f6e3ae 70%,#b8913f);color:#1a1408}
+.lp button:disabled{opacity:.45}
+.lp button.feito{background:var(--cartao2);color:var(--ok);border:1px solid var(--ok)}
+</style>
+
+<main>
+  <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
+  <div class="oculto" id="tela">
+    <div class="cartao ck-hero">
+      <div class="ic">📍</div>
+      <h1>Check-in</h1>
+      <p class="suave" style="margin:0 0 12px">Está numa casa, bar, clube ou evento? Faça check-in: o GPS confere se você está no lugar. Não precisa ter evento marcado.</p>
+      <div class="chips" id="ckVis" style="justify-content:center">
+        <span class="chip sel" data-v="privado">🔒 Só para mim</span>
+        <span class="chip" data-v="publico">👀 Aparecer no lugar</span>
+        <span class="chip" data-v="feed">📣 No lugar e no Siga-me</span>
+      </div>
+      <button class="btn" type="button" id="bProcurar" style="width:100%;margin-top:12px">📡 Achar lugares perto de mim</button>
+      <div class="msg" id="mPerto"></div>
+    </div>
+
+    <div class="oculto" id="secPerto">
+      <div class="titulo-secao" id="tituloPerto">Perto de você</div>
+      <div class="cartao" id="listaPerto"></div>
+    </div>
+
+    <div class="oculto" id="secNovo">
+      <div class="titulo-secao">Não achou o lugar?</div>
+      <div class="cartao">
+        <p class="suave" style="margin-top:0">Cadastre o lugar onde você está agora. A localização já vai junto, e daí em diante todo mundo consegue fazer check-in lá. Você poderá editar a página (foto, endereço, horários).</p>
+        <label class="campo" for="nNome">Nome do lugar</label>
+        <input type="text" id="nNome" maxlength="120" placeholder="Ex.: Bar do Zé, Clube X, Motel Y…">
+        <p class="suave" id="nOnde" style="font-size:.85rem"></p>
+        <button class="btn" type="button" id="nCriar" style="width:100%">➕ Cadastrar e fazer check-in</button>
+        <div class="msg" id="mNovo"></div>
+      </div>
+    </div>
+
+    <p class="suave" style="text-align:center"><a href="lugares.html">Ver todos os lugares</a></p>
+  </div>
+</main>
+
+<footer><a href="regras.html">Regras e privacidade</a> · checkin.html v1.0</footer>
+
+<script src="config.js?v=1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="base.js?v=3.3"></script>
+<script src="checkin.js?v=1.0"></script>
+</body>
+</html>
