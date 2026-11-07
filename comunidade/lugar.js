@@ -1,4 +1,4 @@
-// lugar.js — v1.1 — página do lugar: informações, quem já esteve, avaliações e fotos
+// lugar.js — v1.2 — página do lugar: check-in por GPS, informações, quem já esteve, avaliações e fotos
 (async function () {
   'use strict';
   const { sb, $, msg, moldura, exigirMembro, flyer, avatar, sexos, toast, prepararFoto, UFS } = window.BASE;
@@ -60,7 +60,111 @@
     $('sobre').classList.toggle('oculto', !L.sobre); $('sobreTxt').textContent = L.sobre || '';
     $('editarBox').classList.toggle('oculto', !L.posso_editar);
     carregarQuem();
+    carregarCheckin();
   }
+
+  // ---------- Check-in por GPS ----------
+  const qs = new URLSearchParams(location.search);
+  const eventoCk = Number(qs.get('evento')) || null;
+  let CK = null, visivel = 'privado';
+  function posicao() {
+    return new Promise((ok, falha) => {
+      if (!navigator.geolocation) return falha(new Error('Este aparelho não informa a localização.'));
+      navigator.geolocation.getCurrentPosition(p => ok(p.coords), (e) => falha(new Error(
+        e.code === 1 ? 'Você não permitiu a localização. Toque no cadeado ao lado do endereço do site (ou nas configurações do celular) e permita a localização para a Comunidade.'
+        : e.code === 3 ? 'O GPS demorou para responder. Vá para perto da entrada ou de uma janela e tente de novo.'
+        : 'Não consegui pegar a sua localização. Confira se a localização do celular está ligada.')),
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+    });
+  }
+  const hora = (iso) => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  function pintarVis() { document.querySelectorAll('#ckVis .chip').forEach(c => c.classList.toggle('sel', c.dataset.v === visivel)); }
+  document.querySelectorAll('#ckVis .chip').forEach(c => c.addEventListener('click', async () => {
+    visivel = c.dataset.v; pintarVis();
+    // já fez check-in nas últimas horas? muda a visibilidade na hora
+    if (CK && CK.meu_ultimo && Date.now() - new Date(CK.meu_ultimo).getTime() < 6 * 3600e3) {
+      await sb.rpc('mudar_visibilidade_checkin', { p_lugar: id, p_visivel: visivel });
+      toast(visivel === 'publico' ? 'Agora você aparece na página do lugar' : 'Seu check-in agora é só seu'); carregarCheckin(); carregarQuem();
+    }
+  }));
+
+  async function carregarCheckin() {
+    const { data } = await sb.rpc('lugar_checkin_info', { p_lugar: id });
+    CK = data && data[0]; if (!CK) return;
+    const temLocal = CK.lat != null && CK.lng != null;
+    if (CK.meu_visivel) { visivel = CK.meu_visivel; pintarVis(); }
+    $('ckAgora').textContent = CK.agora_total ? '🔥 ' + CK.agora_total + (CK.agora_total === 1 ? ' perfil fez' : ' perfis fizeram') + ' check-in nas últimas 12h' : '';
+    if (!temLocal) $('ckStatus').textContent = 'Este lugar ainda não tem a localização marcada, então o check-in ainda não funciona aqui.';
+    else if (CK.meu_ultimo) $('ckStatus').textContent = '✓ Seu último check-in aqui: ' + hora(CK.meu_ultimo) + '. O check-in vale como "estive aqui" e libera avaliar o lugar.';
+    else $('ckStatus').textContent = 'Está aqui agora? Faça check-in: o celular confere pelo GPS se você está no lugar (até ' + CK.raio_m + ' m). Vale como "estive aqui" e libera avaliar o lugar.';
+    $('ckFazer').disabled = !temLocal;
+    if (temLocal) $('mapa').href = 'https://www.google.com/maps/search/?api=1&query=' + CK.lat + ',' + CK.lng;
+    // Quem está aqui agora (só quem escolheu aparecer)
+    const box = $('ckLista'); box.innerHTML = '';
+    (CK.agora || []).forEach(p => {
+      const a = el('a', 'ck-pessoa'); a.href = p.membro === eu.id ? 'meu-perfil.html' : 'perfil.html?id=' + encodeURIComponent(p.membro);
+      const av = el('span', 'av'); avatar(av, p, 80);
+      const t = el('div'); const b = el('b'); b.append(sexos(p), ' ' + p.apelido + (p.uf ? ' . ' + p.uf : ''));
+      t.append(b, el('small', 'suave', ' · check-in ' + new Date(p.quando).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })));
+      a.append(av, t); box.appendChild(a);
+    });
+    // Marcar a localização (admin, quem criou, responsável)
+    $('ckMarcar').classList.toggle('oculto', !CK.posso_marcar);
+    $('ckLocalTxt').textContent = temLocal ? '✓ marcada (raio ' + CK.raio_m + ' m)' : '— ainda não marcada';
+    $('ckRaio').value = String([80, 150, 250, 400].reduce((m, v) => Math.abs(v - CK.raio_m) < Math.abs(m - CK.raio_m) ? v : m, 150));
+  }
+
+  $('ckFazer').addEventListener('click', async () => {
+    $('ckFazer').disabled = true; msg('ckMsg', 'info', '📡 Pegando a sua localização pelo GPS…');
+    try {
+      const c = await posicao();
+      const { data, error } = await sb.rpc('fazer_checkin', { p_lugar: id, p_lat: c.latitude, p_lng: c.longitude,
+        p_precisao: Math.round(c.accuracy || 0), p_visivel: visivel, p_evento: eventoCk });
+      if (error) throw new Error(error.message);
+      const r = data && data[0];
+      msg('ckMsg', r && r.ok ? 'ok' : 'erro', (r && r.mensagem) || 'Não foi possível.');
+      if (r && r.ok) { try { navigator.vibrate && navigator.vibrate(80); } catch (e) {} carregarCheckin(); carregarQuem(); carregar_estive(); }
+    } catch (e) { msg('ckMsg', 'erro', e.message); }
+    $('ckFazer').disabled = false;
+  });
+  // depois do check-in, libera o botão de avaliar sem recarregar a página
+  function carregar_estive() { if (L) L.estive = true; }
+
+  async function salvarLocal(lat, lng) {
+    const { error } = await sb.rpc('definir_local_lugar', { p_lugar: id, p_lat: lat, p_lng: lng, p_raio: Number($('ckRaio').value) });
+    if (error) { msg('ckMarcarMsg', 'erro', error.message); return false; }
+    msg('ckMarcarMsg', 'ok', 'Localização salva ✓ O check-in já funciona aqui.'); $('ckAchado').classList.add('oculto'); carregarCheckin(); return true;
+  }
+  $('ckAqui').addEventListener('click', async () => {
+    msg('ckMarcarMsg', 'info', '📡 Pegando a localização…');
+    try {
+      const c = await posicao();
+      if (c.accuracy > 100) { msg('ckMarcarMsg', 'erro', 'O GPS está impreciso (' + Math.round(c.accuracy) + ' m). Vá para a porta da casa, ao ar livre, e tente de novo.'); return; }
+      salvarLocal(c.latitude, c.longitude);
+    } catch (e) { msg('ckMarcarMsg', 'erro', e.message); }
+  });
+  $('ckRaio').addEventListener('change', () => { if (CK && CK.lat != null) salvarLocal(CK.lat, CK.lng); });
+  // Busca gratuita no OpenStreetMap (sem custo do Google)
+  $('ckBuscar').addEventListener('click', async () => {
+    const q = [L.endereco, L.cidade, L.uf, 'Brasil'].filter(Boolean).join(', ');
+    if (!L.endereco) { msg('ckMarcarMsg', 'erro', 'Coloque o endereço do lugar primeiro (em Editar informações).'); return; }
+    msg('ckMarcarMsg', 'info', '🔎 Procurando "' + q + '"…');
+    try {
+      const r = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=br&q=' + encodeURIComponent(q),
+        { referrerPolicy: 'strict-origin-when-cross-origin', headers: { 'Accept-Language': 'pt-BR' } });
+      const lista = await r.json();
+      if (!lista.length) { msg('ckMarcarMsg', 'erro', 'Não achei este endereço no mapa. Confira o endereço ou use "Estou na casa".'); return; }
+      const a = lista[0], lat = Number(a.lat), lng = Number(a.lon);
+      msg('ckMarcarMsg');
+      const box = $('ckAchado'); box.innerHTML = ''; box.classList.remove('oculto');
+      box.append(el('div', null, 'Encontrei: ' + a.display_name));
+      const ver = el('a', null, '🗺️ conferir no mapa'); ver.href = 'https://www.google.com/maps/search/?api=1&query=' + lat + ',' + lng; ver.target = '_blank'; ver.rel = 'noopener noreferrer';
+      const ok = el('button', 'btn', 'Está certo, salvar'); ok.type = 'button'; ok.style.marginTop = '8px';
+      ok.addEventListener('click', () => salvarLocal(lat, lng));
+      box.append(ver, ok);
+    } catch (e) { msg('ckMarcarMsg', 'erro', 'Não consegui buscar agora. Tente de novo ou use "Estou na casa".'); }
+  });
+  if (qs.get('checkin')) setTimeout(() => { $('ckBox').classList.add('ck-foco'); $('ckBox').scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 600);
 
   async function carregarQuem() {
     const { data } = await sb.rpc('quem_esteve_no_lugar', { p_lugar: id });

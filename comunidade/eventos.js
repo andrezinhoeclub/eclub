@@ -1,4 +1,4 @@
-// eventos.js — v2.4 — eventos no modelo do CRS: agenda por estado, criar (evento/agenda/viagem),
+// eventos.js — v2.5 — eventos no modelo do CRS: agenda por estado, criar (evento/agenda/viagem),
 //                      lista aberta/fechada/secreta, chat do evento, confirmados/pendentes, gerenciar convidados
 (async function () {
   'use strict';
@@ -393,6 +393,12 @@
       const tx = el('span', 'tx'); tx.appendChild(el('b', null, e.local || ''));
       const nt = el('small'); nt.textContent = e.lugar_total ? '★'.repeat(Math.round(e.lugar_media)) + '☆'.repeat(5 - Math.round(e.lugar_media)) + ' (' + e.lugar_total + ') · ver o lugar ›' : 'ver o lugar e avaliações ›';
       tx.appendChild(nt); c.append(th, tx); $('dLocal').appendChild(c);
+      // No dia do evento (3h antes até 10h depois do início): atalho para o check-in
+      const ini = new Date(e.inicio).getTime(), agora = Date.now();
+      if (e.tipo !== 'viagem' && agora > ini - 3 * 3600e3 && agora < (e.fim ? new Date(e.fim).getTime() : ini + 10 * 3600e3)) {
+        const ck = el('a', 'btn', '📍 Cheguei! Fazer check-in'); ck.href = 'lugar.html?id=' + e.lugar + '&checkin=1&evento=' + e.id;
+        ck.style.cssText = 'display:block;text-align:center;margin-top:8px;text-decoration:none'; $('dLocal').appendChild(ck);
+      }
     } else $('dLocal').appendChild(el('b', null, e.local || ''));
     $('dEndereco').innerHTML = '';
     const end = [e.endereco, e.cidade && (e.cidade + (e.uf ? ' - ' + e.uf : ''))].filter(Boolean).join(', ');
