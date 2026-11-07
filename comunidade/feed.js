@@ -1,4 +1,4 @@
-// feed.js — v1.4 — publicações (curtir, comentar, seguir) e mural de recados
+// feed.js — v1.5 — publicações (curtir, comentar, seguir) e mural de recados
 (function () {
   'use strict';
   const { sb, links, fotoProtegida, abrirVisor, sexos, avatar, tempo, toast, flyer } = window.BASE;
@@ -8,6 +8,65 @@
     if (cls) e.className = cls;
     if (texto != null) e.textContent = texto;
     return e;
+  }
+
+  // ---------- Cartão do check-in (mapinha + lugar + quem esteve), como no CRS ----------
+  const CSS_CK = `
+.ckc{margin:8px 0 4px;border:1px solid var(--linha);border-radius:12px;overflow:hidden;background:var(--cartao2)}
+.ckc .mapa{position:relative;height:130px;overflow:hidden;background:#d9d3c7}
+.ckc .mapa .tiles{position:absolute;width:768px;height:768px;display:grid;grid-template-columns:repeat(3,256px)}
+.ckc .mapa .tiles img{width:256px;height:256px;display:block}
+.ckc .mapa .pino{position:absolute;left:50%;top:65px;transform:translate(-50%,-100%);font-size:30px;line-height:1;filter:drop-shadow(0 2px 2px #0006)}
+.ckc .mapa .osm{position:absolute;right:4px;bottom:2px;font-size:9px;color:#333;background:#fff9;padding:0 3px;border-radius:3px}
+.ckc .casa{display:flex;gap:10px;align-items:center;padding:10px 12px;text-decoration:none;color:var(--texto)}
+.ckc .casa .tx{flex:1;min-width:0}
+.ckc .casa b{display:block;font-size:1.02rem}
+.ckc .casa .est{color:var(--marca);font-size:.85rem}
+.ckc .casa small{display:block;color:var(--suave);font-size:.78rem}
+.ckc .casa img{width:62px;height:62px;border-radius:8px;object-fit:cover;flex:0 0 62px}
+.ckc .faixa{background:#2f9e44;color:#fff;text-align:center;font:700 .72rem Inter,sans-serif;letter-spacing:.06em;padding:5px}
+.ckc .gente a{display:flex;gap:10px;align-items:center;padding:7px 12px;border-top:1px solid var(--linha);text-decoration:none;color:var(--texto);font-size:.88rem}
+.ckc .gente .av{width:30px;height:30px;border-radius:50%;overflow:hidden;flex:0 0 30px;display:flex;align-items:center;justify-content:center;background:var(--cartao)}
+.ckc .gente .av canvas{width:100%;height:100%}
+.ckc .gente small{display:block;color:var(--suave);font-size:.74rem}`;
+  function cssCk() { if (document.getElementById('css-ckc')) return; const s = document.createElement('style'); s.id = 'css-ckc'; s.textContent = CSS_CK; document.head.appendChild(s); }
+  function miniMapa(lat, lng) {
+    const z = 16, n = Math.pow(2, z), r = lat * Math.PI / 180;
+    const xt = (lng + 180) / 360 * n, yt = (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n;
+    const tx = Math.floor(xt), ty = Math.floor(yt), px = (xt - tx) * 256, py = (yt - ty) * 256;
+    const m = el('div', 'mapa'), t = el('div', 'tiles');
+    for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) {
+      const im = el('img'); im.alt = ''; im.loading = 'lazy'; im.referrerPolicy = 'strict-origin-when-cross-origin';
+      im.src = 'https://tile.openstreetmap.org/' + z + '/' + (tx + i) + '/' + (ty + j) + '.png'; t.appendChild(im);
+    }
+    t.style.left = 'calc(50% - ' + Math.round(256 + px) + 'px)'; t.style.top = Math.round(65 - 256 - py) + 'px';
+    m.append(t, el('span', 'pino', '📍'), el('span', 'osm', '© OpenStreetMap'));
+    return m;
+  }
+  const horaCk = (iso) => { const d = new Date(iso), h = new Date(); const hoje = d.toDateString() === h.toDateString();
+    return (hoje ? 'Hoje' : d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })) + ', às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + 'h'; };
+  async function cartaoCheckin(box, p) {
+    const { data } = await sb.rpc('cartoes_checkin', { p_posts: [p.id] });
+    const k = data && data[0]; if (!k) return;
+    cssCk(); box.innerHTML = '';
+    const card = el('div', 'ckc');
+    if (k.lat != null && k.lng != null) card.appendChild(miniMapa(k.lat, k.lng));
+    const casa = el('a', 'casa'); casa.href = 'lugar.html?id=' + k.lugar;
+    const tx = el('div', 'tx'); tx.appendChild(el('b', null, k.nome));
+    if (k.media) tx.appendChild(el('span', 'est', '★'.repeat(Math.round(k.media)) + '☆'.repeat(5 - Math.round(k.media)) + ' ' + String(k.media).replace('.', ',')));
+    tx.appendChild(el('small', null, [k.endereco, k.cidade && (k.cidade + (k.uf ? ' - ' + k.uf : ''))].filter(Boolean).join(', ')));
+    casa.appendChild(tx);
+    if (k.foto) { const im = el('img'); im.alt = ''; im.src = flyer(k.foto); casa.appendChild(im); }
+    card.appendChild(casa);
+    if (k.estiveram) card.appendChild(el('div', 'faixa', k.estiveram + (k.estiveram === 1 ? ' PESSOA ESTEVE AQUI' : ' PESSOAS ESTIVERAM AQUI')));
+    const g = el('div', 'gente');
+    (k.pessoas || []).forEach(q => {
+      const a = el('a'); a.href = 'perfil.html?id=' + encodeURIComponent(q.membro);
+      const av = el('span', 'av'); avatar(av, q, 80);
+      const t = el('div'); const b = el('b'); b.append(sexos(q), ' ' + q.apelido + (q.uf ? ' . ' + q.uf : ''));
+      t.append(b, el('small', null, horaCk(q.quando))); a.append(av, t); g.appendChild(a);
+    });
+    card.appendChild(g); box.appendChild(card);
   }
 
   function cartao(p, eu, aoMudar) {
@@ -87,7 +146,11 @@
     }
 
     // Texto
-    if (p.texto) c.appendChild(el('div', 'txt', p.texto));
+    if (p.texto && /^📍 Fez check-in em /.test(p.texto)) {
+      const sub = cab.querySelector('small'); if (sub) sub.textContent = 'Fez check-in ' + horaCk(p.criado_em);
+      const box = el('div'); box.appendChild(el('div', 'txt', p.texto)); c.appendChild(box);
+      cartaoCheckin(box, p);
+    } else if (p.texto) c.appendChild(el('div', 'txt', p.texto));
 
     // Fotos
     if (p.fotos && p.fotos.length) {

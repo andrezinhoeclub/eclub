@@ -1,4 +1,4 @@
-// base.js — v3.3 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v3.4 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -598,7 +598,7 @@
     const bb = (n, rotulo, href) => '<' + (href ? 'a href="' + href + '"' : 'button type="button"') + ' data-id="' + n + '">' +
       icone(n) + '<span>' + rotulo + '</span><span class="bolinha" id="bb_' + n + '"></span></' + (href ? 'a' : 'button') + '>';
     baixo.innerHTML = '<nav>' + bb('sigame', 'Siga-me', 'inicio.html') + bb('ultimas', 'Últimas', 'inicio.html?aba=ultimas') +
-      bb('radar', 'Radar', 'aovivo.html') + bb('forum', 'Fórum') + bb('grupos', 'Grupos') + '</nav>';
+      bb('radar', 'Radar', 'radar.html') + bb('forum', 'Fórum') + bb('grupos', 'Grupos') + '</nav>';
     document.body.appendChild(baixo);
 
     [...topo.querySelectorAll('[data-id]'), ...baixo.querySelectorAll('[data-id]')].forEach(el => {
@@ -621,6 +621,8 @@
       const total = (a.mensagens || 0) + (a.recados || 0);
       document.title = document.title.replace(/^\(\d+\+?\) /, '');
       if (total) document.title = '(' + total + ') ' + document.title;
+      // Cutucadas novas no Radar
+      sb.rpc('radar_avisos').then(({ data: rc }) => { const b = $('bb_radar'); if (b) b.textContent = rc ? (rc > 9 ? '9+' : rc) : ''; });
       // Respostas novas da administração (aparece no ícone do menu)
       const { data: sn } = await sb.rpc('suporte_avisos');
       suporteNovas = sn || 0;
@@ -715,7 +717,8 @@
     item('amigos', 'Meus Seguidores', null);
     item('sigame', 'Siga-me', 'inicio.html');
     item('ultimas', 'Últimas Atualizações', 'inicio.html?aba=ultimas');
-    item('radar', 'Radar', 'aovivo.html');
+    item('radar', 'Radar', 'radar.html');
+    item('ultimas', 'Ao Vivo (online agora)', 'aovivo.html');
     item('forum', 'Fórum', null);
     item('grupos', 'Círculos', null);
     item('agenda', 'Eventos', 'eventos.html');

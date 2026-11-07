@@ -1,4 +1,4 @@
-// perfil.js — v2.4 — perfil de um membro (layout em cartão central)
+// perfil.js — v2.5 — perfil de um membro (layout em cartão central)
 (async function () {
   'use strict';
   const { sb, $, msg, idades, visto, avatar, sexos, gradeFotos, moldura, exigirMembro, emBreve, toast,
@@ -30,6 +30,8 @@
   $('txtNome').append(sexos(p), p.apelido);
   $('txtUf').textContent = '. ' + p.uf;
   $('txtStatus').textContent = online ? 'Online agora' : visto(p.ultimo_acesso);
+  // "A fim de … hoje" (Radar)
+  sb.rpc('a_fim_de', { p_membro: p.id }).then(({ data: af }) => { if (af) { $('aFim').textContent = '🔥 A fim de ' + af.toLowerCase() + ' hoje!'; $('aFim').classList.remove('oculto'); } });
   if (!online) $('txtStatus').style.color = 'var(--suave)';
   $('txtCidade').textContent = p.cidade + ' . ' + p.uf;
 
