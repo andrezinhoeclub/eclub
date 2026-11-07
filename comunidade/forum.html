@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Fórum CL</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=3.2">
+</head>
+<body>
+<style>
+.fo-cab{display:flex;align-items:center;gap:10px;padding:12px 14px}
+.fo-cab h1{margin:0;font-size:1.2rem;flex:1}
+.fo-intro{padding:14px;font-size:.9rem;line-height:1.55;color:var(--suave)}
+.fo-intro b{color:var(--texto)}
+.fo-abas{display:flex;background:var(--cartao);border-bottom:1px solid var(--linha)}
+.fo-abas button{flex:1;background:none;border:0;border-bottom:3px solid transparent;padding:12px 6px;font:600 .9rem Inter,sans-serif;color:var(--suave);cursor:pointer}
+.fo-abas button.sel{color:var(--texto);border-bottom-color:var(--marca)}
+.fo-sub{display:flex;gap:8px;padding:10px 12px;background:var(--cartao);border-bottom:1px solid var(--linha);flex-wrap:wrap}
+.fo-t{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:var(--cartao);border-bottom:1px solid var(--linha);text-decoration:none;color:var(--texto)}
+.fo-t .av,.fo-r .av{width:44px;height:44px;border-radius:50%;overflow:hidden;flex:0 0 44px;background:var(--cartao2);display:flex;align-items:center;justify-content:center}
+.fo-t .av canvas,.fo-r .av canvas{width:44px!important;height:44px!important;display:block}
+.fo-t .tx{flex:1;min-width:0}
+.fo-t b{display:block;font-size:.98rem;line-height:1.3}
+.fo-t small{display:block;color:var(--suave);font-size:.78rem;margin-top:3px}
+.fo-t .num{flex:0 0 auto;text-align:center;font-size:.72rem;color:var(--suave)}
+.fo-t .num b{font-size:1.05rem;color:var(--marca)}
+.fo-novo{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--erro);margin-right:5px;vertical-align:middle}
+.fo-r{display:flex;gap:12px;padding:12px 14px;background:var(--cartao);border-bottom:1px solid var(--linha)}
+.fo-r .tx{flex:1;min-width:0}
+.fo-r .quem{font-size:.85rem}
+.fo-r .quem a{font-weight:700;color:var(--texto);text-decoration:none}
+.fo-r .quem small{color:var(--suave);font-size:.75rem}
+.fo-r p{margin:5px 0 0;white-space:pre-wrap;word-wrap:break-word;line-height:1.5}
+.fo-r .ap{background:none;border:0;color:var(--suave);font-size:.75rem;cursor:pointer;padding:4px 0}
+.fo-r.abertura{background:var(--cartao2)}
+.fo-stats{padding:12px 14px;font-size:.85rem;color:var(--suave);line-height:1.6}
+.fo-tag{display:inline-block;font-size:.68rem;font-weight:700;padding:1px 6px;border-radius:999px;border:1px solid var(--linha);margin-left:4px;vertical-align:middle;color:var(--suave)}
+</style>
+
+<main>
+  <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
+  <div class="oculto" id="tela">
+    <div class="cartao fo-cab"><img src="logo-ouro.png" alt="" style="width:30px;height:30px;object-fit:contain"><h1 id="titulo">Fórum CL</h1><a href="#" id="voltar" class="oculto">‹ voltar</a></div>
+
+    <!-- LISTA -->
+    <div id="vLista">
+      <div class="cartao fo-intro">
+        <b>Seja bem-vindo ao Fórum CL!</b> Um espaço para debate de ideias e opiniões, troca de experiências, relatos, interação e muito mais!
+        Antes de criar um novo tópico, navegue pelos que já existem e participe. <span id="txtMinimo"></span>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:12px">
+          <input type="search" id="busca" placeholder="Busca de Tópicos e Postagens…" maxlength="60">
+          <button class="btn" type="button" id="bBuscar" style="width:auto;padding:10px 14px">🔎</button>
+        </div>
+        <button class="btn" type="button" id="bCriar" style="width:100%;margin-top:10px">✏️ Criar Tópico</button>
+      </div>
+      <div class="fo-abas" id="abas"><button type="button" class="sel" data-a="topicos">Tópicos</button><button type="button" data-a="textos">Textos</button></div>
+      <div class="fo-sub" id="sub">
+        <span class="chip sel" data-s="principais">Principais</span><span class="chip" data-s="outros">Outros</span><span class="chip" data-s="meus">Que participo</span>
+      </div>
+      <div id="lista"></div>
+      <div class="cartao fo-stats" id="stats"></div>
+      <div class="cartao fo-intro">
+        <b>Sobre as abas:</b> na aba TÓPICOS estão os tópicos de debate do Fórum; na aba TEXTOS estão as publicações de texto do Siga-me.
+        Em PRINCIPAIS ficam os tópicos mais debatidos e que você não ocultou; em OUTROS, os menos debatidos e os que você ocultou.
+        Dentro de um tópico, toque em ⭐ <b>Favorito</b> para fixá-lo em Principais ou em <b>Ocultar</b> para movê-lo para Outros.
+        <details style="margin-top:10px"><summary style="cursor:pointer;color:var(--marca);font-weight:600">Regras do Fórum (clique aqui)</summary>
+          <ol style="padding-left:18px;margin:8px 0 0">
+            <li>Respeito sempre: discordar é permitido, ofender não.</li>
+            <li>É proibido expor qualquer pessoa: nada de nomes reais, telefones, endereços, prints de conversas ou fotos de terceiros.</li>
+            <li>Sem anúncios, vendas, cobrança por encontros ou divulgação de outros sites.</li>
+            <li>Nada de rosto à mostra, menores de idade ou conteúdo ilegal — mesmo em texto.</li>
+            <li>Um assunto por tópico. Procure antes se o assunto já existe.</li>
+            <li>A administração pode fechar, fixar ou apagar tópicos e respostas que fujam das regras.</li>
+          </ol></details>
+      </div>
+    </div>
+
+    <!-- CRIAR -->
+    <div id="vCriar" class="oculto">
+      <div class="cartao">
+        <label class="campo" for="cTitulo">Título do tópico</label>
+        <input type="text" id="cTitulo" maxlength="120" placeholder="Ex.: Primeira vez numa casa de swing, dicas?">
+        <label class="campo" for="cTexto">Texto</label>
+        <textarea id="cTexto" rows="7" maxlength="5000" placeholder="Conte o assunto que você quer debater…"></textarea>
+        <button class="btn" type="button" id="cPublicar" style="margin-top:10px">Publicar tópico</button>
+        <div class="msg" id="mCriar"></div>
+      </div>
+    </div>
+
+    <!-- TÓPICO -->
+    <div id="vTopico" class="oculto">
+      <div id="tCab"></div>
+      <div id="tRespostas"></div>
+      <div class="cartao" id="tResponder">
+        <textarea id="rTexto" rows="4" maxlength="5000" placeholder="Escreva sua resposta…"></textarea>
+        <button class="btn" type="button" id="rEnviar" style="margin-top:8px">Responder</button>
+        <div class="msg" id="mResp"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer><a href="regras.html">Regras e privacidade</a> · forum.html v1.0</footer>
+
+<script src="config.js?v=1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="base.js?v=3.7"></script>
+<script src="forum.js?v=1.0"></script>
+</body>
+</html>

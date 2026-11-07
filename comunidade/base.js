@@ -1,4 +1,4 @@
-// base.js — v3.6 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v3.7 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -659,7 +659,7 @@
     const bb = (n, rotulo, href) => '<' + (href ? 'a href="' + href + '"' : 'button type="button"') + ' data-id="' + n + '">' +
       icone(n) + '<span>' + rotulo + '</span><span class="bolinha" id="bb_' + n + '"></span></' + (href ? 'a' : 'button') + '>';
     baixo.innerHTML = '<nav>' + bb('sigame', 'Siga-me', 'inicio.html') + bb('ultimas', 'Últimas', 'inicio.html?aba=ultimas') +
-      bb('radar', 'Radar', 'radar.html') + bb('forum', 'Fórum') + bb('grupos', 'Grupos') + '</nav>';
+      bb('radar', 'Radar', 'radar.html') + bb('forum', 'Fórum', 'forum.html') + bb('grupos', 'Grupos') + '</nav>';
     document.body.appendChild(baixo);
 
     [...topo.querySelectorAll('[data-id]'), ...baixo.querySelectorAll('[data-id]')].forEach(el => {
@@ -766,9 +766,9 @@
       'Fotos de Rosto': 'rosto album privado', 'Minha Agenda': 'agenda eventos festas viagens', 'Meus Depoimentos': 'depoimento testemunho elogio',
       'Minhas Paqueras': 'paquera flerte favoritos retribuida', 'Minhas Anotações': 'anotacao notas lembrete', 'Convidar Amigos': 'convite convidar indicar',
       'Meus Seguidores': 'seguidores seguir seguindo', 'Siga-me': 'feed inicio publicacoes', 'Últimas Atualizações': 'ultimas novidades recentes',
-      'Radar': 'radar gps perto localizacao pessoas cutucar', 'Ao Vivo (online agora)': 'online ao vivo', 'Fórum': 'forum topicos debate',
+      'Radar CL': 'radar gps perto localizacao pessoas cutucar', 'Ao Vivo (online agora)': 'online ao vivo', 'Fórum CL': 'forum topicos debate discussao perguntas',
       'Círculos': 'grupos circulos comunidades', 'Eventos': 'evento festa balada agenda', 'Fazer Check-in': 'checkin check-in gps lugar casa',
-      'Ranking': 'ranking top votos', 'Editar Meu Perfil': 'editar perfil dados proposta bio', 'Trocar Senha': 'senha trocar',
+      'Ranking TOP CL': 'ranking top votos', 'Editar Meu Perfil': 'editar perfil dados proposta bio', 'Trocar Senha': 'senha trocar',
       'Acesso Rápido (código)': 'codigo pin acesso rapido', 'Privacidade e Segurança': 'privacidade seguranca', 'Aparelhos e Acessos': 'aparelhos celular acessos sair',
       'Perfis Bloqueados': 'bloqueio bloquear desbloquear', 'Letras': 'fonte tamanho letras grandes', 'Informativos': 'regras termos normas lgpd privacidade',
       'Ajuda': 'ajuda duvidas perguntas faq', 'Instalar o App no celular': 'app instalar baixar apk', 'Falar com a Administração': 'administracao suporte contato denunciar',
@@ -804,13 +804,13 @@
     item('amigos', 'Meus Seguidores', 'minhas.html?ver=seguidores');
     item('sigame', 'Siga-me', 'inicio.html');
     item('ultimas', 'Últimas Atualizações', 'inicio.html?aba=ultimas');
-    item('radar', 'Radar', 'radar.html');
+    item('radar', 'Radar CL', 'radar.html');
     item('ultimas', 'Ao Vivo (online agora)', 'aovivo.html');
-    item('forum', 'Fórum', null);
+    item('forum', 'Fórum CL', 'forum.html');
     item('grupos', 'Círculos', null);
     item('agenda', 'Eventos', 'eventos.html');
     item('pin', 'Fazer Check-in', 'checkin.html');
-    item('trofeu', 'Ranking', null);
+    item('trofeu', 'Ranking TOP CL', null);
 
     secao('Configurações');
     item('lapis', 'Editar Meu Perfil', 'meu-perfil.html');

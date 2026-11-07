@@ -1,4 +1,4 @@
-// admin.js — v2.12 — verificações, membros (privilégios), planos, destaques, lugares, denúncias e suporte
+// admin.js — v2.13 — verificações, membros (privilégios), planos, destaques, lugares, denúncias e suporte
 (async function () {
   'use strict';
   const { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, moldura, toast } = window.BASE;
@@ -47,7 +47,7 @@
   }));
 
   // Segurança do login (aparelhos por vez e tempo sem uso)
-  const REGRAS_SG = { sgSolteiro: ['acessos_solteiro', 1], sgSolteira: ['acessos_solteira', 1], sgCasal: ['acessos_casal', 2], sgInativo: ['inatividade_min', 30] };
+  const REGRAS_SG = { sgSolteiro: ['acessos_solteiro', 1], sgSolteira: ['acessos_solteira', 1], sgCasal: ['acessos_casal', 2], sgInativo: ['inatividade_min', 30], sgForum: ['forum_min_respostas', 25] };
   async function carregarSeguranca() {
     const { data } = await sb.from('config').select('chave, valor').in('chave', Object.values(REGRAS_SG).map(x => x[0]));
     const v = {}; (data || []).forEach(r => { v[r.chave] = r.valor; });
@@ -55,8 +55,9 @@
   }
   $('sgSalvar').addEventListener('click', async () => {
     const linhas = Object.entries(REGRAS_SG).map(([id, [k, pad]]) => {
-      let n = parseInt($(id).value, 10); if (!n || n < 1) n = pad;
-      if (k === 'inatividade_min') n = Math.min(1440, Math.max(5, n)); else n = Math.min(5, n);
+      let n = parseInt($(id).value, 10); if (isNaN(n) || (n < 1 && k !== 'forum_min_respostas')) n = pad;
+      if (k === 'forum_min_respostas') n = Math.min(200, Math.max(0, n));
+      else if (k === 'inatividade_min') n = Math.min(1440, Math.max(5, n)); else n = Math.min(5, n);
       return { chave: k, valor: n };
     });
     const { error } = await sb.from('config').upsert(linhas);
