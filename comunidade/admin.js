@@ -1,4 +1,4 @@
-// admin.js — v2.14 — verificações, membros (privilégios), planos, destaques, lugares, denúncias e suporte
+// admin.js — v2.15 — verificações, membros (privilégios), planos, destaques, lugares, denúncias e suporte
 (async function () {
   'use strict';
   const { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, moldura, toast } = window.BASE;
@@ -32,6 +32,16 @@
       resultado(card, erro ? 'erro' : 'ok', prefixo + (erro ? ' — mas o e-mail NÃO foi enviado: ' + erro : ' — e-mail enviado ao membro ✉️'));
     } catch (e) { resultado(card, 'erro', prefixo + ' — mas o e-mail NÃO foi enviado.'); }
   }
+  // Banir = apagar a conta inteira (função "excluir-conta" no Supabase): perfil, apelido, fotos,
+  // conversas, tudo. O e-mail fica livre para um convite novo no futuro.
+  async function excluirConta(id) {
+    try {
+      const { data, error } = await sb.functions.invoke('excluir-conta', { body: { alvo: id } });
+      const erro = error ? ((await (error.context && error.context.json ? error.context.json().catch(() => null) : null)) || {}).erro || error.message : (data && data.erro);
+      return erro || null;
+    } catch (e) { return 'Não foi possível falar com o servidor.'; }
+  }
+  const AVISO_BANIR = 'Isso APAGA a conta inteira para sempre (perfil, fotos, conversas, tudo) e libera o apelido e o e-mail. Toque de novo para confirmar.';
   const novoEl = (tag, cls, texto) => { const e = document.createElement(tag); if (cls) e.className = cls; if (texto != null) e.textContent = texto; return e; };
 
   // ---------- Membros ----------
@@ -112,9 +122,10 @@
       botao('−30 dias', '', () => rpc(null, -30));
       if (m.status === 'aprovado') botao('Suspender', '', () => status('suspenso'));
       if (m.status === 'suspenso') botao('Reativar', 'sim', () => status('aprovado'));
-      if (m.status !== 'banido' && !ADM.has(m.id)) botao('Banir', 'nao', async () => {
-        if (!confirmar('Toque em Banir de novo para confirmar.')) return false;
-        await status('banido');
+      if (!ADM.has(m.id)) botao(m.status === 'banido' ? '🗑️ Apagar tudo' : '🚫 Banir e apagar tudo', 'nao', async () => {
+        if (!confirmar(AVISO_BANIR)) return false;
+        const erro = await excluirConta(m.id);
+        toast(erro ? 'Erro: ' + erro : m.apelido + ' foi banido e tudo foi apagado ✓');
       });
       linha.append(info, bt); $('mLista').appendChild(linha);
     });
@@ -197,7 +208,14 @@
       if (d.status !== 'descartada') tratar('descartada', 'Descartar');
       if (d.alvo_status === 'aprovado') perfilSt('suspenso', 'Suspender perfil');
       if (d.alvo_status === 'suspenso') perfilSt('aprovado', 'Reativar perfil', 'sim');
-      if (d.alvo_status !== 'banido') perfilSt('banido', 'Banir', 'nao');
+      { const b = novoEl('button', 'nao', '🚫 Banir e apagar tudo'); b.type = 'button';
+        b.addEventListener('click', async () => {
+          if (!card.dataset.ok) { card.dataset.ok = '1'; toast(AVISO_BANIR); setTimeout(() => delete card.dataset.ok, 5000); return; }
+          b.disabled = true;
+          const erro = await excluirConta(d.alvo);
+          if (erro) { toast('Erro: ' + erro); b.disabled = false; return; }
+          toast('Perfil banido e tudo apagado ✓'); carregarDenuncias();
+        }); bt.appendChild(b); }
       card.append(topo, mot, det, pub, info, bt); box.appendChild(card);
     });
   }
@@ -496,10 +514,10 @@
         const { error } = await sb.rpc('analisar_verificacao', { p_id: v.id, p_aprovar: false, p_motivo: motivo });
         if (error) { travar(false); resultado(card, 'erro', error.message); return; }
         if (banir) {
-          // Guarda as fotos como prova e encerra a conta
-          const { error: e2 } = await sb.from('perfis').update({ status: 'banido' }).eq('id', v.perfil);
-          resultado(card, e2 ? 'erro' : 'ok', e2 ? 'Recusado, mas não consegui banir: ' + e2.message
-            : 'Recusado e BANIDO. As fotos foram guardadas como prova.');
+          // Banir = apagar a conta inteira (fotos da verificação inclusive)
+          const e2 = await excluirConta(v.perfil);
+          resultado(card, e2 ? 'erro' : 'ok', e2 ? 'Recusado, mas não consegui banir: ' + e2
+            : 'Recusado e BANIDO. A conta foi apagada por completo; o e-mail fica livre para um convite novo.');
         } else {
           await apagarFotos(v.fotos);
           resultado(card, 'ok', 'Recusado. O membro vai ver o motivo e pode tentar de novo. Enviando e-mail…');

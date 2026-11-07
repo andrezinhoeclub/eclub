@@ -61,15 +61,31 @@
       <div id="listaAcessos" style="margin-top:12px"></div>
     </div>
 
+    <!-- Excluir conta -->
+    <div class="titulo-secao" id="excluir">🗑️ Excluir minha conta</div>
+    <div class="cartao" style="border-color:var(--erro)">
+      <p style="margin-top:0">Apaga <b>tudo</b> e para sempre: perfil, apelido, fotos e álbuns, conversas, recados, amizades, depoimentos, check-ins e participação no fórum. Não dá para desfazer.</p>
+      <p class="suave" style="font-size:.85rem">Depois disso o seu apelido fica livre para outra pessoa e o seu e-mail só volta à comunidade com um convite novo. Se é só uma pausa, você pode simplesmente parar de usar.</p>
+      <button class="btn secundario" id="exAbrir" type="button" style="width:100%;color:var(--erro)">Quero excluir minha conta</button>
+      <div class="oculto" id="exCaixa">
+        <label for="exPalavra">Para confirmar, escreva <b>EXCLUIR</b></label>
+        <input type="text" id="exPalavra" autocomplete="off" autocapitalize="characters" maxlength="10">
+        <label for="exSenha">Sua senha</label>
+        <input type="password" id="exSenha" autocomplete="current-password" style="width:100%;box-sizing:border-box;background:var(--cartao);border:1px solid var(--linha);color:var(--texto);border-radius:10px;padding:10px 11px;font:16px Inter,sans-serif">
+        <button class="btn" id="exConfirmar" type="button" style="width:100%;margin-top:10px;background:var(--erro);color:#fff" disabled>Excluir tudo para sempre</button>
+      </div>
+      <div class="msg" id="mExcluir"></div>
+    </div>
+
     <p class="suave" style="text-align:center"><a href="regras.html#privacidade">Como cuidamos dos seus dados (LGPD)</a></p>
   </div>
 </main>
 
-<footer><a href="regras.html">Regras e privacidade</a> · seguranca.html v1.0</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · seguranca.html v1.1</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="base.js?v=3.7"></script>
-<script src="seguranca.js?v=1.0"></script>
+<script src="seguranca.js?v=1.1"></script>
 </body>
 </html>

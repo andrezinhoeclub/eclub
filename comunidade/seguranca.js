@@ -1,4 +1,4 @@
-// seguranca.js — v1.0 — Acesso Rápido (código), Ele/Ela, aparelhos conectados e relação de acessos
+// seguranca.js — v1.1 — Acesso Rápido (código), Ele/Ela, aparelhos conectados, relação de acessos e excluir conta
 (async function () {
   'use strict';
   const { sb, $, msg, exigirLogin, exigirMembro, moldura, toast } = window.BASE;
@@ -134,6 +134,22 @@
     if (!user || !user.email) return;
     await sb.auth.resetPasswordForEmail(user.email, { redirectTo: location.origin + location.pathname.replace(/[^/]*$/, '') + 'entrar.html' });
     toast('Enviamos um e-mail para você criar uma senha nova ✓');
+  });
+
+  // ---------- Excluir minha conta ----------
+  $('exAbrir').addEventListener('click', () => { $('exCaixa').classList.remove('oculto'); $('exAbrir').classList.add('oculto'); $('exPalavra').focus(); });
+  const conferirEx = () => { $('exConfirmar').disabled = !($('exPalavra').value.trim().toUpperCase() === 'EXCLUIR' && $('exSenha').value.length >= 6); };
+  $('exPalavra').addEventListener('input', conferirEx); $('exSenha').addEventListener('input', conferirEx);
+  $('exConfirmar').addEventListener('click', async () => {
+    $('exConfirmar').disabled = true; msg('mExcluir', 'info', 'Excluindo tudo… não feche esta tela.');
+    const { data, error } = await sb.functions.invoke('excluir-conta', { body: { senha: $('exSenha').value } });
+    let erro = data && data.erro;
+    if (error && !erro) { try { erro = (await error.context.json()).erro; } catch (_) { erro = 'Não foi possível excluir agora. Tente de novo.'; } }
+    if (erro) { msg('mExcluir', 'erro', erro); conferirEx(); return; }
+    try { localStorage.clear(); } catch (_) {}
+    await sb.auth.signOut({ scope: 'local' }).catch(() => {});
+    msg('mExcluir', 'ok', 'Sua conta foi excluída. Até mais!');
+    setTimeout(() => { location.href = 'entrar.html'; }, 2500);
   });
 
   const ir = () => { const h = location.hash.slice(1); if (h && $(h)) setTimeout(() => $(h).scrollIntoView({ block: 'start' }), 300); };

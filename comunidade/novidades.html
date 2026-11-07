@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Novidades</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=3.2">
+</head>
+<body>
+<style>
+.nv-img{display:block;width:100%;height:auto;border-radius:0}
+.nv a.it{display:flex;gap:12px;align-items:center;padding:14px;background:var(--cartao);border-bottom:1px solid var(--linha);text-decoration:none;color:var(--texto)}
+.nv a.it .e{font-size:1.5rem;flex:0 0 34px;text-align:center}
+.nv a.it b{display:block}
+.nv a.it small{color:var(--suave);font-size:.84rem}
+.nv a.it::after{content:'›';margin-left:auto;color:var(--marca);font-size:1.4rem}
+</style>
+<main>
+  <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
+  <div class="oculto nv" id="tela">
+    <img class="nv-img" src="novidades.jpg?v=1" alt="Novidades da Comunidade Liberal" width="1080" height="1350">
+    <div class="titulo-secao">Toque para conhecer</div>
+    <a class="it" href="radar.html"><span class="e">📡</span><span><b>Radar CL</b><small>Pessoas e casas perto de você, “a fim de… hoje” e cutucar</small></span></a>
+    <a class="it" href="checkin.html"><span class="e">📍</span><span><b>Check-in nas casas</b><small>Pelo GPS, a qualquer hora — libera avaliar o lugar</small></span></a>
+    <a class="it" href="forum.html"><span class="e">💬</span><span><b>Fórum CL</b><small>Tópicos para debater, perguntar e trocar experiências</small></span></a>
+    <a class="it" href="minhas.html?ver=amigos"><span class="e">🤝</span><span><b>Amigos</b><small>Real, Virtual, Íntimos e Verificados por GPS</small></span></a>
+    <a class="it" href="minhas.html?ver=paqueras"><span class="e">💘</span><span><b>Paqueras secretas e Favoritos</b><small>A pessoa só fica sabendo se paquerar você de volta</small></span></a>
+    <a class="it" href="minhas.html?ver=depoimentos"><span class="e">⭐</span><span><b>Depoimentos e Anotações</b><small>Depoimentos entre amigos reais; anotações só você vê</small></span></a>
+    <a class="it" href="inicio.html?postar=foto"><span class="e">🫥</span><span><b>Esconder rostos</b><small>O app acha e borra o rosto antes de postar</small></span></a>
+    <a class="it" href="seguranca.html#codigo"><span class="e">🔢</span><span><b>Acesso Rápido</b><small>Crie seu código de 4 números</small></span></a>
+    <a class="it" href="suporte.html"><span class="e">👑</span><span><b>Falar com a Administração</b><small>Dúvidas, sugestões e problemas</small></span></a>
+  </div>
+</main>
+
+<footer><a href="regras.html">Regras e privacidade</a> · novidades.html v1.0</footer>
+
+<script src="config.js?v=1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="base.js?v=3.7"></script>
+<script src="novidades.js?v=1.0"></script>
+</body>
+</html>
