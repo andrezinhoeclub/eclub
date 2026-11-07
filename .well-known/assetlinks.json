@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "br.curitiba.eclub.comunidade",
+    "sha256_cert_fingerprints": ["E1:0D:4A:2D:F2:84:36:33:BC:CF:78:5E:0B:C7:A4:DF:67:6F:1A:7B:16:2F:F6:E7:D8:6F:32:E8:F3:28:51:AC"]
+  }
+}]
