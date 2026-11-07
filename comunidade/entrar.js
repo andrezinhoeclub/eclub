@@ -1,4 +1,4 @@
-// entrar.js — v1.6 — login, cadastro, convite (completar cadastro) e recuperação de senha
+// entrar.js — v1.7 — login, cadastro, convite (completar cadastro) e recuperação de senha
 (function () {
   'use strict';
 
@@ -278,7 +278,43 @@
   $('cSenha').addEventListener('input', () => {
     const ok = senhaBoa($('cSenha').value);
     $('dSenha').className = 'dica ' + (ok ? 'ok' : 'ruim');
+    if ($('cSenha2').value) conferirSenhas('cSenha', 'cSenha2', 'dSenha2');
   });
+
+  // ---------- Confere na hora (não espera o fim do cadastro) ----------
+  // Data de nascimento: só maiores de 18, sem datas impossíveis (ex.: 2077)
+  const hojeISO = new Date().toISOString().slice(0, 10);
+  const menos = (anos) => { const d = new Date(); d.setFullYear(d.getFullYear() - anos); return d.toISOString().slice(0, 10); };
+  ['cNasc1', 'cNasc2'].forEach(id => { $(id).max = menos(18); $(id).min = menos(100); });
+  function conferirNascimento(id, dica) {
+    const v = $(id).value, d = $(dica);
+    if (!v) { d.textContent = ''; d.className = 'dica'; return true; }
+    const i = idade(v);
+    let txt = '', ok = false;
+    if (i < 0 || v > hojeISO) txt = '✗ Data no futuro. Confira o ano (ex.: 1985).';
+    else if (i < 18) txt = '✗ Só maiores de 18 anos podem entrar na Comunidade.';
+    else if (i > 100) txt = '✗ Ano inválido. Confira a data.';
+    else { txt = '✓ ' + i + ' anos'; ok = true; }
+    d.textContent = txt; d.className = 'dica ' + (ok ? 'ok' : 'ruim');
+    return ok;
+  }
+  $('cNasc1').addEventListener('change', () => conferirNascimento('cNasc1', 'dNasc1'));
+  $('cNasc1').addEventListener('blur', () => conferirNascimento('cNasc1', 'dNasc1'));
+  $('cNasc2').addEventListener('change', () => conferirNascimento('cNasc2', 'dNasc2'));
+  $('cNasc2').addEventListener('blur', () => conferirNascimento('cNasc2', 'dNasc2'));
+  // Senhas: avisa já na segunda digitação
+  function conferirSenhas(a, b, dica) {
+    const s1 = $(a).value, s2 = $(b).value, d = $(dica);
+    if (!s2) { d.textContent = ''; d.className = 'dica'; return false; }
+    const igual = s1 === s2;
+    const parcial = !igual && s1.startsWith(s2);
+    d.textContent = igual ? '✓ As senhas conferem' : parcial ? 'Continue digitando…' : '✗ As senhas não são iguais';
+    d.className = 'dica ' + (igual ? 'ok' : parcial ? '' : 'ruim');
+    return igual;
+  }
+  $('cSenha2').addEventListener('input', () => conferirSenhas('cSenha', 'cSenha2', 'dSenha2'));
+  $('cSenha2').addEventListener('blur', () => { if ($('cSenha2').value && $('cSenha').value !== $('cSenha2').value) { $('dSenha2').textContent = '✗ As senhas não são iguais'; $('dSenha2').className = 'dica ruim'; } });
+  $('nSenha2').addEventListener('input', () => conferirSenhas('nSenha', 'nSenha2', 'dNSenha2'));
 
   $('fCadastro').addEventListener('submit', async (ev) => {
     ev.preventDefault();
@@ -293,7 +329,7 @@
     const i1 = idade(n1), i2 = tipo === 'casal' ? idade(n2) : 99;
     if (i1 < 0 || (tipo === 'casal' && i2 < 0)) return erro('Preencha a data de nascimento' + (tipo === 'casal' ? ' dos dois.' : '.'));
     if (i1 < 18 || i2 < 18) return erro('Cadastro permitido somente para maiores de 18 anos' + (tipo === 'casal' ? ' (os dois).' : '.'));
-    if (i1 > 105 || i2 > 105) return erro('Data de nascimento inválida.');
+    if (i1 > 100 || i2 > 100) return erro('Data de nascimento inválida.');
 
     const apelido = $('cApelido').value.trim();
     if (!apelidoOk) return erro('Escolha um apelido válido e disponível.');

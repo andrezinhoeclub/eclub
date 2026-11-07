@@ -1,4 +1,4 @@
-// meu-perfil.js — v2.6 — editar perfil (com detalhes Ele/Ela), fotos, álbum privado e bloqueios
+// meu-perfil.js — v2.7 — editar perfil (com detalhes Ele/Ela), fotos, álbum privado e bloqueios
 (async function () {
   'use strict';
   const { sb, $, msg, formacao, links, fotoProtegida, gradeFotos, sexos,
@@ -53,6 +53,16 @@
     const info = det['p' + n];
     const box = novoEl('div', 'cartao'); box.style.margin = '0'; box.style.background = 'var(--cartao2)';
     box.appendChild(novoEl('h2', null, eu.tipo === 'casal' ? (sx === 'M' ? 'Ele' : 'Ela') + (eu.sexo_1 === eu.sexo_2 ? ' ' + n : '') : 'Sobre mim'));
+    if (eu.tipo === 'casal') {   // nome de cada um no perfil (como o "Sra Equalize" do CRS)
+      box.appendChild(novoEl('label', 'campo', 'Como chamar ' + (sx === 'M' ? 'o Ele' : 'a Ela') + ' no perfil'));
+      const i = document.createElement('input'); i.type = 'text'; i.maxLength = 24;
+      i.placeholder = sx === 'M' ? 'Ex.: Sr. Safado, Marido, Léo…' : 'Ex.: Sra. Equalize, Esposa, Mari…';
+      i.value = info.nome || '';
+      i.addEventListener('input', () => { const v = i.value.replace(/[<>]/g, '').trim(); info.nome = v || undefined; });
+      box.appendChild(i);
+      box.appendChild(novoEl('div', 'suave', 'Aparece no perfil no lugar de "' + (sx === 'M' ? 'Ele' : 'Ela') + '". Não use nome verdadeiro.'));
+      box.lastChild.style.cssText = 'font-size:.78rem;margin-top:4px';
+    }
     CAMPOS.pessoa.forEach(([k, rot, ops]) => {
       box.appendChild(novoEl('label', 'campo', rot));
       if (ops === 'numero') {

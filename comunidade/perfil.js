@@ -1,4 +1,4 @@
-// perfil.js — v2.6 — perfil de um membro (layout em cartão central)
+// perfil.js — v2.7 — perfil de um membro (layout em cartão central)
 (async function () {
   'use strict';
   const { sb, $, msg, idades, visto, avatar, sexos, gradeFotos, moldura, exigirMembro, emBreve, toast,
@@ -39,7 +39,8 @@
   const badge = (t, cls, alvo) => (alvo || $('badges')).appendChild(el('span', 'badge ' + (cls || ''), t));  // devolve o elemento
   if (p.verificado) badge('✓ Maioridade Verificada', 'verde');
   badge('👑 ' + (anos >= 1 ? anos + (anos === 1 ? ' Ano' : ' Anos') : 'Novo') + ' na comunidade', 'ouro');
-  const nomePessoa = (sx, n) => (p.tipo !== 'casal' ? '' : (sx === 'M' ? 'Ele' : 'Ela') + (p.sexo_1 === p.sexo_2 ? ' ' + n : '') + ': ');
+  const nomeDe = (sx, n) => ((d['p' + n] || {}).nome) || ((sx === 'M' ? 'Ele' : 'Ela') + (p.sexo_1 === p.sexo_2 ? ' ' + n : ''));
+  const nomePessoa = (sx, n) => (p.tipo !== 'casal' ? '' : nomeDe(sx, n) + ': ');
   badge(nomePessoa(p.sexo_1, 1) + [signo(p.aniv_1), p.idade_1 + ' Anos'].filter(Boolean).join(' . '), p.sexo_1 === 'M' ? 'azul' : 'rosa', $('badgesIdade'));
   if (p.tipo === 'casal') badge(nomePessoa(p.sexo_2, 2) + [signo(p.aniv_2), p.idade_2 + ' Anos'].filter(Boolean).join(' . '), p.sexo_2 === 'M' ? 'azul' : 'rosa', $('badgesIdade'));
   if (p.tipo === 'casal') {
@@ -192,7 +193,7 @@
     const linhas = [['Idade', idade + ' Anos'], ['Signo', signo(aniv)], ['Aniversário', mesDe(aniv)]];
     CAMPOS.pessoa.forEach(([k, rot]) => linhas.push([rot.replace(' (cm)', '').replace(' (kg)', ''),
       info[k] ? info[k] + (k === 'altura' ? ' cm' : k === 'peso' ? ' kg' : '') : '']));
-    return tabela(p.tipo === 'casal' ? (sx === 'M' ? 'Ele' : 'Ela') : (sx === 'M' ? 'Ele' : 'Ela'), linhas);
+    return tabela(p.tipo === 'casal' ? nomeDe(sx, n) : (sx === 'M' ? 'Ele' : 'Ela'), linhas);
   }
   $('infoPessoas').appendChild(pessoa(1, p.sexo_1, p.idade_1, p.aniv_1));
   if (p.tipo === 'casal') $('infoPessoas').appendChild(pessoa(2, p.sexo_2, p.idade_2, p.aniv_2));

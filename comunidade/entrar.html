@@ -104,9 +104,11 @@
     <div id="blocoDados" class="oculto">
       <label for="cNasc1" id="lNasc1">Data de nascimento</label>
       <input id="cNasc1" type="date">
+      <div class="dica" id="dNasc1"></div>
       <div id="blocoNasc2" class="oculto">
         <label for="cNasc2" id="lNasc2">Data de nascimento</label>
         <input id="cNasc2" type="date">
+        <div class="dica" id="dNasc2"></div>
       </div>
       <div class="dica">Nunca aparece no perfil. Os outros membros só veem a idade.</div>
 
@@ -133,6 +135,7 @@
       <div class="dica" id="dSenha">Mínimo 10 caracteres, com letras e números.</div>
       <label for="cSenha2">Repita a senha</label>
       <input id="cSenha2" type="password" autocomplete="new-password">
+      <div class="dica" id="dSenha2"></div>
 
       <label class="aceite"><input type="checkbox" id="a18">
         <span id="t18">Declaro que tenho 18 anos ou mais e vou comprovar com documento na verificação.</span></label>
@@ -152,6 +155,7 @@
     <input id="nSenha" type="password" autocomplete="new-password">
     <label for="nSenha2">Repita a nova senha</label>
     <input id="nSenha2" type="password" autocomplete="new-password">
+    <div class="dica" id="dNSenha2"></div>
     <div class="dica">Mínimo 10 caracteres, com letras e números.</div>
     <button class="btn" id="bNovaSenha" type="submit">Salvar nova senha</button>
     <div class="msg" id="mNovaSenha"></div>
@@ -175,12 +179,12 @@
 </div>
 
 <footer>
-  <a href="regras.html">Regras e privacidade</a> · entrar.html v3.2
+  <a href="regras.html">Regras e privacidade</a> · entrar.html v3.3
 </footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="pwa.js?v=1.0"></script>
-<script src="entrar.js?v=1.6"></script>
+<script src="entrar.js?v=1.7"></script>
 </body>
 </html>

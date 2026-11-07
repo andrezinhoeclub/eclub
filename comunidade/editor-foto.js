@@ -1,4 +1,4 @@
-// editor-foto.js — v1.1 — esconder rostos antes de publicar (borrar / tarja), girar, detecção automática de rosto
+// editor-foto.js — v1.2 — esconder rostos antes de publicar (borrar / tarja), girar, detecção automática de rosto
 // Uso: const r = await window.EDITOR_FOTO.editar(blob, estadoAnterior)  →  { blob, estado } ou null (cancelou)
 (function () {
   'use strict';
@@ -164,7 +164,7 @@
         <button type="button" class="ef-desfazer">↶ Desfazer</button>
         <button type="button" class="ef-achar">🔎 Achar rostos</button>
       </div>
-      <div class="ef-dica">Arraste o dedo sobre um rosto para escondê-lo. <b>Toque num borrão</b> para escolher e ajuste o <b>Tamanho</b> (ou toque em Tirar). Sem nenhum escolhido, o tamanho muda todos.</div>
+      <div class="ef-dica">Arraste o dedo sobre um rosto para escondê-lo. Para ajustar: <b>arraste o borrão</b> para mover e <b>puxe a bolinha dourada ⤡</b> do canto para aumentar ou diminuir. Também dá para usar o controle de Tamanho ou tocar em Tirar.</div>
       <label class="ef-conf"><input type="checkbox"><span>Conferi a foto e <b>nenhum rosto aparece</b> (nem parte dele).</span></label>
       <div class="ef-erro"></div>
       <div class="ef-botoes"><button type="button" class="cancelar">Cancelar</button><button type="button" class="usar">Usar esta foto</button></div>
@@ -191,6 +191,15 @@
       ctx.lineWidth = esp;
       if (temp) { ctx.strokeStyle = '#fff'; forma(ctx, temp, oval); ctx.stroke(); }
       ctx.setLineDash([]);
+      // alça para aumentar/diminuir o borrão escolhido
+      if (sel >= 0 && estado.rects[sel]) {
+        const r = efetivo(estado.rects[sel]), k = tela.width / (tela.getBoundingClientRect().width || tela.width);
+        const rr = Math.max(9 * k, esp * 4);
+        ctx.beginPath(); ctx.arc(r.x + r.w, r.y + r.h, rr, 0, Math.PI * 2);
+        ctx.fillStyle = '#f1d999'; ctx.fill(); ctx.lineWidth = esp; ctx.strokeStyle = '#1a1408'; ctx.stroke();
+        ctx.fillStyle = '#1a1408'; ctx.font = 'bold ' + Math.round(rr * 1.3) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('⤡', r.x + r.w, r.y + r.h + rr * 0.05);
+      }
       fundo.querySelectorAll('[data-m]').forEach(b => b.classList.toggle('sel', b.dataset.m === estado.modo));
       fundo.querySelectorAll('[data-f]').forEach(b => b.classList.toggle('sel', b.dataset.f === estado.forma));
       // controle de tamanho: do escolhido, ou de todos
@@ -200,31 +209,57 @@
       q('.ef-tam input').disabled = !estado.rects.length; q('.ef-tirar').disabled = sel < 0;
     }
 
-    // Arrastar para marcar / tocar para tirar
+    // Gestos: arrastar fora de um borrão = cria um novo · arrastar DENTRO = move · arrastar a bolinha do canto = aumenta/diminui
     const ponto = (e) => { const b = tela.getBoundingClientRect(); return { x: (e.clientX - b.left) * tela.width / b.width, y: (e.clientY - b.top) * tela.height / b.height, k: tela.width / b.width }; };
-    let ini = null;
-    tela.addEventListener('pointerdown', (e) => { e.preventDefault(); tela.setPointerCapture(e.pointerId); ini = ponto(e); temp = null; });
+    const alcaRaio = (k) => 26 * k;
+    function achar(p) {
+      for (let i = estado.rects.length - 1; i >= 0; i--) {
+        const r = efetivo(estado.rects[i]);
+        if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) return i;
+      }
+      return -1;
+    }
+    let ini = null, modoGesto = null, orig = null, pedido = 0;
+    const redesenhar = () => { if (pedido) return; pedido = requestAnimationFrame(() => { pedido = 0; desenhar(); }); };
+    tela.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); tela.setPointerCapture(e.pointerId); ini = ponto(e); temp = null;
+      // alça de tamanho do borrão escolhido
+      if (sel >= 0) {
+        const r = efetivo(estado.rects[sel]);
+        if (Math.hypot(ini.x - (r.x + r.w), ini.y - (r.y + r.h)) <= alcaRaio(ini.k)) { modoGesto = 'tamanho'; orig = Object.assign({}, estado.rects[sel], { ef: r }); return; }
+      }
+      const i = achar(ini);
+      if (i >= 0) { sel = i; modoGesto = 'mover'; orig = Object.assign({}, estado.rects[i]); desenhar(); return; }
+      modoGesto = 'novo';
+    });
     tela.addEventListener('pointermove', (e) => {
       if (!ini) return; const p = ponto(e);
-      temp = { x: Math.min(ini.x, p.x), y: Math.min(ini.y, p.y), w: Math.abs(p.x - ini.x), h: Math.abs(p.y - ini.y) };
-      desenhar();
+      if (modoGesto === 'mover') {
+        const r = estado.rects[sel]; r.x = orig.x + (p.x - ini.x); r.y = orig.y + (p.y - ini.y);
+      } else if (modoGesto === 'tamanho') {
+        const r = estado.rects[sel], ef = orig.ef, min = 30 * ini.k;
+        // mantém o canto de cima/esquerda e leva o de baixo/direita até o dedo
+        const w = Math.max(min, p.x - ef.x), h = Math.max(min, p.y - ef.y);
+        r.s = 1; r.x = ef.x; r.y = ef.y; r.w = w; r.h = h;
+      } else {
+        temp = { x: Math.min(ini.x, p.x), y: Math.min(ini.y, p.y), w: Math.abs(p.x - ini.x), h: Math.abs(p.y - ini.y) };
+      }
+      redesenhar();
     });
     const soltar = (e) => {
       if (!ini) return; const p = ponto(e), k = ini.k;
       const w = Math.abs(p.x - ini.x), h = Math.abs(p.y - ini.y);
-      if (w < 14 * k && h < 14 * k) {      // foi um toque: escolhe o borrão tocado (ou desmarca)
-        let achou = -1;
-        for (let i = estado.rects.length - 1; i >= 0; i--) {
-          const r = efetivo(estado.rects[i]);
-          if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) { achou = i; break; }
+      const toque = w < 10 * k && h < 10 * k;
+      if (modoGesto === 'novo') {
+        if (toque) sel = -1;                       // tocou fora: desmarca
+        else {
+          const min = 30 * k;
+          estado.rects.push({ x: Math.min(ini.x, p.x), y: Math.min(ini.y, p.y), w: Math.max(w, min), h: Math.max(h, min), auto: false, s: 1 });
+          sel = estado.rects.length - 1;
         }
-        sel = achou === sel ? -1 : achou;
-      } else {
-        const min = 30 * k;
-        const r = { x: Math.min(ini.x, p.x), y: Math.min(ini.y, p.y), w: Math.max(w, min), h: Math.max(h, min), auto: false, s: 1 };
-        estado.rects.push(r); sel = estado.rects.length - 1;
       }
-      ini = null; temp = null; q('.ef-conf input').checked = false; desenhar();
+      if (!toque) q('.ef-conf input').checked = false;
+      ini = null; temp = null; modoGesto = null; desenhar();
     };
     tela.addEventListener('pointerup', soltar);
     tela.addEventListener('pointercancel', () => { ini = null; temp = null; desenhar(); });
