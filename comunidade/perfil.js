@@ -1,4 +1,4 @@
-// perfil.js — v2.5 — perfil de um membro (layout em cartão central)
+// perfil.js — v2.6 — perfil de um membro (layout em cartão central)
 (async function () {
   'use strict';
   const { sb, $, msg, idades, visto, avatar, sexos, gradeFotos, moldura, exigirMembro, emBreve, toast,
@@ -80,6 +80,97 @@
     numeros();
   });
   $('bMaisAcoes').addEventListener('click', () => $('caixaMais').classList.toggle('oculto'));
+
+  // ---------- Amizade, Paquera, Favorito, Anotação (como no CRS) ----------
+  $('lAmigos').href = 'minhas.html?ver=amigos&id=' + encodeURIComponent(id);
+  $('lSeguidores').href = 'minhas.html?ver=seguidores&id=' + encodeURIComponent(id);
+  $('lDepo').href = 'minhas.html?ver=depoimentos&id=' + encodeURIComponent(id);
+  let R = {};
+  const TIPO_T = { real: 'Amigo Real', virtual: 'Amigo Virtual', conflito: 'Conflito' };
+  function rotulo(b, ic, t, on) { b.firstElementChild.textContent = ic; b.lastElementChild.textContent = t; b.classList.toggle('on', !!on); }
+  async function relacao() {
+    if (previa) return;
+    const { data } = await sb.rpc('relacao_com', { p_id: id });
+    R = (data && data[0]) || {};
+    rotulo($('bPaquerar'), R.retribuida ? '💞' : '💘', R.retribuida ? 'Retribuída' : R.paquerei ? 'Paquerado' : 'Paquerar', R.paquerei);
+    rotulo($('bFavoritar'), '⭐', R.favorito ? 'Favorito' : 'Favoritar', R.favorito);
+    rotulo($('bAmigo'), R.amizade === 'amigos' ? '🤝' : '👥',
+      R.amizade === 'amigos' ? (R.tipo === 'real' ? 'Real' : R.tipo === 'virtual' ? 'Virtual' : 'Conflito')
+        : R.amizade === 'enviada' ? 'Pedido enviado' : R.amizade === 'recebida' ? 'Aceitar amigo' : 'Add Amigo', R.amizade === 'amigos');
+    $('nAmigos').textContent = R.amigos || 0;
+    $('nDepo').textContent = R.depoimentos || 0;
+    $('anTexto').value = R.anotacao || '';
+    // selos de amizade (como no CRS)
+    document.querySelectorAll('.badge.amz').forEach(x => x.remove());
+    const selo = (t, cls, href) => { const b = badge(t, cls + ' amz'); if (href) { b.style.cursor = 'pointer'; b.addEventListener('click', () => { location.href = href; }); } };
+    const base = 'minhas.html?ver=amigos&id=' + encodeURIComponent(id);
+    if (R.amigos_reais) selo('✓ ' + R.amigos_reais + ' Amigos Reais', 'verde', base + '&aba=reais');
+    if (R.verificados_gps) selo('📍 ' + R.verificados_gps + ' Amigos Reais Verificados por GPS', 'verde', base + '&aba=verificados');
+    selo(R.em_comum ? '🤝 ' + R.em_comum + ' Amigos Reais em comum' : 'Nenhum Amigo Real em comum', 'azul', R.em_comum ? base + '&aba=comum' : null);
+    if (R.intimos_mutuos) selo('🔥 ' + R.intimos_mutuos + ' Amigos Íntimos', 'rosa');
+  }
+  relacao();
+  $('bPaquerar').addEventListener('click', async () => {
+    const { data, error } = await sb.rpc('paquerar', { p_id: id });
+    if (error) { toast(error.message); return; }
+    toast(data === 'retribuida' ? '💞 Paquera retribuída! ' + p.apelido + ' também paquerou você.' : data === 'enviada' ? '💘 Paquera enviada em segredo. Se ' + p.apelido + ' paquerar você também, os dois ficam sabendo.' : 'Paquera desfeita');
+    relacao();
+  });
+  $('bFavoritar').addEventListener('click', async () => {
+    const { data, error } = await sb.rpc('favoritar', { p_id: id });
+    toast(error ? error.message : data ? '⭐ Adicionado aos Favoritos' : 'Tirado dos Favoritos'); relacao();
+  });
+  $('bAnotacao').addEventListener('click', () => { $('caixaAnotacao').classList.toggle('oculto'); $('anTexto').focus(); });
+  $('anSalvar').addEventListener('click', async () => {
+    const { error } = await sb.rpc('salvar_anotacao', { p_id: id, p_texto: $('anTexto').value });
+    toast(error ? error.message : $('anTexto').value.trim() ? 'Anotação salva ✓ (só você vê)' : 'Anotação apagada'); relacao();
+  });
+  if (location.hash === '#anotacao' && !previa) setTimeout(() => { $('caixaMais').classList.remove('oculto'); $('caixaAnotacao').classList.remove('oculto'); $('anTexto').focus(); }, 700);
+
+  // Caixa de diálogo de amizade
+  function dialogo(titulo, texto, opcoes) {
+    const f = el('div', 'dialogo-fundo'); f.style.cssText = 'position:fixed;inset:0;z-index:80;background:#000a;display:flex;align-items:flex-end;justify-content:center';
+    const c = el('div', 'cartao'); c.style.cssText = 'width:100%;max-width:520px;margin:0;border-radius:16px 16px 0 0;padding:18px 16px 22px';
+    c.appendChild(el('h2', null, titulo)); c.lastChild.style.marginTop = '0';
+    const tx = el('p', 'suave'); tx.innerHTML = texto; c.appendChild(tx);
+    const fechar = () => f.remove();
+    opcoes.concat([['Cancelar', 'secundario', () => {}]]).forEach(([t, cls, fn]) => {
+      const b = el('button', 'btn ' + (cls || ''), t); b.type = 'button'; b.style.marginTop = '8px';
+      b.addEventListener('click', async () => { fechar(); await fn(); });
+      c.appendChild(b);
+    });
+    f.addEventListener('click', (e) => { if (e.target === f) fechar(); });
+    f.appendChild(c); document.body.appendChild(f);
+  }
+  const avisoReal = '<br><br><b>Amigo Real</b> é quem você conhece pessoalmente. Marcar como Real sem conhecer é fraude.';
+  $('bAmigo').addEventListener('click', () => {
+    const nome = '<b>' + p.apelido.replace(/[<>&]/g, '') + '</b>';
+    if (R.amizade === 'nenhuma' || !R.amizade) {
+      dialogo('Amizade', 'Você conhece ' + nome + ' na vida real?' + avisoReal, [
+        ['Conheço no Real', '', async () => { const { data, error } = await sb.rpc('pedir_amizade', { p_id: id, p_real: true }); toast(error ? error.message : data); relacao(); }],
+        ['Só no Virtual', 'secundario', async () => { const { data, error } = await sb.rpc('pedir_amizade', { p_id: id, p_real: false }); toast(error ? error.message : data); relacao(); }]]);
+    } else if (R.amizade === 'recebida') {
+      dialogo('Pedido de amizade', nome + ' quer ser seu amigo. Você conhece ' + nome + ' na vida real?' + avisoReal, [
+        ['Conheço no Real', '', async () => { await sb.rpc('responder_amizade', { p_id: id, p_aceitar: true, p_real: true }); toast('Agora vocês são amigos ✓'); relacao(); }],
+        ['Só no Virtual', 'secundario', async () => { await sb.rpc('responder_amizade', { p_id: id, p_aceitar: true, p_real: false }); toast('Agora vocês são amigos ✓'); relacao(); }],
+        ['Recusar amizade', 'vermelho', async () => { await sb.rpc('responder_amizade', { p_id: id, p_aceitar: false }); toast('Pedido recusado'); relacao(); }]]);
+    } else if (R.amizade === 'enviada') {
+      dialogo('Amizade', 'Você pediu amizade para ' + nome + '. Aguardando resposta.', [
+        ['Cancelar pedido', 'vermelho', async () => { await sb.rpc('remover_amizade', { p_id: id }); toast('Pedido cancelado'); relacao(); }]]);
+    } else {
+      const txt = R.tipo === 'conflito'
+        ? 'Vocês estão em <b>Conflito</b>: um disse que se conhecem no Real e o outro disse Virtual.'
+        : 'Vocês são <b>' + TIPO_T[R.tipo] + 's</b>. O que você deseja fazer?';
+      dialogo('Amizade', txt, [
+        R.eu_disse_real
+          ? ['Mudar para Virtual', 'secundario', async () => { await sb.rpc('mudar_amizade', { p_id: id, p_real: false }); toast('Você marcou como Virtual'); relacao(); }]
+          : ['Mudar para Real', '', async () => { await sb.rpc('mudar_amizade', { p_id: id, p_real: true }); toast('Você marcou como Real'); relacao(); }],
+        [R.intimo ? 'Tirar dos Íntimos' : '🔥 Marcar como Íntimo', 'secundario', async () => {
+          const { error } = await sb.rpc('marcar_intimo', { p_id: id, p_sim: !R.intimo });
+          toast(error ? error.message : R.intimo ? 'Tirado dos Íntimos' : 'Marcado como Íntimo (só você sabe)'); relacao(); }],
+        ['Remover a Amizade', 'vermelho', async () => { await sb.rpc('remover_amizade', { p_id: id }); toast('Amizade removida'); relacao(); }]]);
+    }
+  });
 
   // ---------- Informações ----------
   $('txtNumero').textContent = '👑 Nº ' + p.numero;

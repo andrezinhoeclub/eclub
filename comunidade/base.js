@@ -1,4 +1,4 @@
-// base.js — v3.5 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v3.6 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -755,27 +755,53 @@
     avatar(eu.querySelector('.av'), perfil, 100);
     m.appendChild(eu);
 
+    // Busca de ferramentas (como no CRS)
+    const busca = document.createElement('div'); busca.className = 'menu-busca';
+    busca.innerHTML = '<input type="search" placeholder="Buscar ferramenta…" aria-label="Buscar ferramenta"><div class="menu-vazio oculto">Nenhuma ferramenta encontrada.</div>';
+    m.appendChild(busca);
+    const PALAVRAS = {
+      'Pagamento': 'pagar assinatura plano pix cartao renovar mensalidade', 'Navegação Discreta': 'discreto ocultar tela privacidade fotos borradas',
+      'Modo Escuro': 'noite escuro claro tema', 'Meus Recados': 'recado mensagem mural', 'Meus Amigos': 'amigo amizade real virtual intimo pedidos conflitos',
+      '+ Atualizar Fotolog': 'foto postar publicar fotolog', 'Meu Fotolog': 'fotos fotolog publicacoes', '+ Postar Foto de Rosto': 'rosto album privado foto',
+      'Fotos de Rosto': 'rosto album privado', 'Minha Agenda': 'agenda eventos festas viagens', 'Meus Depoimentos': 'depoimento testemunho elogio',
+      'Minhas Paqueras': 'paquera flerte favoritos retribuida', 'Minhas Anotações': 'anotacao notas lembrete', 'Convidar Amigos': 'convite convidar indicar',
+      'Meus Seguidores': 'seguidores seguir seguindo', 'Siga-me': 'feed inicio publicacoes', 'Últimas Atualizações': 'ultimas novidades recentes',
+      'Radar': 'radar gps perto localizacao pessoas cutucar', 'Ao Vivo (online agora)': 'online ao vivo', 'Fórum': 'forum topicos debate',
+      'Círculos': 'grupos circulos comunidades', 'Eventos': 'evento festa balada agenda', 'Fazer Check-in': 'checkin check-in gps lugar casa',
+      'Ranking': 'ranking top votos', 'Editar Meu Perfil': 'editar perfil dados proposta bio', 'Trocar Senha': 'senha trocar',
+      'Acesso Rápido (código)': 'codigo pin acesso rapido', 'Privacidade e Segurança': 'privacidade seguranca', 'Aparelhos e Acessos': 'aparelhos celular acessos sair',
+      'Perfis Bloqueados': 'bloqueio bloquear desbloquear', 'Letras': 'fonte tamanho letras grandes', 'Informativos': 'regras termos normas lgpd privacidade',
+      'Ajuda': 'ajuda duvidas perguntas faq', 'Instalar o App no celular': 'app instalar baixar apk', 'Falar com a Administração': 'administracao suporte contato denunciar',
+      'Painel da Administração': 'admin painel', 'SAIR': 'sair logout' };
+    const semAcento = (t) => (t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    const escondidos = [];
+    const mais = (el) => { el.classList.add('oculto'); escondidos.push(el); return el; };
+
     secao('Configurações');
     item('pagamento', 'Pagamento', 'planos.html',
       assinatura.admin ? etiqueta('administração') : assinatura.isento ? etiqueta('isento') :
       assinatura.ativa ? etiqueta(assinatura.dias_restantes + ' dias restantes') : etiqueta('vencido', 'vencido'));
     item('olho', 'Navegação Discreta', () => {}, alternador('discreta', [['desligada', 'Desligada'], ['ligada', 'Ligada']], 'desligada'));
     item('lua', 'Modo Escuro', () => {}, alternador('escuro', [['desliga', 'Desliga'], ['noite', 'só à noite'], ['liga', 'Liga']], 'liga'));
-    item('letra', 'Letras', () => {}, alternador('letras', [['normais', 'Normais'], ['grandes', 'Grandes']], 'normais'));
 
-    secao('Minhas coisas');
-    item('recado', 'Meus Recados', 'recados.html');
-    item('amigos', 'Meus Amigos', null);
-    item('camera', 'Meu Fotolog', 'meu-perfil.html');
-    item('perfil', 'Fotos de Rosto', null);
+    secao('Minhas Coisas');
+    const iRecados = mais(item('recado', 'Meus Recados', 'recados.html'));
+    const iAmigos = mais(item('amigos', 'Meus Amigos', 'minhas.html?ver=amigos'));
+    item('camera', '+ Atualizar Fotolog', 'inicio.html?postar=foto');
+    item('camera', 'Meu Fotolog', 'meu-perfil.html#fotos');
+    item('perfil', '+ Postar Foto de Rosto', 'meu-perfil.html?album=privado#fotos');
+    item('perfil', 'Fotos de Rosto', 'meu-perfil.html#fotos');
     item('agenda', 'Minha Agenda', 'eventos.html?aba=agenda');
-    item('estrela', 'Meus Depoimentos', null);
-    item('coracao', 'Minhas Paqueras', null);
-    item('nota', 'Minhas Anotações', null);
+    const iDepo = mais(item('estrela', 'Meus Depoimentos', 'minhas.html?ver=depoimentos'));
+    const iPaq = mais(item('coracao', 'Minhas Paqueras', 'minhas.html?ver=paqueras'));
+    const iAnot = mais(item('nota', 'Minhas Anotações', 'minhas.html?ver=anotacoes'));
     item('convite', 'Convidar Amigos', 'convidar.html');
+    const bMais = document.createElement('button'); bMais.type = 'button'; bMais.className = 'menu-mais'; bMais.textContent = 'mostrar mais ferramentas…';
+    bMais.addEventListener('click', () => { escondidos.forEach(e => e.classList.remove('oculto')); bMais.remove(); });
+    m.appendChild(bMais);
 
     secao('Ferramentas');
-    item('amigos', 'Meus Seguidores', null);
+    item('amigos', 'Meus Seguidores', 'minhas.html?ver=seguidores');
     item('sigame', 'Siga-me', 'inicio.html');
     item('ultimas', 'Últimas Atualizações', 'inicio.html?aba=ultimas');
     item('radar', 'Radar', 'radar.html');
@@ -786,7 +812,7 @@
     item('pin', 'Fazer Check-in', 'checkin.html');
     item('trofeu', 'Ranking', null);
 
-    secao('Conta');
+    secao('Configurações');
     item('lapis', 'Editar Meu Perfil', 'meu-perfil.html');
     item('chave', 'Trocar Senha', async () => {
       const { data: { user } } = await sb.auth.getUser();
@@ -794,20 +820,47 @@
       await sb.auth.resetPasswordForEmail(user.email, { redirectTo: location.origin + location.pathname.replace(/[^/]*$/, '') + 'entrar.html' });
       toast('Enviamos um link para o seu e-mail para criar a nova senha.');
     });
-    item('escudo', 'Privacidade e Segurança', 'seguranca.html');
     item('cadeado', 'Acesso Rápido (código)', 'seguranca.html#codigo');
+    item('escudo', 'Privacidade e Segurança', 'seguranca.html');
     item('celular', 'Aparelhos e Acessos', 'seguranca.html#aparelhos');
     item('bloqueio', 'Perfis Bloqueados', 'meu-perfil.html#bloqueados');
     if (perfil.tipo === 'casal') {
       const q = lerLS('cl_quem');
       item('perfil', 'Quem está usando: ' + (q === 'ela' ? 'Ela' : q === 'ele' ? 'Ele' : '—'), () => { fechar(); perguntarQuem(true).then(r => { if (r) toast('Agora: ' + (r === 'ele' ? 'Ele' : 'Ela') + ' ✓'); }); });
     }
-    item('ajuda', 'Ajuda e Regras', 'regras.html');
+    item('letra', 'Letras', () => {}, alternador('letras', [['normais', 'Normais'], ['grandes', 'Grandes']], 'normais'));
+    item('nota', 'Informativos', 'regras.html');
+    item('ajuda', 'Ajuda', 'suporte.html#faq');
     const inst = item('baixar', 'Instalar o App no celular', 'instalar.html'); inst.classList.add('instalar');
     const sup = item('chat', 'Falar com a Administração', 'suporte.html');
     if (suporteNovas) sup.appendChild(etiqueta(suporteNovas + (suporteNovas > 1 ? ' respostas' : ' resposta'), 'vencido'));
     if (assinatura.admin) item('admin', 'Painel da Administração', 'admin.html');
+    // Avisos: pedidos de amizade, depoimentos para aceitar, paqueras retribuídas, nº de anotações
+    sb.rpc('social_avisos').then(({ data }) => {
+      const a = (data && data[0]) || {};
+      const marcar = (el, n, t) => { if (!n) return; el.classList.remove('oculto'); el.appendChild(etiqueta(n + ' ' + t, 'vencido')); };
+      marcar(iAmigos, a.pedidos, a.pedidos > 1 ? 'pedidos' : 'pedido');
+      marcar(iDepo, a.depoimentos, 'para aceitar');
+      marcar(iPaq, a.paqueras, a.paqueras > 1 ? 'retribuídas' : 'retribuída');
+      if (a.anotacoes) iAnot.querySelector('span').textContent = 'Minhas Anotações (' + a.anotacoes + ')';
+    });
     const s = item('sair', 'SAIR', sair); s.classList.add('sair');
+
+    const campo = busca.querySelector('input'), nada = busca.querySelector('.menu-vazio');
+    campo.addEventListener('input', () => {
+      const q = semAcento(campo.value.trim());
+      let algum = false;
+      m.querySelectorAll('.item').forEach(it => {
+        const rot = it.querySelector('span') ? it.querySelector('span').textContent : '';
+        const ok = !q || semAcento(rot + ' ' + (PALAVRAS[rot.replace(/ \(\d+\)$/, '')] || '')).includes(q);
+        it.classList.toggle('busca-fora', !ok);
+        if (q && ok && escondidos.includes(it)) it.classList.remove('oculto');
+        if (ok) algum = true;
+      });
+      m.querySelectorAll('.secao').forEach(sc => { sc.classList.toggle('busca-fora', !!q); });
+      m.querySelectorAll('.menu-mais,.eu').forEach(x => x.classList.toggle('busca-fora', !!q));
+      nada.classList.toggle('oculto', algum);
+    });
 
     const rod = document.createElement('div'); rod.className = 'menu-rodape';
     rod.textContent = A.NOME + ' · Credibilidade · Responsabilidade · Segurança';

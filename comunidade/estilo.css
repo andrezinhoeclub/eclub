@@ -1,4 +1,4 @@
-/* estilo.css — v3.1 — Comunidade Liberal: preto noite e ouro (padrão), modo claro em marfim */
+/* estilo.css — v3.2 — Comunidade Liberal: preto noite e ouro (padrão), modo claro em marfim */
 @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Great+Vibes&display=swap");
 :root{
   --marca:#d6b26e; --marca2:#f1dca6; --marca-txt:#1b1408; --marca-suave:rgba(214,178,110,.14);
@@ -236,8 +236,8 @@ footer a{color:var(--suave)}
 .botoes-perfil .on{background:var(--marca);border-color:var(--marca);color:var(--marca-txt)}
 .botoes-perfil span.ic{font-size:1.15rem}
 .contadores{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--linha);border-radius:var(--raio);overflow:hidden;background:var(--cartao);margin-bottom:10px}
-.contadores div{padding:12px;text-align:center;font-size:.9rem;border-bottom:1px solid var(--linha)}
-.contadores div:nth-child(odd){border-right:1px solid var(--linha)}
+.contadores div,.contadores a{display:block;padding:12px;text-align:center;font-size:.9rem;border-bottom:1px solid var(--linha)}
+.contadores>:nth-child(odd){border-right:1px solid var(--linha)}
 .contadores b{color:var(--azul)}
 .titulo-secao{text-align:center;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--suave);background:var(--cartao);border:1px solid var(--linha);border-radius:6px;padding:7px;margin:14px 0 10px}
 .info-pessoas{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -559,3 +559,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--marca)!i
 .sup-item{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--linha);padding:12px 0;color:inherit;font:inherit;cursor:pointer}
 .sup-item:first-of-type{border-top:0}
 .sup-item .novo-r{background:var(--erro);color:#fff;font-size:.68rem;font-weight:700;border-radius:5px;padding:2px 6px;margin-left:6px}
+
+/* ---------- Menu: busca de ferramentas e "mostrar mais" (como no CRS) ---------- v3.2 */
+.menu-busca{margin:8px 0 4px}
+.menu-busca input{width:100%;box-sizing:border-box;background:var(--cartao2);border:1px solid var(--linha);color:var(--texto);border-radius:10px;padding:11px 12px;font:16px Inter,sans-serif}
+.menu-vazio{margin:8px 0;padding:14px;text-align:center;color:var(--suave);border:1px solid var(--linha);border-radius:10px;font-size:.9rem}
+.menu-mais{display:block;width:100%;background:none;border:0;color:var(--marca);font:600 .9rem Inter,sans-serif;padding:8px;cursor:pointer;text-align:center}
+.menu-lateral .busca-fora{display:none!important}

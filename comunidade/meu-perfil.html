@@ -8,7 +8,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Meu perfil</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=3.1">
+<link rel="stylesheet" href="estilo.css?v=3.2">
 </head>
 <body>
 
@@ -41,7 +41,7 @@
     </div>
 
     <!-- Fotos -->
-    <div class="titulo-secao">Meu Fotolog e álbum privado</div>
+    <div class="titulo-secao" id="fotos">Meu Fotolog e álbum privado</div>
     <div class="cartao">
       <p class="suave" style="margin-top:0">Toque numa foto para usar como foto de perfil, mudar de álbum ou apagar. Só publique fotos suas; se aparecer outra pessoa, ela precisa ter concordado.</p>
       <div class="filtros">
@@ -134,8 +134,8 @@
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
-<script src="base.js?v=3.5"></script>
+<script src="base.js?v=3.6"></script>
 <script src="editor-foto.js?v=1.1"></script>
-<script src="meu-perfil.js?v=2.5"></script>
+<script src="meu-perfil.js?v=2.6"></script>
 </body>
 </html>

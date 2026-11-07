@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Minhas Coisas</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=3.2">
+</head>
+<body>
+<style>
+.mc-cab{display:flex;align-items:center;gap:10px;padding:12px 14px}
+.mc-cab h1{margin:0;font-size:1.2rem;flex:1}
+.mc-cab a{font-size:.9rem}
+.mc-abas{display:flex;overflow-x:auto;gap:0;background:var(--cartao);border-bottom:1px solid var(--linha);scrollbar-width:none}
+.mc-abas button{flex:0 0 auto;background:none;border:0;border-bottom:3px solid transparent;padding:12px 13px;font:500 .88rem Inter,sans-serif;color:var(--suave);cursor:pointer;white-space:nowrap}
+.mc-abas button.sel{color:var(--texto);border-bottom-color:var(--marca)}
+.mc-abas .n{font-size:.75rem;opacity:.8}
+.mc-filtros{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;padding:10px 12px;background:var(--cartao);border-bottom:1px solid var(--linha)}
+.mc-p{display:flex;gap:12px;align-items:center;padding:12px 14px;background:var(--cartao);border-bottom:1px solid var(--linha)}
+.mc-p .av{width:52px;height:52px;border-radius:50%;overflow:hidden;flex:0 0 52px;background:var(--cartao2);display:flex;align-items:center;justify-content:center;font-size:1.5rem;position:relative}
+.mc-p .av canvas{width:100%;height:100%}
+.mc-p .tx{flex:1;min-width:0}
+.mc-p .tx a.nome{font-weight:700;color:var(--texto);text-decoration:none}
+.mc-p .tx small{display:block;color:var(--suave);font-size:.8rem;margin-top:2px}
+.mc-p .tx .nota{display:block;margin-top:4px;font-size:.86rem;white-space:pre-wrap;color:var(--texto)}
+.mc-p .bts{display:flex;flex-direction:column;gap:6px}
+.mc-p .bts button{padding:7px 10px;border-radius:9px;border:1px solid var(--linha);background:var(--cartao2);color:var(--texto);font:600 .78rem Inter,sans-serif;cursor:pointer;white-space:nowrap}
+.mc-p .bts button.ok{border-color:var(--marca);color:var(--marca)}
+.mc-tag{display:inline-block;font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px;vertical-align:middle}
+.mc-tag.real{background:#2f9e4422;color:#51b36a;border:1px solid #2f9e4466}
+.mc-tag.virtual{background:#4c6ef522;color:#91a7ff;border:1px solid #4c6ef566}
+.mc-tag.conflito{background:#e5484d22;color:#ff8787;border:1px solid #e5484d66}
+.mc-tag.ret{background:#c2255c33;color:#ff8fab;border:1px solid #c2255c66}
+.mc-aviso{padding:12px 14px;font-size:.85rem;color:var(--suave);background:var(--cartao);border-bottom:1px solid var(--linha);line-height:1.5}
+.mc-dep{padding:12px 14px;background:var(--cartao);border-bottom:1px solid var(--linha)}
+.mc-dep .dep-topo{display:flex;gap:10px;align-items:center}
+.mc-dep .av{width:40px;height:40px;border-radius:50%;overflow:hidden;flex:0 0 40px;background:var(--cartao2);display:flex;align-items:center;justify-content:center}
+.mc-dep .av canvas{width:40px!important;height:40px!important;display:block}
+.mc-dep p{white-space:pre-wrap;margin:8px 0 6px}
+.mc-dep .pend{font-size:.75rem;color:var(--aviso);font-weight:700}
+.mc-vazio{padding:22px 16px;text-align:center;color:var(--suave);background:var(--cartao)}
+</style>
+
+<main>
+  <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
+  <div class="oculto" id="tela">
+    <div class="cartao mc-cab"><h1 id="titulo"></h1><a href="javascript:history.back()">‹ voltar</a></div>
+    <div class="mc-abas" id="abas"></div>
+    <div class="oculto" id="filtros">
+      <div class="mc-filtros">
+        <select id="fUf" aria-label="Estado"><option value="">de todos os estados</option></select>
+        <select id="fTipo" aria-label="Tipo"><option value="">Todos</option><option value="casal">Casais</option><option value="solteiro">Homens</option><option value="solteira">Mulheres</option></select>
+      </div>
+    </div>
+    <div id="topoExtra"></div>
+    <div id="lista"></div>
+    <div id="rodape"></div>
+  </div>
+</main>
+
+<footer><a href="regras.html">Regras e privacidade</a> · minhas.html v1.0</footer>
+
+<script src="config.js?v=1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="base.js?v=3.6"></script>
+<script src="minhas.js?v=1.0"></script>
+</body>
+</html>
