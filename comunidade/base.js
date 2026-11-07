@@ -1,4 +1,4 @@
-// base.js — v3.0 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v3.2 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -41,9 +41,179 @@
   }
 
   // Exige login. Devolve { user, perfil } ou manda para a tela de entrar.
+  // ---------- Sessão: inatividade, Acesso Rápido, Ele/Ela e aparelhos ----------
+  // Sem usar por X minutos (padrão 30): pede o código de 4 números (se este aparelho usa Acesso Rápido)
+  // ou volta para o login com e-mail e senha.
+  // Entrou em outro aparelho além do limite (solteiro/a 1; casal 1 do Ele + 1 da Ela): o antigo é desconectado.
+  const CHAVE_ATIV = 'cl_atividade', CHAVE_LIM = 'cl_inativ_min', CHAVE_COD = 'cl_codigo_aparelho';
+  const lerLS = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const gravarLS = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} };
+  function limiteInativo() { return (parseInt(lerLS(CHAVE_LIM), 10) || 30) * 60000; }
+  function ficouInativo() { const u = parseInt(lerLS(CHAVE_ATIV), 10); return !!u && Date.now() - u > limiteInativo(); }
+  const usaCodigo = () => lerLS(CHAVE_COD) === '1';
+  let saindo = false, travado = null;
+  async function desconectar(motivo) {
+    if (saindo) return; saindo = true;
+    try { await sb.auth.signOut({ scope: 'local' }); } catch (e) {}
+    gravarLS(CHAVE_ATIV, null);
+    location.replace('entrar.html' + (motivo ? '?saiu=' + motivo : ''));
+  }
+  // Passou do tempo: código (se tiver) ou login
+  function tempoEsgotado() {
+    if (saindo) return Promise.resolve();
+    if (usaCodigo()) return mostrarTrava();
+    return desconectar('inativo');
+  }
+  async function conferirSessao() {
+    if (document.hidden || saindo || travado) return;
+    if (ficouInativo()) return tempoEsgotado();
+    const { data, error } = await sb.rpc('sessao_valida');
+    if (!error && data === false) desconectar('outro');
+  }
+  let ultimaGravacao = 0;
+  function marcarAtividade(forcar) {
+    const agora = Date.now();
+    if (travado || (!forcar && agora - ultimaGravacao < 15000)) return;
+    if (!forcar && ficouInativo()) return;        // já passou do tempo: não renova
+    ultimaGravacao = agora; gravarLS(CHAVE_ATIV, String(agora));
+  }
+
+  const CSS_SESSAO = `
+.trava{position:fixed;inset:0;z-index:9500;background:var(--fundo,#0b0a09);color:var(--texto,#f3ece0);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;overflow:auto;text-align:center}
+.trava img{width:74px;height:74px;object-fit:contain;margin-bottom:8px}
+.trava h2{font:600 1.15rem Inter,sans-serif;letter-spacing:.18em;margin:6px 0 2px;color:var(--marca,#c9a45c)}
+.trava p{margin:4px 0;color:var(--suave,#a8998a);font-size:.92rem;max-width:340px}
+.trava .pontos{display:flex;gap:16px;margin:20px 0 6px}
+.trava .pontos i{width:16px;height:16px;border-radius:50%;border:2px solid var(--marca,#c9a45c)}
+.trava .pontos i.ch{background:var(--marca,#c9a45c)}
+.trava .pontos.erro{animation:trv .35s}
+@keyframes trv{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.trava .teclado{display:grid;grid-template-columns:repeat(3,72px);gap:12px;margin:14px 0}
+.trava .teclado button{height:64px;border-radius:50%;border:1px solid var(--linha,#2b251c);background:var(--cartao,#15120e);color:inherit;font:600 1.5rem Inter,sans-serif;cursor:pointer}
+.trava .teclado button:active{background:var(--marca,#c9a45c);color:#1a1408}
+.trava .teclado .vazio{visibility:hidden}
+.trava .aviso{min-height:22px;color:#e5484d;font-size:.88rem}
+.trava .modos{display:flex;border:1px solid var(--linha,#2b251c);border-radius:999px;overflow:hidden;margin:6px 0 14px}
+.trava .modos button{border:0;background:none;color:inherit;padding:8px 16px;font:500 .85rem Inter,sans-serif;cursor:pointer}
+.trava .modos button.sel{background:var(--marca,#c9a45c);color:#1a1408}
+.trava a{color:var(--marca,#c9a45c);font-size:.9rem}
+.trava .quem{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:340px;margin:18px 0 10px}
+.trava .quem button{padding:22px 10px;border-radius:14px;border:1px solid var(--marca,#c9a45c);background:var(--cartao,#15120e);color:inherit;font:600 1.05rem Inter,sans-serif;cursor:pointer}
+.trava .quem button span{display:block;font-size:2rem;margin-bottom:6px}
+.trava small{color:var(--suave,#a8998a);font-size:.78rem;max-width:340px;line-height:1.4}`;
+  function cssSessao() {
+    if (document.getElementById('css-sessao')) return;
+    const st = document.createElement('style'); st.id = 'css-sessao'; st.textContent = CSS_SESSAO; document.head.appendChild(st);
+  }
+
+  // Tela do Acesso Rápido (código de 4 números)
+  function mostrarTrava() {
+    if (travado) return travado;
+    cssSessao();
+    travado = new Promise((pronto) => {
+      const t = document.createElement('div'); t.className = 'trava'; t.setAttribute('role', 'dialog');
+      t.innerHTML = '<img src="logo-ouro.png" alt=""><h2>ACESSO RÁPIDO</h2><p>Digite seu código de 4 números</p>' +
+        '<div class="pontos"><i></i><i></i><i></i><i></i></div><div class="aviso"></div>' +
+        '<div class="teclado"></div>' +
+        '<div class="modos"><button type="button" data-d="desligada">Modo Normal</button><button type="button" data-d="ligada">Modo Discreto</button></div>' +
+        '<a href="#" class="outra">Entrar com e-mail e senha</a>';
+      const tec = t.querySelector('.teclado');
+      ['1','2','3','4','5','6','7','8','9','', '0','⌫'].forEach(k => {
+        const b = document.createElement('button'); b.type = 'button'; b.textContent = k;
+        if (!k) b.className = 'vazio'; else b.dataset.k = k;
+        tec.appendChild(b);
+      });
+      let cod = '', ocupado = false;
+      const pontos = t.querySelector('.pontos'), aviso = t.querySelector('.aviso');
+      const pintar = () => pontos.querySelectorAll('i').forEach((p, i) => p.classList.toggle('ch', i < cod.length));
+      async function tecla(k) {
+        if (ocupado) return;
+        if (k === '⌫') { cod = cod.slice(0, -1); pintar(); return; }
+        if (!/^\d$/.test(k) || cod.length >= 4) return;
+        cod += k; pintar();
+        if (cod.length < 4) return;
+        ocupado = true; aviso.textContent = '';
+        const { data, error } = await sb.rpc('conferir_codigo', { p_codigo: cod });
+        const r = (data && data[0]) || {};
+        ocupado = false;
+        if (!error && r.resultado === 'ok') {
+          t.remove(); document.body.style.overflow = ''; travado = null;
+          marcarAtividade(true); pronto(); return;
+        }
+        if (error || r.resultado === 'sair') { desconectar(error ? 'inativo' : 'codigo'); return; }
+        cod = ''; pintar(); pontos.classList.remove('erro'); void pontos.offsetWidth; pontos.classList.add('erro');
+        aviso.textContent = 'Código errado. ' + (r.restam > 1 ? 'Restam ' + r.restam + ' tentativas.' : 'Última tentativa.');
+      }
+      tec.addEventListener('click', (e) => { const b = e.target.closest('[data-k]'); if (b) tecla(b.dataset.k); });
+      const teclado = (e) => { if (!t.isConnected) return document.removeEventListener('keydown', teclado); if (/^\d$/.test(e.key)) tecla(e.key); else if (e.key === 'Backspace') tecla('⌫'); };
+      document.addEventListener('keydown', teclado);
+      const modos = t.querySelectorAll('.modos button');
+      const pintarModo = () => modos.forEach(b => b.classList.toggle('sel', pref('discreta', 'desligada') === b.dataset.d));
+      modos.forEach(b => b.addEventListener('click', () => { salvarPref('discreta', b.dataset.d); pintarModo(); }));
+      pintarModo();
+      t.querySelector('.outra').addEventListener('click', (e) => { e.preventDefault(); desconectar(''); });
+      document.body.appendChild(t); document.body.style.overflow = 'hidden';
+    });
+    return travado;
+  }
+
+  // Casal: quem está usando este aparelho?
+  function perguntarQuem(trocar) {
+    cssSessao();
+    return new Promise((pronto) => {
+      const t = document.createElement('div'); t.className = 'trava';
+      t.innerHTML = '<img src="logo-ouro.png" alt=""><h2>QUEM ESTÁ USANDO?</h2>' +
+        '<p>Informe quem está usando o app neste aparelho. Cada um de vocês pode ficar conectado em 1 aparelho ao mesmo tempo.</p>' +
+        '<div class="quem"><button type="button" data-q="ele"><span>👨</span>Sou o Ele</button><button type="button" data-q="ela"><span>👩</span>Sou a Ela</button></div>' +
+        '<small>Não alterne o mesmo aparelho entre os dois: se o Ele entrar num celular novo, o celular antigo do Ele é desconectado (o da Ela continua).</small>' +
+        (trocar ? '<p style="margin-top:14px"><a href="#" class="cancelar">Cancelar</a></p>' : '');
+      t.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', async () => {
+        b.disabled = true;
+        const { data, error } = await sb.rpc('definir_quem', { p_quem: b.dataset.q });
+        if (error) { b.disabled = false; toast('Não foi possível salvar. Tente de novo.'); return; }
+        gravarLS('cl_quem', b.dataset.q);
+        t.remove(); document.body.style.overflow = '';
+        if (data > 0) setTimeout(() => toast('🔐 O aparelho antigo ' + (b.dataset.q === 'ele' ? 'do Ele' : 'da Ela') + ' foi desconectado.'), 600);
+        pronto(b.dataset.q);
+      }));
+      const c = t.querySelector('.cancelar');
+      if (c) c.addEventListener('click', (e) => { e.preventDefault(); t.remove(); document.body.style.overflow = ''; pronto(null); });
+      document.body.appendChild(t); document.body.style.overflow = 'hidden';
+    });
+  }
+
+  let vigiando = false, estadoSessao = {};
+  function vigiarSessao() {
+    if (vigiando) return; vigiando = true;
+    ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(ev => window.addEventListener(ev, () => marcarAtividade(), { passive: true, capture: true }));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) conferirSessao(); });
+    setInterval(() => { if (!document.hidden && !travado && ficouInativo()) tempoEsgotado(); }, 30000);
+    setInterval(conferirSessao, 60000);
+    sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT' && !saindo) { saindo = true; location.replace('entrar.html?saiu=outro'); } });
+  }
+
   async function exigirLogin() {
+    const inativo = ficouInativo();
+    if (inativo && !usaCodigo()) { await desconectar('inativo'); throw new Error('inativo'); }
     const { data: { user } } = await sb.auth.getUser();
     if (!user) { location.replace('entrar.html'); throw new Error('sem login'); }
+    const { data: est } = await sb.rpc('estado_sessao');
+    const e = (est && est[0]) || {};
+    estadoSessao = e;
+    if (e.valida === false) { await desconectar('outro'); throw new Error('outro aparelho'); }
+    if (e.inatividade_min) gravarLS(CHAVE_LIM, String(e.inatividade_min));
+    if (e.tem_codigo === false) gravarLS(CHAVE_COD, null);
+    if (inativo) {
+      if (!usaCodigo() || e.codigo_vale === false) { await desconectar('inativo'); throw new Error('inativo'); }
+      await mostrarTrava();
+    }
+    marcarAtividade(true); vigiarSessao();
+    if (e.tipo === 'casal' && !e.quem) { e.quem = await perguntarQuem(false); estadoSessao = e; }
+    if (e.quem) gravarLS('cl_quem', e.quem);
+    // aviso: aparelhos antigos desconectados ao entrar
+    let n = 0; try { n = parseInt(sessionStorage.getItem('cl_aviso_saiu'), 10) || 0; sessionStorage.removeItem('cl_aviso_saiu'); } catch (x) {}
+    if (n) setTimeout(() => toast('🔐 Sua conta permite ' + e.limite + (e.limite > 1 ? ' aparelhos' : ' aparelho') + ' ao mesmo tempo. ' +
+      (n > 1 ? n + ' aparelhos antigos foram desconectados.' : 'O aparelho anterior foi desconectado.')), 1500);
     const { data: perfil } = await sb.from('perfis')
       .select('id, numero, apelido, tipo, sexo_1, sexo_2, status, verificado, foto_perfil, cidade, uf, bio, procura, isento, acesso_ate, detalhes, msg_so_quem_sigo')
       .eq('id', user.id).maybeSingle();
@@ -52,7 +222,9 @@
   }
 
   async function sair() {
-    await sb.auth.signOut();
+    saindo = true;
+    try { await sb.auth.signOut({ scope: 'local' }); } catch (e) {}   // só este aparelho (o do parceiro continua)
+    gravarLS(CHAVE_ATIV, null);
     location.replace('entrar.html');
   }
 
@@ -384,6 +556,8 @@
     lapis: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/>',
     chave: '<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M16 6l3 3"/>',
     escudo: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+    cadeado: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+    celular: '<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18h2"/>',
     bloqueio: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
     ajuda: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 015 0c0 1.8-2.5 2-2.5 4M12 17h.01"/>',
     admin: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
@@ -554,8 +728,14 @@
       await sb.auth.resetPasswordForEmail(user.email, { redirectTo: location.origin + location.pathname.replace(/[^/]*$/, '') + 'entrar.html' });
       toast('Enviamos um link para o seu e-mail para criar a nova senha.');
     });
-    item('escudo', 'Privacidade e Segurança', 'regras.html#privacidade');
+    item('escudo', 'Privacidade e Segurança', 'seguranca.html');
+    item('cadeado', 'Acesso Rápido (código)', 'seguranca.html#codigo');
+    item('celular', 'Aparelhos e Acessos', 'seguranca.html#aparelhos');
     item('bloqueio', 'Perfis Bloqueados', 'meu-perfil.html#bloqueados');
+    if (perfil.tipo === 'casal') {
+      const q = lerLS('cl_quem');
+      item('perfil', 'Quem está usando: ' + (q === 'ela' ? 'Ela' : q === 'ele' ? 'Ele' : '—'), () => { fechar(); perguntarQuem(true).then(r => { if (r) toast('Agora: ' + (r === 'ele' ? 'Ele' : 'Ela') + ' ✓'); }); });
+    }
     item('ajuda', 'Ajuda e Regras', 'regras.html');
     const inst = item('baixar', 'Instalar o App no celular', 'instalar.html'); inst.classList.add('instalar');
     const sup = item('chat', 'Falar com a Administração', 'suporte.html');
@@ -619,7 +799,9 @@
 
   window.BASE = { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, sair, prepararFoto,
                   links, definirMarca, moldura, abrirVisor, gradeFotos, fotoProtegida, visto, idades, tempo,
-                  sexos, avatar, toast, emBreve, icone, flyer, CAMPOS, signo, mesDe, UFS, NOME_TIPO, NOME: A.NOME };
+                  sexos, avatar, toast, emBreve, icone, flyer, CAMPOS, signo, mesDe, UFS, NOME_TIPO, NOME: A.NOME,
+                  perguntarQuem, estadoSessao: () => estadoSessao,
+                  codigoNesteAparelho: (sim) => { if (sim === undefined) return usaCodigo(); gravarLS(CHAVE_COD, sim ? '1' : null); } };
 
   // Nome da comunidade no topo e no título
   document.addEventListener('DOMContentLoaded', () => {

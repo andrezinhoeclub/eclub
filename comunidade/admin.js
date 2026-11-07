@@ -1,4 +1,4 @@
-// admin.js — v2.11 — verificações, membros (privilégios), planos, destaques, lugares, denúncias e suporte
+// admin.js — v2.12 — verificações, membros (privilégios), planos, destaques, lugares, denúncias e suporte
 (async function () {
   'use strict';
   const { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, moldura, toast } = window.BASE;
@@ -46,8 +46,25 @@
     carregarCadastro();
   }));
 
+  // Segurança do login (aparelhos por vez e tempo sem uso)
+  const REGRAS_SG = { sgSolteiro: ['acessos_solteiro', 1], sgSolteira: ['acessos_solteira', 1], sgCasal: ['acessos_casal', 2], sgInativo: ['inatividade_min', 30] };
+  async function carregarSeguranca() {
+    const { data } = await sb.from('config').select('chave, valor').in('chave', Object.values(REGRAS_SG).map(x => x[0]));
+    const v = {}; (data || []).forEach(r => { v[r.chave] = r.valor; });
+    Object.entries(REGRAS_SG).forEach(([id, [k, pad]]) => { $(id).value = v[k] != null ? v[k] : pad; });
+  }
+  $('sgSalvar').addEventListener('click', async () => {
+    const linhas = Object.entries(REGRAS_SG).map(([id, [k, pad]]) => {
+      let n = parseInt($(id).value, 10); if (!n || n < 1) n = pad;
+      if (k === 'inatividade_min') n = Math.min(1440, Math.max(5, n)); else n = Math.min(5, n);
+      return { chave: k, valor: n };
+    });
+    const { error } = await sb.from('config').upsert(linhas);
+    toast(error ? 'Erro: ' + error.message : 'Regras de login salvas ✓'); carregarSeguranca();
+  });
+
   async function carregarMembros() {
-    carregarCadastro();
+    carregarCadastro(); carregarSeguranca();
     let q = sb.from('perfis').select('id, numero, apelido, tipo, sexo_1, sexo_2, cidade, uf, status, isento, acesso_ate, teste_ate, criado_em')
       .order('criado_em', { ascending: false }).limit(50);
     const busca = $('mBusca').value.trim().replace(/[%_\\,()]/g, '');

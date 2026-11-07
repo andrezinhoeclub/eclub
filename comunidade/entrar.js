@@ -1,4 +1,4 @@
-// entrar.js — v1.5 — login, cadastro, convite (completar cadastro) e recuperação de senha
+// entrar.js — v1.6 — login, cadastro, convite (completar cadastro) e recuperação de senha
 (function () {
   'use strict';
 
@@ -50,6 +50,29 @@
   document.querySelectorAll('#abas button').forEach(b => b.addEventListener('click', () => mostrar(b.dataset.aba)));
 
   // ---------- para onde vai depois de entrar ----------
+  // ---------- Sessão (mesmas regras do base.js) ----------
+  const lerLS = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const gravarLS = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+  function ficouInativo() {
+    const u = parseInt(lerLS('cl_atividade'), 10), lim = (parseInt(lerLS('cl_inativ_min'), 10) || 30) * 60000;
+    return !!u && Date.now() - u > lim;
+  }
+  // Acabou de entrar: começa a contar o tempo e desconecta aparelhos além do limite
+  async function novoAcesso(como) {
+    gravarLS('cl_atividade', String(Date.now()));
+    try {
+      const { data } = await sb.rpc('registrar_sessao', { p_como: como || 'senha' });
+      if (data > 0) { try { sessionStorage.setItem('cl_aviso_saiu', String(data)); } catch (e) {} }
+    } catch (e) {}
+  }
+  const AVISOS_SAIU = {
+    inativo: 'Por segurança, você saiu porque ficou um tempo sem usar. Entre de novo.',
+    outro: 'Sua conta foi aberta em outro aparelho, então este foi desconectado. Se não foi você, troque sua senha.',
+    codigo: 'Código de acesso rápido errado 3 vezes (ou vencido). Por segurança, entre com e-mail e senha.'
+  };
+  const saiu = new URLSearchParams(location.search).get('saiu');
+  if (AVISOS_SAIU[saiu]) setTimeout(() => msg('mEntrar', 'info', AVISOS_SAIU[saiu]), 0);
+
   async function encaminhar() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
@@ -57,7 +80,7 @@
     if (error) { msg('mEntrar', 'erro', 'Não foi possível carregar seu perfil. Tente de novo.'); return; }
     if (!p) { modoCompletar(user); return; }
     if (p.status === 'suspenso' || p.status === 'banido') {
-      await sb.auth.signOut();
+      await sb.auth.signOut({ scope: 'local' });
       msg('mEntrar', 'erro', p.status === 'banido'
         ? 'Esta conta foi encerrada por violar as regras.'
         : 'Sua conta está suspensa enquanto a administração analisa uma denúncia.');
@@ -113,6 +136,7 @@
       return;
     }
     $('eSenha').value = '';
+    await novoAcesso('senha');
     encaminhar();
   });
 
@@ -176,6 +200,7 @@
       $('bLink').disabled = false;
       if (error) { msg('mLink', null, ''); linkVencido(linkEmail.tipo); return; }
       msg('mLink', null, '');
+      await novoAcesso('link');
       if (linkEmail.tipo === 'recovery') aposRecuperacao(); else encaminhar();
     });
   } else if (linkComErro) {
@@ -331,6 +356,10 @@
 
   // Já está logado? (ou voltou pelo link de confirmação) → segue direto
   if (!linkEmail && !linkComErro) sb.auth.getSession().then(({ data }) => {
-    if (data.session && !location.hash.includes('type=recovery')) encaminhar();
+    if (!data.session || location.hash.includes('type=recovery')) return;
+    // Ficou sem usar além do tempo: pede login e senha de novo
+    // (com Acesso Rápido neste aparelho, segue e o app pede o código)
+    if (saiu || (ficouInativo() && lerLS('cl_codigo_aparelho') !== '1')) { sb.auth.signOut({ scope: 'local' }); return; }
+    encaminhar();
   });
 })();

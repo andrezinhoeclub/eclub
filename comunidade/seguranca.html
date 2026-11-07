@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Privacidade e Segurança</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=3.1">
+</head>
+<body>
+
+<main>
+  <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
+  <div class="oculto" id="tela">
+    <div class="titulo-secao">Privacidade e Segurança</div>
+
+    <!-- Acesso Rápido -->
+    <div class="titulo-secao" id="codigo">🔢 Acesso Rápido</div>
+    <div class="cartao">
+      <p class="suave" style="margin-top:0">Depois de <b id="minInativo">30</b> minutos sem usar, o app se tranca. Com o Acesso Rápido você destranca só com um <b>código de 4 números</b>, sem digitar e-mail e senha. Errou 3 vezes, o app pede e-mail e senha.</p>
+      <p id="codStatus" style="font-weight:600"></p>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
+        <label>Novo código<input style="width:100%;box-sizing:border-box;background:var(--cartao2);border:1px solid var(--linha);color:var(--texto);border-radius:10px;padding:10px 11px;font:16px Inter,sans-serif;letter-spacing:.4em;text-align:center" type="password" id="codNovo" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"></label>
+        <label>Repita o código<input style="width:100%;box-sizing:border-box;background:var(--cartao2);border:1px solid var(--linha);color:var(--texto);border-radius:10px;padding:10px 11px;font:16px Inter,sans-serif;letter-spacing:.4em;text-align:center" type="password" id="codRepete" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"></label>
+      </div>
+      <button class="btn" id="codSalvar" type="button" style="width:100%;margin-top:10px">Salvar código</button>
+      <label class="oculto" id="codAparelhoBox" style="display:flex;gap:10px;align-items:center;margin-top:12px;cursor:pointer">
+        <input type="checkbox" id="codAparelho" style="width:20px;height:20px"> <span>Usar o código <b>neste aparelho</b> (recomendado só no seu celular)</span>
+      </label>
+      <p class="suave" style="font-size:.82rem">Não use números repetidos (1111) nem em sequência (1234). O código é guardado com criptografia: nem a administração consegue ver.</p>
+      <button class="btn secundario oculto" id="codRemover" type="button" style="width:100%">Remover meu código</button>
+      <div class="msg" id="mCodigo"></div>
+    </div>
+
+    <!-- Casal: quem está usando -->
+    <div class="oculto" id="secQuem">
+      <div class="titulo-secao">👫 Quem está usando este aparelho</div>
+      <div class="cartao">
+        <p style="margin-top:0">Neste aparelho: <b id="quemAgora">—</b></p>
+        <p class="suave">Cada um de vocês pode ficar conectado em 1 aparelho ao mesmo tempo. Se o Ele entrar num celular novo, o celular antigo do Ele é desconectado; o da Ela continua.</p>
+        <button class="btn secundario" id="trocarQuem" type="button" style="width:100%">Trocar quem está usando</button>
+      </div>
+    </div>
+
+    <!-- Aparelhos conectados -->
+    <div class="titulo-secao" id="aparelhos">📱 Aparelhos conectados</div>
+    <div class="cartao">
+      <p class="suave" style="margin-top:0" id="apRegra"></p>
+      <div class="lista-pessoas" id="listaAparelhos"></div>
+      <button class="btn secundario oculto" id="apSairOutros" type="button" style="width:100%;margin-top:8px">Desconectar todos os outros aparelhos</button>
+    </div>
+
+    <!-- Relação de acessos -->
+    <div class="titulo-secao" id="acessos">🕒 Relação de acessos</div>
+    <div class="cartao">
+      <p class="suave" style="margin-top:0">Cada vez que alguém entrou na sua conta (últimos 60 dias). Se notar algo estranho, <b>troque sua senha</b> e desconecte os outros aparelhos. Se não conseguir, <a href="suporte.html?assunto=Problema%20para%20entrar%20ou%20senha">fale com a Administração</a>.</p>
+      <button class="btn secundario" id="trocarSenha" type="button" style="width:100%">Trocar minha senha</button>
+      <div id="listaAcessos" style="margin-top:12px"></div>
+    </div>
+
+    <p class="suave" style="text-align:center"><a href="regras.html#privacidade">Como cuidamos dos seus dados (LGPD)</a></p>
+  </div>
+</main>
+
+<footer><a href="regras.html">Regras e privacidade</a> · seguranca.html v1.0</footer>
+
+<script src="config.js?v=1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="base.js?v=3.2"></script>
+<script src="seguranca.js?v=1.0"></script>
+</body>
+</html>

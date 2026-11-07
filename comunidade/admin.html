@@ -85,6 +85,17 @@
         <div class="linha-acoes"><a class="btn secundario" href="convidar.html">✉️ Convidar alguém agora</a></div>
       </div>
       <div class="cartao">
+        <h2 style="margin:0 0 6px">Segurança do login</h2>
+        <p class="suave" style="margin:0 0 8px">Quantos aparelhos cada tipo de perfil pode deixar conectados ao mesmo tempo (ao entrar num novo, o mais antigo sai) e depois de quanto tempo sem usar o app pede login e senha de novo.</p>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
+          <label>Solteiro <input style="width:100%;box-sizing:border-box" type="number" min="1" max="5" id="sgSolteiro"></label>
+          <label>Solteira <input style="width:100%;box-sizing:border-box" type="number" min="1" max="5" id="sgSolteira"></label>
+          <label>Casal <input style="width:100%;box-sizing:border-box" type="number" min="1" max="5" id="sgCasal"></label>
+          <label>Minutos sem uso <input style="width:100%;box-sizing:border-box" type="number" min="5" max="1440" step="5" id="sgInativo"></label>
+        </div>
+        <div class="linha-acoes"><button class="btn" type="button" id="sgSalvar">Salvar regras</button></div>
+      </div>
+      <div class="cartao">
         <h1>Membros</h1>
         <p class="suave">Busque pelo apelido. Aqui você <b>isenta da mensalidade</b>, soma dias de acesso, escolhe quem é <b>admin</b>, suspende ou bane. Todo membro novo ganha 7 dias de acesso completo depois de aprovado; depois, quem não paga usa só 5 minutos por dia.</p>
         <input type="search" id="mBusca" placeholder="Apelido…" maxlength="24">
@@ -185,11 +196,11 @@
   </div>
 </template>
 
-<footer>admin.html v2.13</footer>
+<footer>admin.html v2.14</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
-<script src="base.js?v=3.0"></script>
-<script src="admin.js?v=2.11"></script>
+<script src="base.js?v=3.2"></script>
+<script src="admin.js?v=2.12"></script>
 </body>
 </html>

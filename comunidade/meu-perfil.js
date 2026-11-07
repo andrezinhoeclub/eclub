@@ -1,4 +1,4 @@
-// meu-perfil.js — v2.4 — editar perfil (com detalhes Ele/Ela), fotos, álbum privado e bloqueios
+// meu-perfil.js — v2.5 — editar perfil (com detalhes Ele/Ela), fotos, álbum privado e bloqueios
 (async function () {
   'use strict';
   const { sb, $, msg, formacao, links, fotoProtegida, gradeFotos, sexos,
@@ -283,6 +283,8 @@
     $('semBloq').classList.toggle('oculto', !!(data && data.length));
   }
   await carregarBloqueados();
-  const irBloq = () => { if (location.hash === '#bloqueados') setTimeout(() => $('bloqueados').scrollIntoView({ block: 'start' }), 300); };
+
+
+  const irBloq = () => { const h = location.hash.slice(1); if (h === 'bloqueados' || h === 'aparelhos') setTimeout(() => $(h).scrollIntoView({ block: 'start' }), 400); };
   irBloq(); window.addEventListener('hashchange', irBloq);
 })();
