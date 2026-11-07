@@ -1,4 +1,4 @@
-// entrar.js — v1.7 — login, cadastro, convite (completar cadastro) e recuperação de senha
+// entrar.js — v1.8 — login, cadastro, convite (completar cadastro) e recuperação de senha
 (function () {
   'use strict';
 
@@ -260,15 +260,18 @@
   let apelidoOk = false, apelidoTimer;
   $('cApelido').addEventListener('input', () => {
     clearTimeout(apelidoTimer);
-    const v = $('cApelido').value.trim(), d = $('dApelido');
+    const v = $('cApelido').value.trim().replace(/\s+/g, ' '), d = $('dApelido');
     apelidoOk = false;
-    if (!/^[A-Za-z0-9_.]{3,24}$/.test(v)) {
-      d.className = 'dica ruim'; d.textContent = '3 a 24 caracteres: letras, números, ponto ou _.'; return;
-    }
+    // Regras: 3 a 24 caracteres; letras (com acento), números, espaço, ponto ou _
+    const motivo = v.length < 3 ? 'Muito curto: use pelo menos 3 caracteres.'
+      : v.length > 24 ? 'Muito longo: no máximo 24 caracteres.'
+      : /[^\p{L}\p{N}_. ]/u.test(v) ? 'Não use "' + (v.match(/[^\p{L}\p{N}_. ]/u) || [''])[0] + '". Pode: letras, números, espaço, ponto e _.'
+      : '';
+    if (motivo) { d.className = 'dica ruim'; d.textContent = motivo; return; }
     d.className = 'dica'; d.textContent = 'Verificando…';
     apelidoTimer = setTimeout(async () => {
       const { data, error } = await sb.rpc('apelido_disponivel', { p_apelido: v });
-      if ($('cApelido').value.trim() !== v) return;
+      if ($('cApelido').value.trim().replace(/\s+/g, ' ') !== v) return;
       apelidoOk = !error && data === true;
       d.className = 'dica ' + (apelidoOk ? 'ok' : 'ruim');
       d.textContent = apelidoOk ? 'Disponível ✓' : 'Este apelido já está em uso.';
@@ -331,8 +334,8 @@
     if (i1 < 18 || i2 < 18) return erro('Cadastro permitido somente para maiores de 18 anos' + (tipo === 'casal' ? ' (os dois).' : '.'));
     if (i1 > 100 || i2 > 100) return erro('Data de nascimento inválida.');
 
-    const apelido = $('cApelido').value.trim();
-    if (!apelidoOk) return erro('Escolha um apelido válido e disponível.');
+    const apelido = $('cApelido').value.trim().replace(/\s+/g, ' ');
+    if (!apelidoOk) return erro($('dApelido').textContent && /ruim/.test($('dApelido').className) ? 'Apelido: ' + $('dApelido').textContent : 'Escolha um apelido válido e disponível.');
     const cidade = $('cCidade').value.trim(), uf = $('cUf').value;
     if (cidade.length < 2 || !uf) return erro('Informe cidade e UF.');
     if (procura.size === 0) return erro('Marque quem vocês procuram.');
