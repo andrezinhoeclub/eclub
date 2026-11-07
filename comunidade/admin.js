@@ -1,4 +1,4 @@
-// admin.js — v2.13 — verificações, membros (privilégios), planos, destaques, lugares, denúncias e suporte
+// admin.js — v2.14 — verificações, membros (privilégios), planos, destaques, lugares, denúncias e suporte
 (async function () {
   'use strict';
   const { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, moldura, toast } = window.BASE;
@@ -24,6 +24,14 @@
     if (b.dataset.aba === 'suporte') carregarSuporte();
     if (b.dataset.aba === 'denuncias') carregarDenuncias();
   }));
+  // E-mail ao membro depois da análise da verificação (função "avisar" no Supabase)
+  async function avisarPorEmail(idVerif, card, prefixo) {
+    try {
+      const { data, error } = await sb.functions.invoke('avisar', { body: { verificacao: idVerif } });
+      const erro = error ? ((await (error.context && error.context.json ? error.context.json().catch(() => null) : null)) || {}).erro || error.message : (data && data.erro);
+      resultado(card, erro ? 'erro' : 'ok', prefixo + (erro ? ' — mas o e-mail NÃO foi enviado: ' + erro : ' — e-mail enviado ao membro ✉️'));
+    } catch (e) { resultado(card, 'erro', prefixo + ' — mas o e-mail NÃO foi enviado.'); }
+  }
   const novoEl = (tag, cls, texto) => { const e = document.createElement(tag); if (cls) e.className = cls; if (texto != null) e.textContent = texto; return e; };
 
   // ---------- Membros ----------
@@ -469,7 +477,8 @@
         const { error } = await sb.rpc('analisar_verificacao', { p_id: v.id, p_aprovar: true, p_motivo: null });
         if (error) { travar(false); resultado(card, 'erro', error.message); return; }
         await apagarFotos(v.fotos);
-        resultado(card, 'ok', 'Aprovado ✓ — fotos de verificação apagadas.');
+        resultado(card, 'ok', 'Aprovado ✓ — fotos de verificação apagadas. Enviando e-mail…');
+        avisarPorEmail(v.id, card, 'Aprovado ✓ — fotos apagadas');
         card.querySelector('.acoes').remove(); card.querySelector('.caixaRecusa').remove();
         $('qtd').textContent = Math.max(0, Number($('qtd').textContent) - 1);
       });
@@ -493,7 +502,8 @@
             : 'Recusado e BANIDO. As fotos foram guardadas como prova.');
         } else {
           await apagarFotos(v.fotos);
-          resultado(card, 'ok', 'Recusado. O membro vai ver o motivo e pode tentar de novo.');
+          resultado(card, 'ok', 'Recusado. O membro vai ver o motivo e pode tentar de novo. Enviando e-mail…');
+          avisarPorEmail(v.id, card, 'Recusado (o membro pode tentar de novo)');
         }
         card.querySelector('.acoes').remove(); card.querySelector('.caixaRecusa').remove();
         $('qtd').textContent = Math.max(0, Number($('qtd').textContent) - 1);
