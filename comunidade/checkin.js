@@ -1,4 +1,4 @@
-// checkin.js — v1.0 — check-in a qualquer hora: lugares perto pelo GPS, cadastrar o lugar onde estou
+// checkin.js — v1.2 — check-in a qualquer hora: lugares perto pelo GPS, cadastrar o lugar onde estou
 (async function () {
   'use strict';
   const { sb, $, msg, moldura, exigirMembro, flyer, toast } = window.BASE;
@@ -17,19 +17,12 @@
   }));
   pintar();
 
-  function posicao() {
-    return new Promise((ok, falha) => {
-      if (!navigator.geolocation) return falha(new Error('Este aparelho não informa a localização.'));
-      navigator.geolocation.getCurrentPosition(p => ok(p.coords), (e) => falha(new Error(
-        e.code === 1 ? 'Você não permitiu a localização. Toque no cadeado ao lado do endereço do site (ou nas configurações do celular) e permita a localização para a Comunidade.'
-        : e.code === 3 ? 'O GPS demorou para responder. Vá para perto da entrada ou de uma janela e tente de novo.'
-        : 'Não consegui pegar a sua localização. Confira se a localização do celular está ligada.')),
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
-    });
-  }
+  const posicao = () => window.BASE.posicao();
   const dist = (m) => m >= 1000 ? (m / 1000).toFixed(1).replace('.', ',') + ' km' : m + ' m';
 
   let pos = null, onde = null;
+  // Lista + busca pelo nome (Comunidade e mapa do OpenStreetMap)
+  const busca = window.LUGARES.montar($('listaPerto'), { visivel: () => visivel });
   async function checkin(lugar, botao) {
     botao.disabled = true;
     const { data, error } = await sb.rpc('fazer_checkin', { p_lugar: lugar, p_lat: pos.latitude, p_lng: pos.longitude,
@@ -49,27 +42,8 @@
     if (pos.accuracy > 300) msg('mPerto', 'info', '⚠️ O GPS está impreciso (' + Math.round(pos.accuracy) + ' m). Se o lugar não aparecer, vá para perto da entrada e procure de novo.');
     else msg('mPerto');
     $('bProcurar').textContent = '🔄 Procurar de novo';
-    const { data, error } = await sb.rpc('lugares_perto', { p_lat: pos.latitude, p_lng: pos.longitude, p_km: 3 });
-    const box = $('listaPerto'); box.innerHTML = '';
     $('secPerto').classList.remove('oculto'); $('secNovo').classList.remove('oculto');
-    if (error) { box.textContent = 'Não foi possível buscar: ' + error.message; return; }
-    const lista = data || [];
-    $('tituloPerto').textContent = lista.length ? 'Perto de você (' + lista.length + ')' : 'Perto de você';
-    if (!lista.length) box.appendChild(el('p', 'suave', 'Nenhum lugar cadastrado num raio de 3 km. Cadastre abaixo o lugar onde você está.'));
-    lista.forEach(l => {
-      const d = el('div', 'lp');
-      const th = el('span', 'th'); const im = el('img'); im.alt = ''; im.src = l.foto ? flyer(l.foto) : 'logo-ouro.png'; if (!l.foto) im.className = 'sem'; th.appendChild(im);
-      const tx = el('div', 'tx'); const a = el('a', null, l.nome); a.href = 'lugar.html?id=' + l.id;
-      const dentro = l.distancia_m <= l.raio_m + Math.min(pos.accuracy || 0, 100);
-      tx.append(a, el('small', null, (dentro ? '📍 Você está aqui' : 'a ' + dist(l.distancia_m)) +
-        (l.checkins_12h ? ' · 🔥 ' + l.checkins_12h + ' check-in' + (l.checkins_12h > 1 ? 's' : '') + ' hoje' : '') +
-        (l.media ? ' · ★ ' + String(l.media).replace('.', ',') : '')));
-      if (l.cidade) tx.appendChild(el('small', null, [l.endereco, l.cidade + (l.uf ? ' - ' + l.uf : '')].filter(Boolean).join(', ')));
-      const b = el('button', null, dentro ? 'Check-in' : 'Longe'); b.type = 'button'; b.disabled = !dentro;
-      if (l.meu_ultimo && Date.now() - new Date(l.meu_ultimo).getTime() < 6 * 3600e3) { b.textContent = '✓ Feito'; b.classList.add('feito'); }
-      b.addEventListener('click', () => checkin(l.id, b));
-      d.append(th, tx, b); box.appendChild(d);
-    });
+    busca.definirPosicao(pos); await busca.perto(pos);
     // Onde estou (cidade/UF) pelo mapa gratuito do OpenStreetMap, para cadastrar um lugar novo
     onde = null; $('nOnde').textContent = '';
     try {
@@ -97,5 +71,7 @@
     setTimeout(() => { location.href = 'lugar.html?id=' + id; }, 1500);
   });
 
-  if (new URLSearchParams(location.search).get('auto')) $('bProcurar').click();
+  const qsB = new URLSearchParams(location.search);
+  if (qsB.get('busca')) busca.buscar(qsB.get('busca'));
+  else if (qsB.get('auto')) $('bProcurar').click();
 })();

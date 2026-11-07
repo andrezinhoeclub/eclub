@@ -1,4 +1,4 @@
-// base.js — v3.4 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v3.5 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -180,6 +180,67 @@
       if (c) c.addEventListener('click', (e) => { e.preventDefault(); t.remove(); document.body.style.overflow = ''; pronto(null); });
       document.body.appendChild(t); document.body.style.overflow = 'hidden';
     });
+  }
+
+  // ---------- Localização (GPS) ----------
+  // O celular SEMPRE pergunta na primeira vez (regra do Android/iPhone: nenhum site ou app libera sozinho).
+  // Aqui o app explica antes de perguntar e, se estiver bloqueado, mostra o passo a passo do aparelho.
+  const ehIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const ehApp = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  function passosLiberar() {
+    if (ehIOS) return ehApp
+      ? ['Abra os <b>Ajustes</b> do iPhone', 'Toque em <b>Privacidade e Segurança → Serviços de Localização</b> e confira se está <b>ligado</b>', 'Desça até <b>Sites do Safari</b> e escolha <b>Durante o Uso</b>', 'Volte ao app e toque em <b>Tentar de novo</b>']
+      : ['No Safari, toque em <b>aA</b> (ao lado do endereço)', 'Toque em <b>Ajustes do Site → Localização → Permitir</b>', 'Confira em Ajustes → Privacidade → Serviços de Localização → Sites do Safari: <b>Durante o Uso</b>', 'Toque em <b>Tentar de novo</b>'];
+    return ehApp
+      ? ['<b>Segure o dedo no ícone da Comunidade</b> na tela do celular', 'Toque em <b>ⓘ Informações do app</b> (ou "Configurações do site")', 'Toque em <b>Permissões → Localização → Permitir</b>', 'Confira se a <b>Localização do celular</b> está ligada (puxe a barra de cima)', 'Volte ao app e toque em <b>Tentar de novo</b>']
+      : ['Toque no <b>cadeado 🔒</b> ao lado do endereço do site', 'Toque em <b>Permissões → Localização → Permitir</b>', 'Confira se a <b>Localização do celular</b> está ligada', 'Toque em <b>Tentar de novo</b>'];
+  }
+  function ajudaLocalizacao(motivo) {
+    cssSessao();
+    return new Promise((pronto) => {
+      const t = document.createElement('div'); t.className = 'trava';
+      const bloqueado = motivo === 'negado';
+      t.innerHTML = '<div style="font-size:3rem">📍</div><h2>' + (bloqueado ? 'LOCALIZAÇÃO BLOQUEADA' : 'USAR SUA LOCALIZAÇÃO') + '</h2>' +
+        (bloqueado
+          ? '<p>A localização está bloqueada para a Comunidade neste aparelho. Por segurança, só você pode liberar (nenhum app libera sozinho):</p><ol style="text-align:left;max-width:340px;color:var(--suave);font-size:.9rem;line-height:1.55"></ol>'
+          : '<p>Para o check-in e o Radar, a Comunidade precisa saber onde você está. O celular vai perguntar: toque em <b>Permitir</b> (ou "Ao usar o app").</p><p style="font-size:.82rem">Ninguém vê onde você está: os outros veem só a distância aproximada.</p>') +
+        '<div style="display:grid;gap:10px;width:100%;max-width:340px;margin-top:14px"><button type="button" class="btn ok">' + (bloqueado ? 'Tentar de novo' : 'Continuar') + '</button><button type="button" class="btn secundario nao">Agora não</button></div>';
+      if (bloqueado) { const ol = t.querySelector('ol'); passosLiberar().forEach(x => { const li = document.createElement('li'); li.innerHTML = x; ol.appendChild(li); }); }
+      const fim = (v) => { t.remove(); document.body.style.overflow = ''; pronto(v); };
+      t.querySelector('.ok').addEventListener('click', () => fim(true));
+      t.querySelector('.nao').addEventListener('click', () => fim(false));
+      document.body.appendChild(t); document.body.style.overflow = 'hidden';
+    });
+  }
+  async function estadoPermissao() {
+    try { const r = await navigator.permissions.query({ name: 'geolocation' }); return r.state; } catch (e) { return 'desconhecido'; }
+  }
+  function lerGPS(maxIdade) {
+    return new Promise((ok, falha) => navigator.geolocation.getCurrentPosition(p => ok(p.coords), falha,
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: maxIdade || 0 }));
+  }
+  async function posicao(maxIdade, silencioso) {
+    if (!navigator.geolocation) throw new Error('Este aparelho não informa a localização.');
+    let st = await estadoPermissao();
+    if (silencioso) {                       // atualização automática: nunca abre telas
+      if (st !== 'granted') throw new Error('sem permissão');
+      return lerGPS(maxIdade);
+    }
+    if (st === 'prompt' && lerLS('cl_gps_explicado') !== '1') {        // explica antes da pergunta do celular
+      if (!await ajudaLocalizacao('primeira')) throw new Error('Sem a localização não dá para usar esta função.');
+      gravarLS('cl_gps_explicado', '1');
+    }
+    for (let tentativa = 0; tentativa < 3; tentativa++) {
+      if (st === 'denied') {
+        if (!await ajudaLocalizacao('negado')) throw new Error('A localização está bloqueada neste aparelho.');
+      }
+      try { return await lerGPS(maxIdade); } catch (e) {
+        if (e.code === 1) { st = 'denied'; continue; }
+        if (e.code === 3) throw new Error('O GPS demorou para responder. Vá para perto da entrada ou de uma janela e tente de novo.');
+        throw new Error('Não consegui pegar a sua localização. Confira se a Localização do celular está ligada (puxe a barra de cima do celular).');
+      }
+    }
+    throw new Error('A localização está bloqueada neste aparelho.');
   }
 
   let vigiando = false, estadoSessao = {};
@@ -805,7 +866,7 @@
   window.BASE = { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, sair, prepararFoto,
                   links, definirMarca, moldura, abrirVisor, gradeFotos, fotoProtegida, visto, idades, tempo,
                   sexos, avatar, toast, emBreve, icone, flyer, CAMPOS, signo, mesDe, UFS, NOME_TIPO, NOME: A.NOME,
-                  perguntarQuem, estadoSessao: () => estadoSessao,
+                  perguntarQuem, estadoSessao: () => estadoSessao, posicao,
                   codigoNesteAparelho: (sim) => { if (sim === undefined) return usaCodigo(); gravarLS(CHAVE_COD, sim ? '1' : null); } };
 
   // Nome da comunidade no topo e no título

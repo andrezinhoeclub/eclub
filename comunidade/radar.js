@@ -1,4 +1,4 @@
-// radar.js — v1.0 — Radar (como no CRS): pessoas e lugares perto, check-in/check-out, cutucar, "a fim de", invisível
+// radar.js — v1.1 — Radar (como no CRS): pessoas e lugares perto, check-in/check-out, cutucar, "a fim de", invisível
 (async function () {
   'use strict';
   const { sb, $, msg, moldura, exigirMembro, flyer, toast, avatar, sexos } = window.BASE;
@@ -9,16 +9,7 @@
   const el = (tag, cls, texto) => { const e = document.createElement(tag); if (cls) e.className = cls; if (texto != null) e.textContent = texto; return e; };
   const AFIM = ['Barzinho', 'Balada', 'Sexo', 'Swing', 'Ménage', 'Conversar', 'Conhecer gente nova', 'Encontro a dois', 'Festa liberal', 'Viajar'];
 
-  function posicao() {
-    return new Promise((ok, falha) => {
-      if (!navigator.geolocation) return falha(new Error('Este aparelho não informa a localização.'));
-      navigator.geolocation.getCurrentPosition(p => ok(p.coords), (e) => falha(new Error(
-        e.code === 1 ? 'Você não permitiu a localização. Toque no cadeado ao lado do endereço do site (ou nas configurações do celular) e permita a localização para a Comunidade.'
-        : e.code === 3 ? 'O GPS demorou para responder. Tente de novo perto de uma janela.'
-        : 'Não consegui pegar a sua localização. Confira se a localização do celular está ligada.')),
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 });
-    });
-  }
+  const posicao = (silencioso) => window.BASE.posicao(60000, silencioso);
   const haQuanto = (iso) => {
     const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
     return m < 2 ? 'agora' : m < 60 ? 'há ' + m + ' min' : 'há ' + Math.round(m / 60) + ' h';
@@ -50,7 +41,7 @@
   async function atualizarLocal(silencioso) {
     if (!silencioso) msg('mRadar', 'info', '📡 Pegando a sua localização…');
     try {
-      pos = await posicao();
+      pos = await posicao(silencioso);
       const { error } = await sb.rpc('radar_atualizar', { p_lat: pos.latitude, p_lng: pos.longitude, p_precisao: Math.round(pos.accuracy || 0) });
       if (error) throw new Error(error.message);
       msg('mRadar'); return true;
@@ -134,36 +125,12 @@
   const pintarVis = () => document.querySelectorAll('#ckVis .chip').forEach(c => c.classList.toggle('sel', c.dataset.v === visivel));
   document.querySelectorAll('#ckVis .chip').forEach(c => c.addEventListener('click', () => { visivel = c.dataset.v; pintarVis(); try { localStorage.setItem('cl_ck_vis', visivel); } catch (e) {} }));
   pintarVis();
+  let buscaLug = null;
   async function carregarLugares() {
-    const box = $('listaLugares'); box.innerHTML = '<p class="suave">Procurando lugares…</p>';
+    if (!buscaLug) buscaLug = window.LUGARES.montar($('listaLugares'), { visivel: () => visivel,
+      aoFazer: async () => { await lerConfig(); pintarStatus(); } });
     if (!pos) await atualizarLocal(false);
-    if (!pos) { box.innerHTML = ''; return; }
-    const { data, error } = await sb.rpc('lugares_perto', { p_lat: pos.latitude, p_lng: pos.longitude, p_km: 5 });
-    box.innerHTML = '';
-    if (error) { box.textContent = 'Não foi possível: ' + error.message; return; }
-    if (!data || !data.length) { box.appendChild(el('p', 'suave', 'Nenhum lugar cadastrado num raio de 5 km.')); return; }
-    data.forEach(l => {
-      const d = el('div', 'lp');
-      const th = el('span', 'th'); const im = el('img'); im.alt = ''; im.src = l.foto ? flyer(l.foto) : 'logo-ouro.png'; if (!l.foto) im.className = 'sem'; th.appendChild(im);
-      const tx = el('div', 'tx'); const a = el('a', null, l.nome); a.href = 'lugar.html?id=' + l.id;
-      const dentro = l.distancia_m <= l.raio_m + Math.min(pos.accuracy || 0, 100);
-      tx.append(a, el('small', null, (dentro ? '📍 Você está aqui' : 'a ' + dist(l.distancia_m)) +
-        (l.checkins_12h ? ' · 🔥 ' + l.checkins_12h + ' aqui agora' : '') + (l.media ? ' · ★ ' + String(l.media).replace('.', ',') : '')));
-      const aqui = CFG.checkin_lugar === l.id;
-      const b = el('button', null, aqui ? '✓ Você está aqui' : dentro ? 'Check-in' : 'Longe'); b.type = 'button';
-      b.disabled = !dentro || aqui; if (aqui) b.classList.add('feito');
-      b.addEventListener('click', async () => {
-        b.disabled = true;
-        const { data: r0, error: e } = await sb.rpc('fazer_checkin', { p_lugar: l.id, p_lat: pos.latitude, p_lng: pos.longitude,
-          p_precisao: Math.round(pos.accuracy || 0), p_visivel: visivel, p_evento: null });
-        const r = r0 && r0[0];
-        if (e || !r || !r.ok) { b.disabled = false; toast((r && r.mensagem) || (e && e.message) || 'Não foi possível.'); return; }
-        try { navigator.vibrate && navigator.vibrate(80); } catch (x) {}
-        toast(r.mensagem + (visivel === 'feed' ? ' · publicado no Siga-me' : ''));
-        await lerConfig(); pintarStatus(); carregarLugares();
-      });
-      d.append(th, tx, b); box.appendChild(d);
-    });
+    if (pos) { buscaLug.definirPosicao(pos); buscaLug.perto(pos); }
   }
 
   // ---------- Ajustes ----------

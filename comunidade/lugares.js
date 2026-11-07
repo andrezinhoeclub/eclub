@@ -1,4 +1,4 @@
-// lugares.js — v1.0 — "Lugares para Avaliar": para avaliar / já avaliados / todos
+// lugares.js — v1.1 — "Lugares para Avaliar": para avaliar / já avaliados / todos
 (async function () {
   'use strict';
   const { sb, $, moldura, exigirMembro, flyer, UFS } = window.BASE;
@@ -44,6 +44,10 @@
     if (!(data || []).length) box.appendChild(el('div', 'cartao', aba === 'avaliar'
       ? 'Não há lugares para avaliar. Depois de ir a um evento confirmado, o lugar aparece aqui.'
       : aba === 'avaliados' ? 'Você ainda não avaliou nenhum lugar.' : 'Nenhum lugar encontrado.'));
+    if (aba === 'todos' && busca) {   // não achou na Comunidade: procura no mapa
+      const a = el('a', 'btn', '🗺️ Procurar "' + busca + '" no mapa e cadastrar'); a.href = 'checkin.html?busca=' + encodeURIComponent(busca);
+      a.style.cssText = 'display:block;margin:10px 12px;text-align:center;text-decoration:none'; box.appendChild(a);
+    }
   }
   document.querySelectorAll('#abas button').forEach(b => b.addEventListener('click', () => {
     aba = b.dataset.aba; history.replaceState({}, '', 'lugares.html?aba=' + aba); carregar();

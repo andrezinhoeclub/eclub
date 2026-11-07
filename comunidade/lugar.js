@@ -1,4 +1,4 @@
-// lugar.js — v1.3 — página do lugar: check-in por GPS, informações, quem já esteve, avaliações e fotos
+// lugar.js — v1.4 — página do lugar: check-in por GPS, informações, quem já esteve, avaliações e fotos
 (async function () {
   'use strict';
   const { sb, $, msg, moldura, exigirMembro, flyer, avatar, sexos, toast, prepararFoto, UFS } = window.BASE;
@@ -67,16 +67,7 @@
   const qs = new URLSearchParams(location.search);
   const eventoCk = Number(qs.get('evento')) || null;
   let CK = null, visivel = 'privado';
-  function posicao() {
-    return new Promise((ok, falha) => {
-      if (!navigator.geolocation) return falha(new Error('Este aparelho não informa a localização.'));
-      navigator.geolocation.getCurrentPosition(p => ok(p.coords), (e) => falha(new Error(
-        e.code === 1 ? 'Você não permitiu a localização. Toque no cadeado ao lado do endereço do site (ou nas configurações do celular) e permita a localização para a Comunidade.'
-        : e.code === 3 ? 'O GPS demorou para responder. Vá para perto da entrada ou de uma janela e tente de novo.'
-        : 'Não consegui pegar a sua localização. Confira se a localização do celular está ligada.')),
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
-    });
-  }
+  const posicao = () => window.BASE.posicao();
   const hora = (iso) => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   function pintarVis() { document.querySelectorAll('#ckVis .chip').forEach(c => c.classList.toggle('sel', c.dataset.v === visivel)); }
   document.querySelectorAll('#ckVis .chip').forEach(c => c.addEventListener('click', async () => {
