@@ -1,4 +1,4 @@
-// aovivo-ver.js — v1.0 — CL Ao Vivo (stories): barra de bolinhas, visualizador, curtir, comentar, quem viu e postar
+// aovivo-ver.js — v1.1 — CL Ao Vivo (stories): barra de bolinhas, visualizador, curtir, comentar, quem viu e postar
 // Uso (inicio.js): AOVIVO.barra(caixa, eu, uf)   ·   AOVIVO.postar(eu)
 (function () {
   'use strict';
@@ -24,9 +24,15 @@
     caixa.appendChild(meu);
     let tenho = 0;
     sb.rpc('aovivo_de', { p_autor: eu.id }).then(({ data }) => { tenho = (data || []).length; meu.classList.toggle('tem', tenho > 0); });
+    // curtidas/comentários novos no meu Ao Vivo: bolinha vermelha na minha foto
+    const aviso = el('span', 'bolinha av-aviso'); meu.appendChild(aviso);
+    const pintar = (n) => { aviso.textContent = n ? (n > 99 ? '99+' : n) : ''; };
+    pintar(window.BASE.notif && window.BASE.notif.aovivo);
+    document.addEventListener('notificacoes', (ev) => pintar(ev.detail.aovivo));
     meu.addEventListener('click', (e) => {
       e.preventDefault();
       if (e.target === mais || !tenho) { postar(eu); return; }
+      sb.rpc('marcar_visto', { p_chave: 'aovivo' }).then(() => window.BASE.avisos && window.BASE.avisos());
       abrir([{ autor: eu.id, apelido: eu.apelido, tipo: eu.tipo, foto_perfil: eu.foto_perfil, eu: true }], 0);
     });
     if (!caixa.dataset.rolagem) {

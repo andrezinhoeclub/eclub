@@ -1,4 +1,4 @@
-// inicio.js — v2.3 — Siga-me / Últimas: destaques, CL Ao Vivo (stories), publicar e feed
+// inicio.js — v2.4 — Siga-me / Últimas: destaques, CL Ao Vivo (stories), publicar e feed
 (async function () {
   'use strict';
   const { sb, $, msg, links, fotoProtegida, avatar, tempo, prepararFoto, moldura, exigirMembro, emBreve, UFS } = window.BASE;
@@ -127,6 +127,7 @@
 
   async function atividades() {
     const box = $('lista'); box.innerHTML = '';
+    sb.rpc('marcar_visto', { p_chave: 'fotolog' }).then(() => window.BASE.avisos && window.BASE.avisos());
     const { data } = await sb.rpc('minhas_atividades', { p_limite: 50 });
     if (!data || !data.length) {
       const c = document.createElement('div'); c.className = 'cartao';
@@ -142,5 +143,5 @@
     });
   }
 
-  mostrarAba('pub');
+  mostrarAba(params.get('ver') === 'atividades' ? 'ativ' : 'pub');
 })();

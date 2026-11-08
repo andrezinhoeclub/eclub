@@ -1,10 +1,10 @@
-// minhas.js — v1.0 — "Minhas Coisas" (como no CRS): Amigos, Seguidores, Paqueras, Favoritos, Anotações e Depoimentos
+// minhas.js — v1.1 — "Minhas Coisas" (como no CRS): Amigos, Seguidores, Paqueras, Favoritos, Anotações e Depoimentos
 // minhas.html?ver=amigos|seguidores|paqueras|anotacoes|depoimentos [&id=<perfil>] [&aba=...]
 (async function () {
   'use strict';
   const { sb, $, moldura, exigirMembro, avatar, sexos, toast, UFS } = window.BASE;
   const { perfil: eu, assinatura } = await exigirMembro();
-  moldura(eu, assinatura, '');
+  moldura(eu, assinatura, (new URLSearchParams(location.search).get('ver') || 'amigos') === 'amigos' && !new URLSearchParams(location.search).get('id') ? 'amigos' : '');
   $('carregando').classList.add('oculto');
   $('tela').classList.remove('oculto');
   const el = (tag, cls, texto) => { const e = document.createElement(tag); if (cls) e.className = cls; if (texto != null) e.textContent = texto; return e; };

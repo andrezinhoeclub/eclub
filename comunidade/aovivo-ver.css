@@ -1,4 +1,4 @@
-/* aovivo-ver.css — v1.0 — CL Ao Vivo (stories): barra, visualizador, comentários e postar */
+/* aovivo-ver.css — v1.1 — CL Ao Vivo (stories): barra, visualizador, comentários e postar */
 .aovivo .titulo-av{text-align:center;color:var(--azul);font-weight:600;padding:10px}
 .story.visto{background:var(--linha)}
 .story.eu.tem{background:var(--ok)}
@@ -48,3 +48,5 @@
 .av-postar textarea{width:100%;box-sizing:border-box;background:var(--cartao2);border:1px solid var(--linha);color:var(--texto);border-radius:10px;padding:10px;font:16px Inter,sans-serif;min-height:60px}
 .av-postar .onde{font-size:.85rem;color:var(--suave);margin:6px 0 10px}
 .av-postar .linha{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.story .av-aviso{position:absolute;top:-2px;right:-2px;left:auto}
+.story .av-aviso:empty{display:none}

@@ -1,4 +1,4 @@
-// base.js — v3.7 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v3.8 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -642,7 +642,7 @@
 
   // ---------- Moldura das telas: topo, menu lateral e barra de baixo ----------
   // ativo: 'sigame' | 'ultimas' | 'radar' | 'perfil' | 'busca' | ...
-  let suporteNovas = 0;
+  let suporteNovas = 0, notif = {};
   async function moldura(perfil, assinatura, ativo) {
     const pag = (n, rotulo, href, extra) =>
       '<' + (href ? 'a href="' + href + '"' : 'button type="button"') + ' data-id="' + n + '" aria-label="' + rotulo + '"' + (extra || '') + '>' +
@@ -650,7 +650,7 @@
 
     const topo = document.createElement('div'); topo.className = 'barra-topo';
     topo.innerHTML = '<div class="icones"><a class="marca-app" href="inicio.html" aria-label="Início"><img src="logo-ouro.png" alt=""><span>Comunidade</span><i>Liberal</i></a>' +
-      pag('menu', 'Menu') + pag('agenda', 'Eventos', 'eventos.html') + pag('perfil', 'Meu perfil', 'meu-perfil.html') +
+      pag('menu', 'Menu') + pag('agenda', 'Eventos', 'eventos.html') + pag('amigos', 'Amigos e pedidos de amizade', 'minhas.html?ver=amigos') +
       pag('recado', 'Recados', 'recados.html') + pag('chat', 'Mensagens', 'chat.html') + pag('camera', 'Publicar foto', 'inicio.html?postar=foto') +
       pag('busca', 'Buscar membros', 'aovivo.html?busca=1') + '</div>';
     document.body.prepend(topo);
@@ -668,30 +668,36 @@
     });
     topo.querySelector('[data-id="menu"]').addEventListener('click', () => abrirMenu(perfil, assinatura));
 
-    // Avisos: pedidos de álbum pendentes aparecem no ícone do perfil
-    sb.from('album_pedidos').select('solicitante', { count: 'exact', head: true })
-      .eq('dono', perfil.id).eq('status', 'pendente')
-      .then(({ count }) => { if (count) $('b_perfil').textContent = count; });
+    // 📷 com curtida/comentário novo: abre as Atividades; sem nada novo: publicar foto
+    topo.querySelector('[data-id="camera"]').addEventListener('click', (e) => {
+      if (notif.fotolog_posts > 0) { e.preventDefault(); location.href = 'inicio.html?ver=atividades'; }
+    });
+    // Entrou na seção: o que tinha de novo ali já foi visto
+    const SECAO_VISTA = { sigame: 'sigame', ultimas: 'ultimas', forum: 'forum' };
+    const marcarSecao = SECAO_VISTA[ativo] ? sb.rpc('marcar_visto', { p_chave: SECAO_VISTA[ativo] }) : Promise.resolve();
 
     // Avisos: mensagens não lidas e recados novos
+    // Notificações (como no CRS): uma consulta só e cada número no seu ícone
     async function avisos() {
-      const { data } = await sb.rpc('meus_avisos');
-      const a = (data && data[0]) || {};
-      $('b_chat').textContent = a.mensagens ? (a.mensagens > 99 ? '99+' : a.mensagens) : '';
-      $('b_recado').textContent = a.recados ? (a.recados > 99 ? '99+' : a.recados) : '';
-      const total = (a.mensagens || 0) + (a.recados || 0);
+      const { data } = await sb.rpc('minhas_notificacoes');
+      notif = data || {}; window.BASE.notif = notif;
+      const n = (v) => v ? (v > 99 ? '99+' : String(v)) : '';
+      const por = (id, v) => { const e = $(id); if (e) e.textContent = n(v); };
+      por('b_agenda', notif.eventos); por('b_amigos', notif.amigos); por('b_recado', notif.recados);
+      por('b_chat', notif.chat); por('b_camera', notif.fotolog);
+      por('bb_sigame', notif.sigame); por('bb_ultimas', notif.ultimas); por('bb_radar', notif.radar);
+      por('bb_forum', notif.forum); por('bb_grupos', notif.grupos);
+      suporteNovas = notif.suporte || 0;
+      const menu = (notif.privado || 0) + (notif.depoimentos || 0) + (notif.paqueras || 0) + (notif.admin || 0);
+      $('b_menu').textContent = suporteNovas ? '!' : n(menu);
       document.title = document.title.replace(/^\(\d+\+?\) /, '');
-      if (total) document.title = '(' + total + ') ' + document.title;
-      // Cutucadas novas no Radar
-      sb.rpc('radar_avisos').then(({ data: rc }) => { const b = $('bb_radar'); if (b) b.textContent = rc ? (rc > 9 ? '9+' : rc) : ''; });
-      // Respostas novas da administração (aparece no ícone do menu)
-      const { data: sn } = await sb.rpc('suporte_avisos');
-      suporteNovas = sn || 0;
-      $('b_menu').textContent = suporteNovas ? '!' : '';
+      if (notif.total) document.title = '(' + n(notif.total) + ') ' + document.title;
+      document.dispatchEvent(new CustomEvent('notificacoes', { detail: notif }));
     }
     window.BASE.avisos = avisos;
-    avisos();
-    setInterval(() => { if (!document.hidden) avisos(); }, 60000);
+    marcarSecao.then(avisos, avisos);
+    setInterval(() => { if (!document.hidden) avisos(); }, 45000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) avisos(); });
     // Mensagem nova chega na hora (tempo real)
     try {
       sb.channel('avisos-' + perfil.id)
@@ -790,7 +796,7 @@
     item('camera', '+ Atualizar Fotolog', 'inicio.html?postar=foto');
     item('camera', 'Meu Fotolog', 'meu-perfil.html#fotos');
     item('perfil', '+ Postar Foto de Rosto', 'meu-perfil.html?album=privado#fotos');
-    item('perfil', 'Fotos de Rosto', 'meu-perfil.html#fotos');
+    const iRostos = item('perfil', 'Fotos de Rosto', 'meu-perfil.html#fotos');
     item('agenda', 'Minha Agenda', 'eventos.html?aba=agenda');
     const iDepo = mais(item('estrela', 'Meus Depoimentos', 'minhas.html?ver=depoimentos'));
     const iPaq = mais(item('coracao', 'Minhas Paqueras', 'minhas.html?ver=paqueras'));
@@ -834,14 +840,16 @@
     const inst = item('baixar', 'Instalar o App no celular', 'instalar.html'); inst.classList.add('instalar');
     const sup = item('chat', 'Falar com a Administração', 'suporte.html');
     if (suporteNovas) sup.appendChild(etiqueta(suporteNovas + (suporteNovas > 1 ? ' respostas' : ' resposta'), 'vencido'));
-    if (assinatura.admin) item('admin', 'Painel da Administração', 'admin.html');
-    // Avisos: pedidos de amizade, depoimentos para aceitar, paqueras retribuídas, nº de anotações
+    const iAdm = assinatura.admin ? item('admin', 'Painel da Administração', 'admin.html') : null;
+    // Avisos no menu: pedidos de amizade, depoimentos para aceitar, paqueras retribuídas, pedidos do álbum, admin
+    const marcar = (el, n, t) => { if (!n || !el) return; el.classList.remove('oculto'); el.appendChild(etiqueta(n + ' ' + t, 'vencido')); };
+    marcar(iAmigos, notif.amigos, notif.amigos > 1 ? 'pedidos' : 'pedido');
+    marcar(iDepo, notif.depoimentos, 'para aceitar');
+    marcar(iPaq, notif.paqueras, notif.paqueras > 1 ? 'retribuídas' : 'retribuída');
+    marcar(iRostos, notif.privado, notif.privado > 1 ? 'pedidos' : 'pedido');
+    marcar(iAdm, notif.admin, 'pendentes');
     sb.rpc('social_avisos').then(({ data }) => {
       const a = (data && data[0]) || {};
-      const marcar = (el, n, t) => { if (!n) return; el.classList.remove('oculto'); el.appendChild(etiqueta(n + ' ' + t, 'vencido')); };
-      marcar(iAmigos, a.pedidos, a.pedidos > 1 ? 'pedidos' : 'pedido');
-      marcar(iDepo, a.depoimentos, 'para aceitar');
-      marcar(iPaq, a.paqueras, a.paqueras > 1 ? 'retribuídas' : 'retribuída');
       if (a.anotacoes) iAnot.querySelector('span').textContent = 'Minhas Anotações (' + a.anotacoes + ')';
     });
     const s = item('sair', 'SAIR', sair); s.classList.add('sair');
