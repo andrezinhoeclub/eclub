@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://tile.openstreetmap.org; connect-src https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://tile.openstreetmap.org; connect-src https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net https://nominatim.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Início</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilo.css?v=3.2">
+<link rel="stylesheet" href="aovivo-ver.css?v=1.0">
 <style>
 .aviso-rosto{background:#e5484d1f;border:1px solid #e5484d66;border-radius:10px;padding:9px 12px;font-size:.84rem;line-height:1.4;margin-top:8px}
 .compor .previas .pv{position:relative}
@@ -28,11 +29,11 @@
 
     <!-- Ao Vivo -->
     <div class="aovivo">
-      <a href="aovivo.html?online=1" id="linkAoVivo">Ao Vivo</a>
+      <span class="titulo-av">CL Ao Vivo</span>
       <select id="ufAoVivo" aria-label="Estado"><option value="">todos estados</option></select>
     </div>
 
-    <!-- Stories (quem está ativo) -->
+    <!-- CL Ao Vivo: fotos de 7 dias (stories) -->
     <div class="stories" id="stories"></div>
 
     <!-- Publicar -->
@@ -69,13 +70,14 @@
   </div>
 </main>
 
-<footer><a href="regras.html">Regras e privacidade</a> · inicio.html v2.8</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · inicio.html v2.9</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="base.js?v=3.7"></script>
 <script src="feed.js?v=1.5"></script>
 <script src="editor-foto.js?v=1.2"></script>
-<script src="inicio.js?v=2.2"></script>
+<script src="aovivo-ver.js?v=1.0"></script>
+<script src="inicio.js?v=2.3"></script>
 </body>
 </html>

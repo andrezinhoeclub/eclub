@@ -1,4 +1,4 @@
-// inicio.js — v2.2 — Siga-me / Últimas: destaques, Ao Vivo, stories, publicar e feed
+// inicio.js — v2.3 — Siga-me / Últimas: destaques, CL Ao Vivo (stories), publicar e feed
 (async function () {
   'use strict';
   const { sb, $, msg, links, fotoProtegida, avatar, tempo, prepararFoto, moldura, exigirMembro, emBreve, UFS } = window.BASE;
@@ -22,44 +22,19 @@
       a.append(b, s); $('destaques').appendChild(a);
     }));
 
-  // ---------- Ao Vivo ----------
+  // ---------- CL Ao Vivo (stories) ----------
+  // Bolinhas: primeiro os amigos, depois quem eu sigo, depois os demais; quem já vi tudo vai para o fim.
+  async function contagemEstados() {
+    const { data } = await sb.rpc('aovivo_estados');
+    const qtd = {}; let total = 0;
+    (data || []).forEach(r => { qtd[r.uf] = Number(r.qtd); total += Number(r.qtd); });
+    [...$('ufAoVivo').options].forEach(o => { o.textContent = (o.value || 'todos estados') + ' (' + (o.value ? (qtd[o.value] || 0) : total) + ')'; });
+  }
   UFS.forEach(u => { const o = document.createElement('option'); o.value = u; o.textContent = u; $('ufAoVivo').appendChild(o); });
   try { const s = localStorage.getItem('filtroUf'); if (s) $('ufAoVivo').value = s; } catch (e) {}
-  async function aoVivo() {
-    const uf = $('ufAoVivo').value || null;
-    const { data } = await sb.rpc('contagem_ao_vivo', { p_uf: uf });
-    $('linkAoVivo').textContent = 'Ao Vivo (' + (data || 0) + ')';
-    $('linkAoVivo').href = 'aovivo.html?online=1' + (uf ? '&uf=' + uf : '');
-    $('ufAoVivo').options[0].textContent = 'todos estados';
-  }
-  $('ufAoVivo').addEventListener('change', () => { try { localStorage.setItem('filtroUf', $('ufAoVivo').value); } catch (e) {} aoVivo(); stories(); });
-  aoVivo();
-
-  // ---------- Stories: eu + membros ativos recentemente ----------
-  async function stories() {
-    const box = $('stories'); box.innerHTML = '';
-    const meu = document.createElement('a'); meu.className = 'story eu'; meu.href = '#'; meu.title = 'Publicar foto';
-    const d0 = document.createElement('span'); d0.className = 'dentro'; meu.appendChild(d0);
-    const mais = document.createElement('span'); mais.className = 'mais'; mais.textContent = '+'; meu.appendChild(mais);
-    avatar(d0, eu, 140);
-    meu.addEventListener('click', (e) => { e.preventDefault(); abrirCompor(true); });
-    box.appendChild(meu);
-
-    let q = sb.from('perfis_publicos').select('id, apelido, tipo, foto_perfil, ultimo_acesso')
-      .neq('id', eu.id).not('foto_perfil', 'is', null)
-      .order('ultimo_acesso', { ascending: false, nullsFirst: false }).limit(20);
-    if ($('ufAoVivo').value) q = q.eq('uf', $('ufAoVivo').value);
-    const { data } = await q;
-    const urls = await links((data || []).map(p => p.foto_perfil));
-    (data || []).forEach(p => {
-      if (!urls[p.foto_perfil]) return;
-      const a = document.createElement('a'); a.className = 'story'; a.href = 'perfil.html?id=' + encodeURIComponent(p.id); a.title = p.apelido;
-      const d = document.createElement('span'); d.className = 'dentro';
-      d.appendChild(fotoProtegida(urls[p.foto_perfil], { cortar: true, largura: 140, dono: p.id }));
-      a.appendChild(d); box.appendChild(a);
-    });
-  }
-  stories();
+  const stories = () => window.AOVIVO.barra($('stories'), eu, $('ufAoVivo').value || null);
+  $('ufAoVivo').addEventListener('change', () => { try { localStorage.setItem('filtroUf', $('ufAoVivo').value); } catch (e) {} stories(); });
+  contagemEstados(); stories();
 
   // ---------- Publicar ----------
   const escolhidas = [];
