@@ -9,6 +9,7 @@
 <title>Meu perfil</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilo.css?v=3.2">
+<link rel="stylesheet" href="perfil-capa.css?v=1.0">
 </head>
 <body>
 
@@ -17,11 +18,14 @@
 
   <div class="oculto" id="tela">
     <!-- Cabeçalho -->
-    <div class="cartao perfil-topo">
+    <div class="cartao perfil-topo com-capa" id="capa-topo">
+      <div class="perfil-capa" id="capa"><button type="button" class="editar-capa" id="bCapa">📷 Editar capa</button></div>
       <div class="avatar" id="avatar"></div>
       <h1 id="txtApelido"></h1>
       <div class="suave" id="txtTipo"></div>
       <div style="margin-top:8px"><span class="numero-membro" id="txtNumero"></span></div>
+      <div class="msg" id="mCapa"></div>
+      <div class="email-privado">E-mail de cadastro:<b id="txtEmail">—</b><small>SEU E-MAIL É PRIVADO! APENAS VOCÊ PODE VER!</small></div>
       <div class="linha-acoes">
         <a class="btn secundario" id="linkPrevia" href="#">👁️ Ver como os outros veem</a>
       </div>
@@ -32,6 +36,12 @@
       <div>➡️ <b id="nSeguindo">0</b> Seguindo</div>
       <div>📝 <b id="nPosts">0</b> Publicações</div>
       <div>📷 <b id="nFotos">0</b> Fotos</div>
+    </div>
+
+    <!-- Últimas visitas (só você vê) -->
+    <div class="cartao oculto" id="cartaoVisitas">
+      <h2 style="margin-top:0">Últimas visitas ao seu perfil</h2>
+      <div class="visitas-lista" id="listaVisitas"></div>
     </div>
 
     <!-- Pedidos de álbum -->
@@ -130,12 +140,12 @@
   </div>
 </main>
 
-<footer><a href="regras.html">Regras e privacidade</a> · meu-perfil.html v2.9</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · meu-perfil.html v3.0</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="base.js?v=3.8"></script>
 <script src="editor-foto.js?v=1.2"></script>
-<script src="meu-perfil.js?v=2.7"></script>
+<script src="meu-perfil.js?v=2.8"></script>
 </body>
 </html>

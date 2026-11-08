@@ -1,8 +1,8 @@
-// perfil.js — v2.7 — perfil de um membro (layout em cartão central)
+// perfil.js — v2.8 — perfil de um membro (capa, faixas, medalhas e visitas, como no CRS)
 (async function () {
   'use strict';
   const { sb, $, msg, idades, visto, avatar, sexos, gradeFotos, moldura, exigirMembro, emBreve, toast,
-          CAMPOS, signo, mesDe } = window.BASE;
+          CAMPOS, signo, mesDe, links, fotoProtegida } = window.BASE;
 
   const { perfil: eu, assinatura } = await exigirMembro();
   moldura(eu, assinatura, '');
@@ -14,7 +14,7 @@
   if (!/^[0-9a-f-]{36}$/i.test(id)) { $('naoAchado').classList.remove('oculto'); return; }
 
   const { data: p } = await sb.from('perfis_publicos')
-    .select('id, numero, apelido, tipo, sexo_1, sexo_2, idade_1, idade_2, cidade, uf, bio, procura, foto_perfil, verificado, ultimo_acesso, criado_em, detalhes, aniv_1, aniv_2')
+    .select('id, numero, apelido, tipo, sexo_1, sexo_2, idade_1, idade_2, cidade, uf, bio, procura, foto_perfil, verificado, ultimo_acesso, criado_em, detalhes, aniv_1, aniv_2, capa')
     .eq('id', id).maybeSingle();
   if (!p) { $('naoAchado').classList.remove('oculto'); return; }
   const d = p.detalhes || {};
@@ -30,8 +30,13 @@
   $('txtNome').append(sexos(p), p.apelido);
   $('txtUf').textContent = '. ' + p.uf;
   $('txtStatus').textContent = online ? 'Online agora' : visto(p.ultimo_acesso);
-  // "A fim de … hoje" (Radar)
-  sb.rpc('a_fim_de', { p_membro: p.id }).then(({ data: af }) => { if (af) { $('aFim').textContent = '🔥 A fim de ' + af.toLowerCase() + ' hoje!'; $('aFim').classList.remove('oculto'); } });
+  if (!previa) sb.rpc('registrar_visita', { p_id: p.id });
+  // Capa (poster) com a marca d'água do dono
+  if (p.capa) links([p.capa]).then(u => { if (u[p.capa]) $('capa').prepend(fotoProtegida(u[p.capa], { largura: 1200, dono: p.id, alt: 'Capa de ' + p.apelido })); });
+  if (previa) { const ed = el('a', 'editar-capa', 'Editar'); ed.href = 'meu-perfil.html#capa'; $('capa').appendChild(ed); }
+  // Selos na capa: "A fim de … hoje" (Radar) e "não procura homens solteiros"
+  sb.rpc('a_fim_de', { p_membro: p.id }).then(({ data: af }) => { if (af) $('selosCapa').prepend(el('span', 'fim', '🔥 A fim de ' + af.toUpperCase() + ' hoje!')); });
+  if (Array.isArray(d.interesse) && d.interesse.length && !d.interesse.includes('Homem')) $('selosCapa').appendChild(el('span', null, 'Esse perfil não procura homens solteiros!'));
   if (!online) $('txtStatus').style.color = 'var(--suave)';
   $('txtCidade').textContent = p.cidade + ' . ' + p.uf;
 
@@ -47,7 +52,7 @@
     const lib = [];
     if (d.sai_sozinho_1) lib.push((p.sexo_1 === 'M' ? 'Ele é liberado' : 'Ela é liberada') + ' para sair sozinh' + (p.sexo_1 === 'M' ? 'o' : 'a') + '.');
     if (d.sai_sozinho_2) lib.push((p.sexo_2 === 'M' ? 'Ele é liberado' : 'Ela é liberada') + ' para sair sozinh' + (p.sexo_2 === 'M' ? 'o' : 'a') + '.');
-    $('txtLiberdade').textContent = lib.join(' ');
+    lib.forEach(t => $('faixas').appendChild(el('div', /^Ele/.test(t) ? 'ele' : 'ela', t)));
   }
 
   // ---------- Botões ----------
@@ -110,7 +115,7 @@
     selo(R.em_comum ? '🤝 ' + R.em_comum + ' Amigos Reais em comum' : 'Nenhum Amigo Real em comum', 'azul', R.em_comum ? base + '&aba=comum' : null);
     if (R.intimos_mutuos) selo('🔥 ' + R.intimos_mutuos + ' Amigos Íntimos', 'rosa');
   }
-  relacao();
+  relacao().then(medalhas);
   $('bPaquerar').addEventListener('click', async () => {
     const { data, error } = await sb.rpc('paquerar', { p_id: id });
     if (error) { toast(error.message); return; }
@@ -127,6 +132,67 @@
     toast(error ? error.message : $('anTexto').value.trim() ? 'Anotação salva ✓ (só você vê)' : 'Anotação apagada'); relacao();
   });
   if (location.hash === '#anotacao' && !previa) setTimeout(() => { $('caixaMais').classList.remove('oculto'); $('caixaAnotacao').classList.remove('oculto'); $('anTexto').focus(); }, 700);
+
+  // ---------- Medalhas (Avaliação de Perfis, como no CRS) ----------
+  const GERAIS = [['interessante', '💡 Interessante', 'Muito mais que sexo…'], ['melhor_ao_vivo', '🌟 Ainda Melhor Ao Vivo', 'Supera expectativas…'],
+    ['sexy', '💋 Sexy', 'Atraente, sedutor…'], ['da_pegada', '😈 Da Pegada!', 'Curte sexo! Sem figuração…'], ['baladeiro', '🎵 Baladeiro', 'Curte festas e baladas…'],
+    ['divertido', '😃 Divertido', 'Cia agradável, alto astral…'], ['inteligente', '🧠 Inteligente', 'Culto, bom papo…'], ['elegante', '🎩 Elegante', 'Fino, requintado…'],
+    ['autentico', '✅ Autêntico', 'Verdadeiro, confiável…']];
+  const PESSOA = { gostoso: ['Gostoso', 'Gostosa'], sarado: ['Sarado', 'Sarada'], bonito: ['Bonito', 'Bonita'], sexy: ['Sexy', 'Sexy'], safado: ['Safado', 'Safada'] };
+  const nomeMed = (k, sx) => (PESSOA[k] || ['', ''])[sx === 'M' ? 0 : 1];
+  function explicarMedalhas() {
+    dialogo('Avaliação de Perfis', 'Os <b>Amigos Reais</b> avaliam em segredo, apontando as características que melhor descrevem o perfil. As mais apontadas aparecem aqui como medalhas.<br><br>Só Amigos Reais podem avaliar e ser avaliados. Ninguém fica sabendo como você avaliou.', []);
+  }
+  async function medalhas() {
+    const box = $('medalhas'); box.innerHTML = '';
+    const { data: m } = await sb.rpc('medalhas_de', { p_id: id });
+    const med = m || {};
+    const chip = (t, cls, fn) => { const b = el('span', 'badge ' + (cls || '') + (fn ? ' botao' : ''), t); if (fn) b.addEventListener('click', fn); box.appendChild(b); return b; };
+    if (med.pessoa1) chip((med.pessoa1 === 'safado' ? '😈 ' : '🏅 ') + nomeMed(med.pessoa1, p.sexo_1), p.sexo_1 === 'M' ? 'azul' : 'rosa');
+    if (p.tipo === 'casal' && med.pessoa2) chip((med.pessoa2 === 'safado' ? '😈 ' : '🏅 ') + nomeMed(med.pessoa2, p.sexo_2), p.sexo_2 === 'M' ? 'azul' : 'rosa');
+    (med.gerais || []).forEach(k => { const g = GERAIS.find(x => x[0] === k); if (g) chip(g[1]); });
+    if (!previa && R.amizade === 'amigos' && R.tipo === 'real') chip('⭐ Avaliar', 'ouro', formAvaliar);
+    if (box.children.length) chip('?', '', explicarMedalhas);
+  }
+  async function formAvaliar() {
+    const { data: a0 } = await sb.rpc('minha_avaliacao', { p_id: id });
+    const atual = (a0 && a0[0]) || {};
+    const f = el('div', 'dialogo-fundo'); f.style.cssText = 'position:fixed;inset:0;z-index:80;background:#000a;display:flex;align-items:flex-end;justify-content:center';
+    const c = el('div', 'cartao av-perfil-form'); c.style.cssText = 'width:100%;max-width:520px;margin:0;border-radius:16px 16px 0 0;padding:16px 16px 22px;max-height:88vh;overflow-y:auto';
+    c.appendChild(el('h2', null, 'Avaliar ' + p.apelido)); c.lastChild.style.marginTop = '0';
+    c.appendChild(el('p', 'suave', atual.gerais ? 'Você já avaliou este perfil. Salvar de novo substitui a avaliação anterior.' : 'Sua avaliação é anônima! Ninguém vai saber como você avaliou.'));
+    const g = el('div', 'grupo', 'Quais características melhor descrevem este perfil?'); g.appendChild(el('small', null, 'marque até 3 opções')); c.appendChild(g);
+    const marcados = new Set(atual.gerais || []);
+    GERAIS.forEach(([k, t, sub]) => {
+      const l = el('label'); const i = el('input'); i.type = 'checkbox'; i.checked = marcados.has(k);
+      i.addEventListener('change', () => { if (i.checked) { if (marcados.size >= 3) { i.checked = false; toast('Marque até 3 opções.'); return; } marcados.add(k); } else marcados.delete(k); });
+      const s = el('span', null, t); s.appendChild(el('small', null, sub)); l.append(i, s); c.appendChild(l);
+    });
+    const escolhas = {};
+    const pessoas = p.tipo === 'casal' ? [[1, p.sexo_1], [2, p.sexo_2]] : [[1, p.sexo_1]];
+    pessoas.forEach(([n, sx]) => {
+      const nome = p.tipo === 'casal' ? nomeDe(sx, n) : p.apelido;
+      const gp = el('div', 'grupo', 'Qual característica melhor descreve ' + nome + '?'); gp.appendChild(el('small', null, 'marque 1 opção')); c.appendChild(gp);
+      escolhas[n] = atual['pessoa' + n] || null;
+      Object.keys(PESSOA).forEach(k => {
+        const l = el('label'); const i = el('input'); i.type = 'radio'; i.name = 'pessoa' + n; i.checked = escolhas[n] === k;
+        i.addEventListener('change', () => { escolhas[n] = k; });
+        l.append(i, el('span', null, nomeMed(k, sx))); c.appendChild(l);
+      });
+    });
+    const fechar = () => f.remove();
+    const ok = el('button', 'btn', 'Salvar avaliação'); ok.type = 'button'; ok.style.cssText = 'width:100%;margin-top:14px';
+    const cancel = el('button', 'btn secundario', 'Cancelar'); cancel.type = 'button'; cancel.style.cssText = 'width:100%;margin-top:8px';
+    ok.addEventListener('click', async () => {
+      const { error } = await sb.rpc('avaliar_perfil', { p_id: id, p_gerais: [...marcados], p_p1: escolhas[1] || null, p_p2: escolhas[2] || null });
+      if (error) { toast(error.message); return; }
+      fechar(); toast('Avaliação salva ✓ (anônima)'); medalhas();
+    });
+    cancel.addEventListener('click', fechar);
+    f.addEventListener('click', (e) => { if (e.target === f) fechar(); });
+    c.append(ok, cancel); f.appendChild(c); document.body.appendChild(f);
+  }
+  if (location.hash === '#avaliar' && !previa) setTimeout(() => formAvaliar(), 900);
 
   // Caixa de diálogo de amizade
   function dialogo(titulo, texto, opcoes) {

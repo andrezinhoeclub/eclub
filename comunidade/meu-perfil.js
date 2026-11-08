@@ -1,4 +1,4 @@
-// meu-perfil.js — v2.7 — editar perfil (com detalhes Ele/Ela), fotos, álbum privado e bloqueios
+// meu-perfil.js — v2.8 — editar perfil (com detalhes Ele/Ela), capa, e-mail privado, últimas visitas, fotos, álbum privado e bloqueios
 (async function () {
   'use strict';
   const { sb, $, msg, formacao, links, fotoProtegida, gradeFotos, sexos,
@@ -14,6 +14,77 @@
   sb.rpc('numeros_perfil', { p_id: eu.id }).then(({ data }) => {
     const n = (data && data[0]) || {};
     $('nSeguidores').textContent = n.seguidores || 0; $('nSeguindo').textContent = n.seguindo || 0; $('nPosts').textContent = n.publicacoes || 0;
+  });
+
+  // ---------- E-mail de cadastro (só a pessoa vê, mascarado como no CRS) ----------
+  sb.auth.getUser().then(({ data }) => {
+    const em = (data && data.user && data.user.email) || '';
+    const [u, dom] = em.split('@');
+    if (u && dom) {
+      const mascara = (s) => s.length <= 2 ? s[0] + '_' : s.slice(0, Math.min(3, s.length - 1)) + '____';
+      const [d1, ...resto] = dom.split('.');
+      $('txtEmail').textContent = mascara(u) + '@' + (d1.length > 2 ? d1[0] + '____' + d1.slice(-1) : d1) + '.' + resto.join('.');
+    }
+  });
+
+  // ---------- Capa (poster) ----------
+  async function pintarCapa(caminho) {
+    $('capa').querySelectorAll('canvas').forEach(c => c.remove());
+    if (!caminho) return;
+    const u = await links([caminho]);
+    if (u[caminho]) $('capa').prepend(fotoProtegida(u[caminho], { largura: 1200, dono: eu.id, alt: 'Capa do perfil' }));
+  }
+  sb.from('perfis').select('capa').eq('id', eu.id).maybeSingle().then(({ data }) => { eu.capa = data && data.capa; pintarCapa(eu.capa); });
+  $('bCapa').addEventListener('click', () => {
+    if (window.EDITOR_FOTO) window.EDITOR_FOTO.carregarDetector().catch(() => {});
+    const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*';
+    i.addEventListener('change', async () => {
+      const arq = i.files[0]; if (!arq) return;
+      msg('mCapa', 'info', 'Preparando a capa… confira se nenhum rosto ficou à mostra.');
+      let caminho = null;
+      try {
+        const orig = await prepararFoto(arq);
+        const r = await window.EDITOR_FOTO.editar(orig);
+        if (!r) { msg('mCapa'); return; }
+        msg('mCapa', 'info', 'Enviando a capa…');
+        caminho = eu.id + '/capa-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7) + '.jpg';
+        const up = await sb.storage.from('fotos').upload(caminho, r.blob, { contentType: 'image/jpeg', upsert: false });
+        if (up.error) { caminho = null; throw new Error('Falha ao enviar a foto.'); }
+        const ins = await sb.from('fotos').insert({ dono: eu.id, caminho, album: 'capa' });
+        if (ins.error) throw new Error('Falha ao salvar a foto.');
+        const { data: velha, error } = await sb.rpc('definir_capa', { p_caminho: caminho });
+        if (error) throw error;
+        if (velha) sb.storage.from('fotos').remove([velha]);
+        eu.capa = caminho; await pintarCapa(caminho);
+        msg('mCapa', 'ok', 'Capa atualizada ✓');
+      } catch (e) {
+        if (caminho) { await sb.from('fotos').delete().eq('caminho', caminho); await sb.storage.from('fotos').remove([caminho]); }
+        msg('mCapa', 'erro', e.message || 'Não foi possível trocar a capa.');
+      }
+    });
+    i.click();
+  });
+
+  // ---------- Últimas visitas ao meu perfil (só eu vejo) ----------
+  sb.rpc('minhas_visitas', { p_limite: 20 }).then(async ({ data }) => {
+    if (!data || !data.length) return;
+    const novoEl = (tag, cls, texto) => { const e = document.createElement(tag); if (cls) e.className = cls; if (texto != null) e.textContent = texto; return e; };
+    $('cartaoVisitas').classList.remove('oculto');
+    const fmt = (iso) => {
+      const d = new Date(iso), hoje = new Date(), ontem = new Date(Date.now() - 86400000);
+      const h = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + 'h';
+      if (d.toDateString() === hoje.toDateString()) return 'Visitou hoje às ' + h;
+      if (d.toDateString() === ontem.toDateString()) return 'Visitou ontem às ' + h;
+      return 'Visitou em ' + d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' }) + ', às ' + h;
+    };
+    data.forEach(v => {
+      const linha = novoEl('div', 'v'); const av = novoEl('div', 'av');
+      av.textContent = v.tipo === 'casal' ? '💑' : v.tipo === 'solteira' ? '👩' : '👨';
+      if (v.foto_perfil) links([v.foto_perfil]).then(u => { if (u[v.foto_perfil]) { av.textContent = ''; av.appendChild(fotoProtegida(u[v.foto_perfil], { cortar: true, largura: 90, dono: v.membro })); } });
+      const tx = novoEl('div'); const a = novoEl('a', null, v.apelido + (v.uf ? ' . ' + v.uf : '')); a.href = 'perfil.html?id=' + encodeURIComponent(v.membro);
+      tx.append(a, novoEl('small', null, fmt(v.visto_em)));
+      linha.append(av, tx); $('listaVisitas').appendChild(linha);
+    });
   });
 
   // ---------- Detalhes (Ele / Ela, preferências) ----------

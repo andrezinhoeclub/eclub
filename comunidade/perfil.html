@@ -9,6 +9,7 @@
 <title>Perfil</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilo.css?v=3.2">
+<link rel="stylesheet" href="perfil-capa.css?v=1.0">
 </head>
 <body>
 
@@ -20,8 +21,9 @@
     <div class="cartao oculto" id="avisoPrevia"><p class="suave" style="margin:0">👁️ Assim os outros membros veem o seu perfil. <a href="meu-perfil.html">Voltar para editar</a></p></div>
 
     <!-- Topo do perfil -->
-    <div class="oculto" id="aFim" style="text-align:center;font-weight:700;padding:9px 12px;border-radius:12px;margin-bottom:8px;color:#fff;background:linear-gradient(90deg,#5f3dc4,#c2255c)"></div>
-    <div class="cartao perfil-topo">
+    <div class="faixas-perfil" id="faixas"></div>
+    <div class="cartao perfil-topo com-capa">
+      <div class="perfil-capa" id="capa"><div class="selos-capa" id="selosCapa"></div></div>
       <div class="avatar" id="avatar"></div>
       <h1><span id="txtNome"></span> <span class="uf" id="txtUf"></span></h1>
       <div class="status" id="txtStatus"></div>
@@ -29,7 +31,7 @@
 
       <div class="badges" id="badges"></div>
       <div class="badges" id="badgesIdade"></div>
-      <div class="suave" id="txtLiberdade" style="margin-top:6px"></div>
+      <div class="medalhas" id="medalhas"></div>
 
       <div class="botoes-perfil" id="botoes">
         <button type="button" id="bSeguir"><span class="ic">➕</span><span>Seguir</span></button>
@@ -141,12 +143,12 @@
   </div>
 </main>
 
-<footer><a href="regras.html">Regras e privacidade</a> · perfil.html v3.0</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · perfil.html v3.1</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="base.js?v=3.8"></script>
 <script src="feed.js?v=1.5"></script>
-<script src="perfil.js?v=2.7"></script>
+<script src="perfil.js?v=2.8"></script>
 </body>
 </html>

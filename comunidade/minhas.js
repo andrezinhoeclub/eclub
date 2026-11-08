@@ -1,5 +1,5 @@
-// minhas.js — v1.1 — "Minhas Coisas" (como no CRS): Amigos, Seguidores, Paqueras, Favoritos, Anotações e Depoimentos
-// minhas.html?ver=amigos|seguidores|paqueras|anotacoes|depoimentos [&id=<perfil>] [&aba=...]
+// minhas.js — v1.2 — "Minhas Coisas" (como no CRS): Amigos, Seguidores, Paqueras, Favoritos, Anotações e Depoimentos
+// minhas.html?ver=amigos|seguidores|paqueras|anotacoes|depoimentos|avaliar [&id=<perfil>] [&aba=...]
 (async function () {
   'use strict';
   const { sb, $, moldura, exigirMembro, avatar, sexos, toast, UFS } = window.BASE;
@@ -70,6 +70,13 @@
       const av = el('div', 'mc-aviso'); av.innerHTML = '⚠️ <b>Amigo Real</b> é quem você conhece pessoalmente. Adicionar um perfil como Amigo Real sem conhecê-lo pessoalmente é fraude e pode tirar você da Comunidade. ' +
         '<b>Íntimo</b> é quem você já se relacionou intimamente — só você sabe quem marcou. <b>Conflito</b>: um disse Real e o outro Virtual. <b>Verificados</b>: amigos reais que fizeram check-in no mesmo lugar que você.';
       topo.appendChild(av);
+      // Amigos para Avaliar (medalhas, como no CRS)
+      sb.rpc('amigos_para_avaliar', { p_ja: false }).then(({ data: pa }) => {
+        const l = el('a', 'mc-aviso'); l.href = 'minhas.html?ver=avaliar';
+        l.style.cssText = 'display:block;text-decoration:none;color:inherit;font-weight:600';
+        l.textContent = '⭐ Amigos para Avaliar (' + ((pa || []).length) + ') ›';
+        topo.prepend(l);
+      });
     }
     const { data, error } = await sb.rpc('lista_amigos', { p_dono: dono, p_filtro: aba, p_tipo: $('fTipo').value || null, p_uf: $('fUf').value || null });
     const box = $('lista'); box.innerHTML = '';
@@ -221,6 +228,27 @@
     });
   }
 
-  const PAGS = { amigos, seguidores, paqueras, anotacoes, depoimentos };
+  // =================== AMIGOS PARA AVALIAR (medalhas) ===================
+  async function avaliar(aba) {
+    $('titulo').textContent = 'Avaliações';
+    $('filtros').classList.add('oculto');
+    aba = aba === 'ja' ? 'ja' : 'para';
+    const [{ data: para }, { data: ja }] = await Promise.all([sb.rpc('amigos_para_avaliar', { p_ja: false }), sb.rpc('amigos_para_avaliar', { p_ja: true })]);
+    abas([['para', 'Para Avaliar', (para || []).length], ['ja', 'Já Avaliados', (ja || []).length]], aba, avaliar);
+    recarregar = () => avaliar(aba);
+    const topo = $('topoExtra'); topo.innerHTML = '';
+    const av = el('div', 'mc-aviso'); av.innerHTML = '🔒 Sua avaliação sobre seus amigos é <b>anônima</b>! Ninguém vai saber como você avaliou. Só <b>Amigos Reais</b> avaliam e são avaliados; as características mais apontadas aparecem como medalhas no perfil.';
+    topo.appendChild(av);
+    const lista = aba === 'ja' ? (ja || []) : (para || []);
+    const box = $('lista'); box.innerHTML = '';
+    if (!lista.length) { box.appendChild(vazio(aba === 'ja' ? 'Você ainda não avaliou ninguém.' : 'Não há mais Amigos Reais para avaliar.')); return; }
+    lista.forEach(p => {
+      const info = [el('small', null, (p.cidade || '') + (aba === 'ja' && p.avaliado_em ? ' · avaliado em ' + dataBr(p.avaliado_em) : ''))];
+      const ir = botao(aba === 'ja' ? 'Reavaliar' : '⭐ Avaliar', aba === 'ja' ? '' : 'ok', () => { location.href = 'perfil.html?id=' + encodeURIComponent(p.membro) + '#avaliar'; });
+      box.appendChild(linha(p, info, [ir]));
+    });
+  }
+
+  const PAGS = { amigos, seguidores, paqueras, anotacoes, depoimentos, avaliar };
   (PAGS[ver] || amigos)(qs.get('aba'));
 })();

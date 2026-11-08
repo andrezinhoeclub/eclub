@@ -1,0 +1,34 @@
+/* perfil-capa.css — v1.0 — capa (poster), faixas, medalhas e últimas visitas do perfil (modelo CRS) */
+.faixas-perfil{display:grid;gap:6px;margin-bottom:8px}
+.faixas-perfil div{text-align:center;font-weight:600;font-size:.86rem;padding:8px 10px;border-radius:10px;color:#fff}
+.faixas-perfil .ele{background:#4a8fd8}
+.faixas-perfil .ela{background:#c44fb5}
+.faixas-perfil .procura{background:#6b3fa0}
+
+.perfil-topo.com-capa{padding-top:0;overflow:hidden}
+.perfil-capa{position:relative;margin:0 -14px;height:160px;background:linear-gradient(135deg,#2b2118,#4a3520 55%,#1d1712);overflow:hidden}
+.perfil-capa canvas{width:100%;height:100%;object-fit:cover;display:block}
+.perfil-capa .selos-capa{position:absolute;left:8px;right:8px;top:8px;display:flex;flex-direction:column;align-items:flex-start;gap:5px;z-index:2}
+.perfil-capa .selos-capa span{background:#000b;color:#fff;font-size:.76rem;font-weight:600;padding:4px 9px;border-radius:12px}
+.perfil-capa .selos-capa span.fim{background:linear-gradient(90deg,#5f3dc4,#c2255c)}
+.perfil-capa .editar-capa{position:absolute;right:8px;bottom:8px;z-index:2;background:#000a;color:#fff;border:1px solid #fff5;border-radius:8px;padding:5px 10px;font:600 .8rem Inter,sans-serif;text-decoration:none;cursor:pointer}
+.perfil-topo.com-capa .avatar{margin-top:-62px;border-width:4px;z-index:3}
+
+.medalhas{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:8px}
+.medalhas .badge{cursor:default}
+.medalhas .badge.botao{cursor:pointer}
+
+.av-perfil-form .grupo{margin:12px 0 4px;font-weight:700;font-size:.86rem}
+.av-perfil-form .grupo small{display:block;font-weight:400;color:var(--suave)}
+.av-perfil-form label{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--linha);cursor:pointer;text-align:left}
+.av-perfil-form label input{width:20px;height:20px;flex:0 0 20px;margin-top:2px}
+.av-perfil-form label small{display:block;color:var(--suave);font-size:.78rem}
+
+.visitas-lista .v{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--linha)}
+.visitas-lista .v .av{width:38px;height:38px;border-radius:50%;overflow:hidden;flex:0 0 38px;background:var(--cartao2);display:flex;align-items:center;justify-content:center}
+.visitas-lista .v .av canvas{width:100%;height:100%}
+.visitas-lista .v a{font-weight:700;color:var(--texto);text-decoration:none}
+.visitas-lista .v small{display:block;color:var(--suave);font-size:.78rem}
+.email-privado{text-align:center;font-size:.86rem;margin-top:10px}
+.email-privado b{display:block;font-size:.95rem}
+.email-privado small{color:var(--ok);font-weight:700;font-size:.72rem;letter-spacing:.02em}
