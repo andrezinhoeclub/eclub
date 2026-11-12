@@ -1277,9 +1277,14 @@ window.GuardaSessao = (function () {
         // festas passadas.
         async function carregarEntradasSolteiras() {
             const { data, error } = await sb.from('entradas_solteiras').select('id, cliente_id, criado_em, evento_id, clientes_solteiras(nome, tel)').order('criado_em', { ascending: false });
-            if (error) { console.error('Erro ao carregar entradas_solteiras:', error.message); return; }
+            if (error) { console.error('Erro ao carregar entradas_solteiras:', error.message); mostrarAviso('Erro ao carregar as entradas das solteiras: ' + error.message); return; }
             dadosEntradasSolteiras = data || [];
             renderEntradasSolteiras();
+            // Os relatórios (número de solteiras por evento e "esta noite")
+            // dependem desta lista. Antes eles só eram desenhados quando as
+            // RESERVAS terminavam de carregar: se as solteiras chegassem
+            // depois, o número ficava 0 até a próxima mudança de reserva.
+            try { window.renderRelatorios && window.renderRelatorios(); } catch (e) { console.error('Relatórios:', e); }
             renderRelatorios();
         }
         window.renderEntradasSolteiras = () => {
@@ -3651,6 +3656,6 @@ window.GuardaSessao = (function () {
   .ap-rodape b{color:#e3b94e;font-weight:800}
   @media print{.ap-rodape{display:none!important}}
 </style>
-<div id="ap-rodape" class="ap-rodape" data-tela="Dashboard" data-versao="1.6">Desenvolvido por <b>Abre a Porta</b> · Dashboard v1.6 · 01/11/2026</div>
+<div id="ap-rodape" class="ap-rodape" data-tela="Dashboard" data-versao="1.7">Desenvolvido por <b>Abre a Porta</b> · Dashboard v1.7 · 12/11/2026</div>
 </body>
 </html>
