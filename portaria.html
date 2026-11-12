@@ -343,6 +343,9 @@
     .pt-dica kbd{font-size:12px;padding:3px 8px}
     .pt-avisoteste{font-size:13px;letter-spacing:.04em}
     .pt-filtros{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px 10px;max-width:1712px;width:100%;margin:0 auto}
+    /* 12/11/2026: a barra de filtros (Todos / A cobrar / Pagos / Cortesia /
+       Já entraram) saiu da tela, a pedido da casa. A busca mostra sempre todos. */
+    #pt-filtros{display:none !important}
     .pt-chip{display:inline-flex;align-items:center;gap:9px;min-height:44px;padding:0 16px;border-radius:999px;background:var(--pt-card);border:1px solid var(--pt-cardb);color:var(--pt-mut);font:800 15px var(--ec-fonte);cursor:pointer}
     .pt-chip b{font-family:var(--ec-fonte-titulo);color:var(--pt-txt);font-size:16px}
     .pt-chip:hover{border-color:var(--pt-teclab)}
@@ -752,6 +755,7 @@ window.GuardaSessao = (function () {
   const HORARIO_PADRAO = { abertura: "21:00", fechamento: "08:00" };
   let foraDoTurnoPortaria = false;
   let mensagemForaDoTurnoPortaria = "";
+  let semFestaPortaria = false;   // servidor avisou: hoje não tem festa cadastrada
   function normalizarHora(v) {
     const m = /^(\d{1,2}):(\d{2})/.exec(String(v ?? ""));
     if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) return null;
@@ -785,12 +789,21 @@ window.GuardaSessao = (function () {
   }
 
   // Selo do cabeçalho: casa aberta (até que horas) ou fechada.
+  // Sem festa hoje = o servidor já disse isso, ou a lista de eventos (já
+  // carregada) não tem nenhum "no ar".
+  function semFestaHojePortaria() {
+    if (isModoTeste) return false;
+    if (semFestaPortaria) return true;
+    return bootstrapCarregadoPortaria && !eventos.some(e => e && e.online);
+  }
+  let bootstrapCarregadoPortaria = false;
   function atualizarCasa() {
     const el = $("pt-casa");
     if (!el) return;
     const h = horarioLocal();
     const ic = n => (window.ECUI ? ECUI.icone(n) : "");
     if (isModoTeste) { el.className = "ec-pill cort"; el.innerHTML = ic("info") + "Modo teste"; return; }
+    if (dentroDoTurnoLocalPortaria() && semFestaHojePortaria()) { el.className = "ec-pill blq"; el.innerHTML = ic("relogio") + "Sem festa hoje"; return; }
     if (dentroDoTurnoLocalPortaria()) { el.className = "ec-pill ok"; el.innerHTML = ic("relogio") + "Aberta até " + escapeHtml(h.fechamento); }
     else { el.className = "ec-pill blq"; el.innerHTML = ic("relogio") + "Fechada · abre " + escapeHtml(rotuloHora(h.abertura)); }
   }
@@ -814,6 +827,8 @@ window.GuardaSessao = (function () {
       // Fora do horário nem a lista guardada é usada. Sem isto, bastaria tirar a
       // máquina da internet numa terça de manhã para ver a base inteira.
       if (!dentroDoTurnoLocalPortaria()) return null;
+      // Dia sem festa: a lista guardada de outra noite também não vale.
+      if (semFestaHojePortaria()) return null;
       return o.lista;
     } catch { return null; }
   }
@@ -866,6 +881,8 @@ window.GuardaSessao = (function () {
             // tentar de novo quando o horário abrir.
             foraDoTurnoPortaria = true;
             mensagemForaDoTurnoPortaria = dados.mensagem || "";
+            semFestaPortaria = !!dados.sem_evento;
+            atualizarCasa();
             return [];
           }
           foraDoTurnoPortaria = false;
@@ -895,6 +912,8 @@ window.GuardaSessao = (function () {
         // parar de responder, mas mantém o arquivo guardado no computador.
         foraDoTurnoPortaria = true;
         mensagemForaDoTurnoPortaria = dados.mensagem || "";
+        semFestaPortaria = !!dados.sem_evento;
+        atualizarCasa();
         candidatosCache = null;
         $("container-resultados").innerHTML = "";
         renderFiltros([]);
@@ -1175,6 +1194,8 @@ window.GuardaSessao = (function () {
       if (dados.horario) salvarHorarioLocal(dados.horario);
       isModoTeste = dados.modoTeste === true;
       eventos = Array.isArray(dados.eventos) ? dados.eventos : [];
+      bootstrapCarregadoPortaria = true;
+      semFestaPortaria = !isModoTeste && !eventos.some(e => e && e.online);
       $("total-checkins").innerText = String(Number(dados.totalCheckins || 0));
       $("alertaModoTeste").classList.toggle("hidden", !isModoTeste);
       atualizarCasa();
@@ -1473,7 +1494,7 @@ window.GuardaSessao = (function () {
     if (foraDoTurnoPortaria) {
       cont.innerHTML = `
         <div class="pt-vazio">
-          <h4 class="alerta">Consulta bloqueada fora do horário</h4>
+          <h4 class="alerta">${semFestaPortaria ? "Hoje não tem festa" : "Consulta bloqueada fora do horário"}</h4>
           <p>${escapeHtml(mensagemForaDoTurnoPortaria || `A consulta de clientes funciona ${textoHorarioLocal()}.`)}</p>
         </div>`;
       return;
@@ -1933,6 +1954,6 @@ window.GuardaSessao = (function () {
   body:has(#portaria-login.hidden) .ap-rodape{display:none}
   @media print{.ap-rodape{display:none!important}}
 </style>
-<div id="ap-rodape" class="ap-rodape" data-tela="Portaria" data-versao="1.3">Desenvolvido por <b>Abre a Porta</b> · Portaria v1.3 · 01/11/2026</div>
+<div id="ap-rodape" class="ap-rodape" data-tela="Portaria" data-versao="1.4">Desenvolvido por <b>Abre a Porta</b> · Portaria v1.4 · 12/11/2026</div>
 </body>
 </html>
