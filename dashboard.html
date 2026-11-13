@@ -2731,6 +2731,13 @@ window.GuardaSessao = (function () {
                     txt += `\n`;
                 }
             });
+            // Solteiras que entraram em cada noite (cada cliente conta 1 vez por noite).
+            txt += `> Solteiras\n\n`;
+            at.forEach(ev => {
+                const qtd = new Set(dadosEntradasSolteiras.filter(e => e.evento_id === ev.id).map(e => e.cliente_id)).size;
+                txt += `${dS[new Date(ev.data + 'T12:00:00Z').getDay()]} - ${qtd} ${qtd === 1 ? 'solteira' : 'solteiras'}\n`;
+            });
+            txt += `\n`;
             if (valletPorEvento) {
                 // Liga o atendimento ao evento pelo id; sem id, pela data da noite.
                 const carrosDoEvento = (ev) => valletPorEvento
@@ -3656,6 +3663,6 @@ window.GuardaSessao = (function () {
   .ap-rodape b{color:#e3b94e;font-weight:800}
   @media print{.ap-rodape{display:none!important}}
 </style>
-<div id="ap-rodape" class="ap-rodape" data-tela="Dashboard" data-versao="1.7">Desenvolvido por <b>Abre a Porta</b> · Dashboard v1.7 · 12/11/2026</div>
+<div id="ap-rodape" class="ap-rodape" data-tela="Dashboard" data-versao="1.8">Desenvolvido por <b>Abre a Porta</b> · Dashboard v1.8 · 13/11/2026</div>
 </body>
 </html>
