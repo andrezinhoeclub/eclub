@@ -5,144 +5,113 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org https://overpass-api.de; object-src 'none'; base-uri 'self'; form-action 'self'">
-<title>Radar</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Radar CL</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilo.css?v=3.2">
+<link rel="stylesheet" href="radar.css?v=2.0">
 </head>
 <body>
-<style>
-.rd-topo{text-align:center;padding:18px 16px 14px}
-.rd-topo .ic{font-size:2.2rem}
-.rd-topo h1{margin:4px 0}
-.rd-status{font-size:.82rem;color:var(--suave)}
-.rd-ativar{text-align:center}
-.rd-ativar ul{text-align:left;color:var(--suave);font-size:.9rem;line-height:1.5;padding-left:20px}
-.rd-p{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--linha)}
-.rd-p:first-child{border-top:0}
-.rd-p .av{width:56px;height:56px;border-radius:50%;overflow:hidden;flex:0 0 56px;background:var(--cartao2);display:flex;align-items:center;justify-content:center;font-size:1.6rem;position:relative}
-.rd-p .av canvas{width:100%;height:100%}
-.rd-p .on{position:absolute;right:2px;bottom:2px;width:12px;height:12px;border-radius:50%;background:#2fb344;border:2px solid var(--cartao)}
-.rd-p .tx{flex:1;min-width:0}
-.rd-p .tx a.nome{font-weight:700;color:var(--texto);text-decoration:none}
-.rd-p .tx small{display:block;color:var(--suave);font-size:.8rem;margin-top:2px}
-.rd-p .afim{display:inline-block;margin-top:4px;font-size:.74rem;font-weight:700;padding:3px 8px;border-radius:999px;background:linear-gradient(90deg,#5f3dc4,#c2255c);color:#fff}
-.rd-p .ck{color:var(--marca)!important}
-.rd-p button{flex:0 0 auto;padding:8px 11px;border-radius:10px;border:1px solid var(--marca);background:none;color:var(--marca);font:700 .8rem Inter,sans-serif;cursor:pointer}
-.rd-p button:disabled{opacity:.5;border-color:var(--linha);color:var(--suave)}
-.rd-aqui{display:flex;gap:10px;align-items:center;justify-content:space-between;background:linear-gradient(90deg,#2b2412,#15120e);border:1px solid var(--marca);border-radius:12px;padding:10px 12px;margin-bottom:10px}
-.rd-aqui b{color:var(--marca)}
-.rd-aqui button{padding:7px 10px;border-radius:9px;border:1px solid var(--linha);background:var(--cartao2);color:var(--texto);font:600 .8rem Inter,sans-serif;cursor:pointer}
-.rd-cfg label.lin{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--linha);cursor:pointer}
-.rd-cfg label.lin:first-of-type{border-top:0}
-.rd-cfg input[type=checkbox]{width:20px;height:20px;accent-color:var(--marca)}
-.lp{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--linha)}
-.lp:first-child{border-top:0}
-.lp .th{width:56px;height:56px;border-radius:10px;overflow:hidden;flex:0 0 56px;background:var(--cartao2);display:grid;place-items:center}
-.lp .th img{width:100%;height:100%;object-fit:cover}
-.lp .th img.sem{width:60%;height:60%;object-fit:contain}
-.lp .tx{flex:1;min-width:0}
-.lp .tx a{font-weight:700;color:var(--texto);text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lp .tx small{color:var(--suave);font-size:.8rem;display:block}
-.lp button{flex:0 0 auto;padding:9px 12px;border-radius:10px;border:0;font:700 .85rem Inter,sans-serif;cursor:pointer;background:linear-gradient(135deg,#f1d999,#c9a45c 45%,#f6e3ae 70%,#b8913f);color:#1a1408}
-.lp button:disabled{opacity:.45}
-.lp button.feito{background:var(--cartao2);color:var(--ok);border:1px solid var(--ok)}
-</style>
 
 <main>
   <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
   <div class="oculto" id="tela">
-    <div class="cartao rd-topo">
-      <div class="ic">📡</div>
-      <h1>Radar</h1>
-      <div class="rd-status" id="rdStatus">Pessoas e lugares perto de você</div>
+
+    <!-- Barrinha fixa ao rolar (como no CRS) -->
+    <div class="rd-fixo" id="rdFixo">
+      <span class="pin">📍</span>
+      <div><b>RADAR CL</b><small>Pessoas e Lugares Próximos</small></div>
+      <button type="button" id="bTopo">TOPO ⌃</button>
     </div>
 
-    <!-- Ativar -->
-    <div class="cartao rd-ativar oculto" id="rdAtivar">
-      <h2 style="margin-top:0">Ative o Radar e encontre pessoas perto de você</h2>
-      <ul>
-        <li>Os outros veem só a <b>distância aproximada</b> (ex.: "a 2 km"), <b>nunca onde você está</b>.</li>
-        <li>Você pode ficar <b>invisível</b> quando quiser, ou esconder-se só de casais, mulheres ou homens.</li>
-        <li>Desligou o Radar, sua localização é apagada.</li>
-      </ul>
-      <button class="btn" type="button" id="bAtivar" style="width:100%">📡 Ativar o Radar agora</button>
-      <p class="suave" style="font-size:.8rem">Funciona melhor no celular, com a localização ligada.</p>
+    <!-- Topo: ajustes · cidade (atualizar) · a fim de -->
+    <div class="rd-topo">
+      <button type="button" class="rd-ic" id="bCfg" aria-label="Ajustes do Radar">⚙️</button>
+      <button type="button" class="rd-cidade" id="bCidade"><b id="rdCidade">Radar CL</b><small id="rdSub">clique para atualizar</small></button>
+      <button type="button" class="rd-ic" id="bAfim" aria-label="A fim de que hoje?">•••</button>
     </div>
     <div class="msg" id="mRadar"></div>
 
+    <!-- Ativar -->
+    <div class="cartao rd-ativar oculto" id="rdAtivar">
+      <h2 style="margin-top:0">📡 Ative o Radar e veja quem está perto de você</h2>
+      <ul>
+        <li>Tudo aparece a partir da <b>sua localização</b>: pessoas, lugares e o bate-papo.</li>
+        <li>Os outros veem só a <b>distância</b> (ex.: 2,8 km) e a cidade, <b>nunca onde você está</b>.</li>
+        <li>Você pode ficar <b>invisível</b> quando quiser. Desligou o Radar, sua localização é apagada.</li>
+      </ul>
+      <button class="btn" type="button" id="bAtivar" style="width:100%">📡 Ativar o Radar agora</button>
+    </div>
+
     <div class="oculto" id="rdConteudo">
       <div id="rdAqui"></div>
-      <div class="abas" id="abasRd" style="grid-template-columns:repeat(3,1fr)">
+      <div class="abas" id="abasRd" style="grid-template-columns:1fr 1fr">
         <button type="button" class="sel" data-aba="pessoas">Pessoas</button>
         <button type="button" data-aba="lugares">Lugares</button>
-        <button type="button" data-aba="config">⚙️ Ajustes</button>
       </div>
 
-      <!-- PESSOAS -->
+      <!-- ===== PESSOAS ===== -->
       <div id="abaPessoas">
+        <div class="rd-acoes">
+          <button type="button" class="azul" id="bPapo">BATER PAPO</button>
+          <a class="verde" href="checkin.html">FAZER CHECK-IN</a>
+        </div>
+        <button type="button" class="rd-papo" id="cardPapo">
+          <span class="ic">📍💬</span>
+          <span class="tx"><b>Bate-papo do Radar</b><small id="papoSub">Clique aqui para conversar</small></span>
+          <span class="seta">›</span>
+        </button>
+
+        <div class="rd-seg" id="rdTipo">
+          <button type="button" class="sel" data-v="">Todos</button>
+          <button type="button" data-v="casal">Casais</button>
+          <button type="button" data-v="solteiro">Homens</button>
+          <button type="button" data-v="solteira">Mulheres</button>
+        </div>
+        <div class="rd-filtros" id="rdFiltro">
+          <button type="button" data-v="viagem">✈️ Viagem</button>
+          <button type="button" data-v="checkin">📍 Check-in</button>
+          <button type="button" data-v="Sexo">😈 Sexo</button>
+          <button type="button" data-v="Balada">🎵 Balada</button>
+          <button type="button" data-v="Barzinho">🍺 Barzinho</button>
+        </div>
+        <button type="button" class="rd-mais" id="bMaisFiltros">mais filtros (clique aqui)</button>
+        <div class="rd-seg oculto" id="rdModo">
+          <button type="button" class="sel" data-v="proximos">Mais próximos</button>
+          <button type="button" data-v="ativos">Mais ativos agora</button>
+        </div>
+
+        <button type="button" class="rd-novos oculto" id="bNovos"></button>
+
         <div class="cartao oculto" id="secCutucadas">
           <h2 style="margin:0 0 6px">👉 Cutucaram você</h2>
           <div id="listaCutucadas"></div>
         </div>
-        <div class="cartao">
-          <div class="chips" id="rdModo" style="margin-bottom:8px">
-            <span class="chip sel" data-v="proximos">Mais próximos</span>
-            <span class="chip" data-v="ativos">Mais ativos</span>
-          </div>
-          <div class="chips" id="rdTipo">
-            <span class="chip sel" data-v="">Todos</span>
-            <span class="chip" data-v="casal">Casais</span>
-            <span class="chip" data-v="solteira">Mulheres</span>
-            <span class="chip" data-v="solteiro">Homens</span>
-          </div>
-        </div>
-        <div class="cartao" id="listaPessoas"></div>
+
+        <div class="rd-grade" id="grade"></div>
       </div>
 
-      <!-- LUGARES -->
+      <!-- ===== LUGARES ===== -->
       <div id="abaLugares" class="oculto">
-        <div class="cartao">
-          <p class="suave" style="margin-top:0">Lugares perto de você. Esteja no lugar para fazer check-in.</p>
-          <div class="chips" id="ckVis">
-            <span class="chip sel" data-v="privado">🔒 Só para mim</span>
-            <span class="chip" data-v="publico">👀 Aparecer no lugar</span>
-            <span class="chip" data-v="feed">📣 No lugar e no Siga-me</span>
-          </div>
+        <div class="rd-seg" id="lgModo" style="grid-template-columns:1fr 1fr">
+          <button type="button" class="sel" data-v="proximos">Mais Próximos</button>
+          <button type="button" data-v="ativos">Mais Ativos</button>
         </div>
-        <div class="cartao" id="listaLugares"></div>
-        <p class="suave" style="text-align:center"><a href="checkin.html">Não achou? Cadastrar o lugar onde estou</a></p>
-      </div>
-
-      <!-- AJUSTES -->
-      <div id="abaConfig" class="oculto">
-        <div class="titulo-secao">A fim de… hoje</div>
-        <div class="cartao">
-          <p class="suave" style="margin-top:0">Aparece no Radar e no seu perfil por 24 horas.</p>
-          <div class="chips" id="rdAfim"></div>
-        </div>
-        <div class="titulo-secao">Privacidade no Radar</div>
-        <div class="cartao rd-cfg">
-          <label class="lin"><input type="checkbox" id="cfgInvisivel"> <span><b>Ficar invisível</b><br><small class="suave">Ninguém vê você no Radar (você continua vendo os outros).</small></span></label>
-          <label class="lin"><input type="checkbox" class="cfgEsc" value="casal"> <span>Invisível para <b>casais</b> <small class="suave">(e você também não vê casais)</small></span></label>
-          <label class="lin"><input type="checkbox" class="cfgEsc" value="solteira"> <span>Invisível para <b>mulheres solteiras</b> <small class="suave">(e você não vê elas)</small></span></label>
-          <label class="lin"><input type="checkbox" class="cfgEsc" value="solteiro"> <span>Invisível para <b>homens solteiros</b> <small class="suave">(e você não vê eles)</small></span></label>
-          <button class="btn" type="button" id="cfgSalvar" style="width:100%;margin-top:8px">Salvar</button>
-        </div>
-        <div class="cartao">
-          <button class="btn secundario" type="button" id="bDesligar" style="width:100%">Desligar o Radar e apagar minha localização</button>
-        </div>
+        <div class="rd-cidades" id="lgCidades"></div>
+        <div class="rd-busca"><span>🔍</span><input type="search" id="lgBusca" placeholder="Digite o nome do local…" autocomplete="off"></div>
+        <div class="rd-titulo" id="lgTitulo">LUGARES MAIS PRÓXIMOS DE VOCÊ</div>
+        <div id="lgLista"></div>
+        <p class="suave" style="text-align:center;font-size:.85rem">Não achou a casa? <a href="checkin.html">Cadastre o lugar onde você está</a></p>
       </div>
     </div>
   </div>
 </main>
 
-<footer><a href="regras.html">Regras e privacidade</a> · radar.html v1.1</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · radar.html v2.0</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="base.js?v=3.9"></script>
-<script src="lugares-mapa.js?v=1.1"></script>
-<script src="radar.js?v=1.1"></script>
+<script src="radar.js?v=2.0"></script>
 </body>
 </html>
