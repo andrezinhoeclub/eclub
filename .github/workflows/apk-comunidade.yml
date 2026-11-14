@@ -55,7 +55,10 @@ jobs:
         working-directory: app-comunidade
         env:
           APK_SENHA: ${{ secrets.APK_SENHA }}
-        run: gradle --no-daemon assembleRelease
+        run: |
+          # tira espaços ou quebras de linha que às vezes vêm junto ao colar a senha
+          export APK_SENHA="$(printf '%s' "$APK_SENHA" | tr -d '[:space:]')"
+          gradle --no-daemon assembleRelease
 
       - name: Dar nome ao arquivo
         run: cp app-comunidade/app/build/outputs/apk/release/app-release.apk comunidade-liberal.apk
