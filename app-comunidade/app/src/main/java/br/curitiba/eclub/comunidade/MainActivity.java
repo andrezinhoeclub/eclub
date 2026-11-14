@@ -1,11 +1,13 @@
 package br.curitiba.eclub.comunidade;
 
-// Comunidade Liberal — app Android (v2.0)
+// Comunidade Liberal — app Android (v2.1)
 // Abre a comunidade dentro do próprio app e liga a proteção de tela do Android (FLAG_SECURE):
 // print e gravação de tela saem pretos. Câmera, galeria e GPS (check-in / Radar) funcionam.
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.SharedPreferences;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.Intent;
@@ -26,7 +28,13 @@ import android.webkit.WebViewClient;
 
 import androidx.core.content.FileProvider;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MainActivity extends Activity {
 
@@ -35,6 +43,9 @@ public class MainActivity extends Activity {
     private static final int PEDIDO_ARQUIVO = 10;
     private static final int PERMISSAO_LOCAL = 11;
     private static final int PERMISSAO_CAMERA = 12;
+    // Versão nova do app: o GitHub publica aqui a cada montagem
+    private static final String RELEASE_API = "https://api.github.com/repos/andrezinhoeclub/eclub/releases/tags/app-android";
+    private static final String APK_URL = "https://github.com/andrezinhoeclub/eclub/releases/download/app-android/comunidade-liberal.apk";
 
     private WebView web;
     private ValueCallback<Uri[]> retornoArquivo;
@@ -113,6 +124,60 @@ public class MainActivity extends Activity {
         } else {
             web.loadUrl(enderecoInicial(getIntent()));
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        verificarAtualizacao();
+    }
+
+    // ---------- Aviso de versão nova (no máximo a cada 6 horas) ----------
+    private void verificarAtualizacao() {
+        final SharedPreferences prefs = getSharedPreferences("app", MODE_PRIVATE);
+        long agora = System.currentTimeMillis();
+        if (agora - prefs.getLong("ultima_verificacao", 0) < 6L * 3600 * 1000) return;
+        prefs.edit().putLong("ultima_verificacao", agora).apply();
+        new Thread(() -> {
+            try {
+                HttpURLConnection c = (HttpURLConnection) new URL(RELEASE_API).openConnection();
+                c.setRequestProperty("Accept", "application/vnd.github+json");
+                c.setConnectTimeout(8000);
+                c.setReadTimeout(8000);
+                if (c.getResponseCode() != 200) return;
+                InputStream in = c.getInputStream();
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+                in.close();
+                Matcher m = Pattern.compile("codigo (\\d+)").matcher(out.toString("UTF-8"));
+                if (!m.find()) return;
+                int nova = Integer.parseInt(m.group(1));
+                @SuppressWarnings("deprecation")
+                int atual = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+                if (nova > atual) runOnUiThread(this::avisarAtualizacao);
+            } catch (Exception e) {
+                // sem internet ou GitHub fora do ar: tenta de novo mais tarde
+                prefs.edit().putLong("ultima_verificacao", 0).apply();
+            }
+        }).start();
+    }
+
+    private void avisarAtualizacao() {
+        if (isFinishing()) return;
+        new AlertDialog.Builder(this)
+                .setTitle("Nova versão do app")
+                .setMessage("Saiu uma versão nova do app da Comunidade Liberal. Toque em Atualizar, abra o arquivo baixado e instale por cima (você não perde nada).")
+                .setPositiveButton("Atualizar", (d, w) -> {
+                    try {
+                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(APK_URL)));
+                    } catch (ActivityNotFoundException e) {
+                        // sem navegador: ignora
+                    }
+                })
+                .setNegativeButton("Depois", null)
+                .show();
     }
 
     private String enderecoInicial(Intent i) {
