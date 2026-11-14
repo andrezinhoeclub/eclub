@@ -1,4 +1,4 @@
-// aovivo-ver.js — v1.1 — CL Ao Vivo (stories): barra de bolinhas, visualizador, curtir, comentar, quem viu e postar
+// aovivo-ver.js — v1.2 — CL Ao Vivo (stories): barra de bolinhas, visualizador, curtir, comentar, quem viu e postar
 // Uso (inicio.js): AOVIVO.barra(caixa, eu, uf)   ·   AOVIVO.postar(eu)
 (function () {
   'use strict';
@@ -70,7 +70,7 @@
     });
   }
 
-  // Apaga do cofre as minhas fotos do Ao Vivo que já passaram de 7 dias
+  // Apaga do cofre as minhas fotos do Ao Vivo que já passaram de 24 horas
   let limpou = false;
   async function limpar() {
     if (limpou) return; limpou = true;
@@ -308,7 +308,7 @@
     const corpo = el('div', 'corpo'); f.append(cab, corpo); document.body.appendChild(f);
     x.addEventListener('click', () => f.remove());
     corpo.innerHTML =
-      '<p class="suave" style="margin-top:0;font-size:.86rem">A foto fica no Ao Vivo por <b>7 dias</b> e mostra a sua cidade. Para postar, o <b>Radar</b> precisa estar ligado: ao publicar, a sua localização é atualizada.</p>' +
+      '<p class="suave" style="margin-top:0;font-size:.86rem">A foto fica no Ao Vivo por <b>24 horas</b> e mostra a sua cidade. Para postar, o <b>Radar</b> precisa estar ligado: ao publicar, a sua localização é atualizada.</p>' +
       '<div class="aviso-rosto" style="margin-bottom:10px">🚫 <b>Proibido rosto à mostra.</b> Ao escolher a foto, o app procura os rostos e esconde; confira antes de publicar.</div>' +
       '<img class="previa oculto" alt="Prévia">' +
       '<div class="linha"><button type="button" class="btn secundario" data-c="cam">📷 Tirar foto</button><button type="button" class="btn secundario" data-c="gal">🖼️ Galeria</button></div>' +

@@ -1,4 +1,4 @@
-// base.js — v3.8 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v3.9 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -643,7 +643,45 @@
   // ---------- Moldura das telas: topo, menu lateral e barra de baixo ----------
   // ativo: 'sigame' | 'ultimas' | 'radar' | 'perfil' | 'busca' | ...
   let suporteNovas = 0, notif = {};
+  // ---------- Proteção contra print (todos menos a administração) ----------
+  // Um site não consegue bloquear 100% o print do celular. O que dá para fazer:
+  // esconder as fotos sempre que o app sai da frente (troca de app, prévia de apps recentes,
+  // ferramenta de captura do computador), apagar a área de transferência na tecla Print Screen,
+  // impedir salvar/arrastar/copiar as fotos e manter a marca d'água com o nº e o apelido do dono.
+  let protecaoLigada = false;
+  function protegerTela() {
+    if (protecaoLigada) return; protecaoLigada = true;
+    const css = document.createElement('style');
+    css.textContent = 'body.anti-print .foto-protegida,body.anti-print .av-meio canvas,body.anti-print .perfil-capa canvas{filter:blur(28px)!important}' +
+      'body.anti-print-total::after{content:"🔒 Conteúdo protegido";position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#000;color:#d6b26e;font:700 20px Inter,sans-serif}' +
+      '.foto-protegida,.av-meio canvas{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}' +
+      '@media print{body{display:none!important}}';
+    document.head.appendChild(css);
+    const esconder = () => document.body.classList.add('anti-print', 'anti-print-total');
+    const mostrar = () => document.body.classList.remove('anti-print', 'anti-print-total');
+    document.addEventListener('visibilitychange', () => { if (document.hidden) esconder(); else setTimeout(mostrar, 250); });
+    window.addEventListener('blur', () => document.body.classList.add('anti-print'));   // só desfoca as fotos
+    window.addEventListener('focus', () => setTimeout(mostrar, 250));
+    window.addEventListener('pagehide', esconder);
+    document.addEventListener('keyup', (e) => {
+      if (e.key === 'PrintScreen' || e.keyCode === 44) {
+        esconder();
+        try { navigator.clipboard.writeText('Conteúdo protegido · Comunidade Liberal').catch(() => {}); } catch (x) {}
+        toast('🔒 Print bloqueado. As fotos têm marca d\'água com o nº do dono.');
+        setTimeout(mostrar, 1500);
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      // Ctrl/Cmd+S (salvar), Ctrl/Cmd+P (imprimir), Cmd+Shift+3/4/5 (print do Mac)
+      const k = (e.key || '').toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && (k === 's' || k === 'p')) { e.preventDefault(); toast('🔒 Conteúdo protegido.'); }
+      if (e.metaKey && e.shiftKey && ['3', '4', '5'].includes(k)) esconder();
+    });
+    document.addEventListener('contextmenu', (e) => { if (e.target.closest('canvas,img')) e.preventDefault(); });
+  }
+
   async function moldura(perfil, assinatura, ativo) {
+    if (!(assinatura && assinatura.admin)) protegerTela();
     const pag = (n, rotulo, href, extra) =>
       '<' + (href ? 'a href="' + href + '"' : 'button type="button"') + ' data-id="' + n + '" aria-label="' + rotulo + '"' + (extra || '') + '>' +
       icone(n) + '<span class="bolinha" id="b_' + n + '"></span></' + (href ? 'a' : 'button') + '>';

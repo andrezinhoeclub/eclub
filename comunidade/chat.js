@@ -1,4 +1,4 @@
-// chat.js — v1.1 — mensagens privadas em tempo real
+// chat.js — v1.2 — mensagens privadas em tempo real
 (async function () {
   'use strict';
   const { sb, $, moldura, exigirMembro, avatar, sexos, tempo, toast, fotoProtegida, abrirVisor, prepararFoto } = window.BASE;
@@ -31,7 +31,7 @@
   async function mostrarLista() {
     outro = null;
     document.body.classList.remove('em-conversa');
-    $('telaConversa').classList.add('oculto');
+    $('telaConversa').classList.add('oculto'); ajustarAltura();
     $('principal').classList.remove('oculto');
     $('telaLista').classList.remove('oculto');
     const { data } = await sb.rpc('minhas_conversas');
@@ -107,6 +107,23 @@
     }
   }
 
+  // Conversa ocupa exatamente o espaço visível (abaixo do topo e acima do teclado do celular),
+  // assim o campo de escrever fica sempre à vista, sem precisar arrastar a tela.
+  function ajustarAltura() {
+    const tela = $('telaConversa');
+    if (!document.body.classList.contains('em-conversa')) { tela.style.cssText = 'position:relative'; return; }
+    const topo = document.querySelector('.barra-topo');
+    const vv = window.visualViewport;
+    const alturaVisivel = vv ? vv.height : window.innerHeight;
+    const desloc = vv ? vv.offsetTop : 0;
+    const t = topo ? Math.max(0, topo.getBoundingClientRect().bottom) : 0;
+    tela.style.cssText = 'position:fixed;left:0;right:0;margin:0 auto;z-index:20;top:' + (t + desloc) + 'px;height:' + Math.max(200, alturaVisivel - t) + 'px';
+    const m = $('msgs'); if (m) m.scrollTop = m.scrollHeight;
+  }
+  if (window.visualViewport) { visualViewport.addEventListener('resize', ajustarAltura); visualViewport.addEventListener('scroll', ajustarAltura); }
+  window.addEventListener('resize', ajustarAltura);
+  window.addEventListener('orientationchange', () => setTimeout(ajustarAltura, 300));
+
   async function abrir(id, empilhar) {
     if (!/^[0-9a-f-]{36}$/i.test(id) || id === eu.id) { mostrarLista(); return; }
     const { data: p } = await sb.from('perfis_publicos')
@@ -118,6 +135,7 @@
     $('principal').classList.add('oculto');
     $('telaConversa').classList.remove('oculto');
     $('opcoesConv').classList.add('oculto');
+    window.scrollTo(0, 0); ajustarAltura();
     $('cAvatar').innerHTML = ''; avatar($('cAvatar'), p, 120);
     const nome = $('cNome').querySelector('span'); nome.innerHTML = ''; nome.append(sexos(p), ' ' + p.apelido + ' . ' + p.uf);
     $('cNome').href = 'perfil.html?id=' + encodeURIComponent(id);
