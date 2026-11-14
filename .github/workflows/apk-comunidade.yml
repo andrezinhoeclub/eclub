@@ -64,7 +64,9 @@ jobs:
           gradle --no-daemon assembleRelease
 
       - name: Dar nome ao arquivo
-        run: cp app-comunidade/app/build/outputs/apk/release/app-release.apk comunidade-liberal.apk
+        run: |
+          cp app-comunidade/app/build/outputs/apk/release/app-release.apk comunidade-liberal.apk
+          echo "CODIGO=$((10 + ${{ github.run_number }}))" >> "$GITHUB_ENV"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -79,6 +81,6 @@ jobs:
         with:
           tag_name: app-android
           name: App Android da Comunidade Liberal
-          body: Versão 2.${{ github.run_number }} — baixe o arquivo comunidade-liberal.apk abaixo.
+          body: "Versão 2.${{ github.run_number }} (codigo ${{ env.CODIGO }}) — baixe o arquivo comunidade-liberal.apk abaixo."
           files: comunidade-liberal.apk
           make_latest: true
