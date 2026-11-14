@@ -9,8 +9,9 @@ android {
         applicationId 'br.curitiba.eclub.comunidade'
         minSdk 24
         targetSdk 34
-        versionCode 2
-        versionName '2.0'
+        // cada montagem no GitHub ganha um número maior, para atualizar por cima do app instalado
+        versionCode(10 + (System.getenv('GITHUB_RUN_NUMBER') ?: '0').toInteger())
+        versionName('2.' + (System.getenv('GITHUB_RUN_NUMBER') ?: '0'))
     }
 
     signingConfigs {
