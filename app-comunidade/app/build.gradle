@@ -1,0 +1,40 @@
+// App Android da Comunidade Liberal — abre o site dentro do app e bloqueia print/gravação de tela
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'br.curitiba.eclub.comunidade'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'br.curitiba.eclub.comunidade'
+        minSdk 24
+        targetSdk 34
+        versionCode 2
+        versionName '2.0'
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('../chave.jks')
+            storePassword System.getenv('APK_SENHA')
+            keyAlias 'comunidade'
+            keyPassword System.getenv('APK_SENHA')
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.13.1'
+}
