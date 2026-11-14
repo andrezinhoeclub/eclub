@@ -1,4 +1,4 @@
-// radar.js — v2.0 — Radar CL no modelo do CRS. Tudo a partir da SUA localização:
+// radar.js — v2.1 — Radar CL no modelo do CRS. Tudo a partir da SUA localização:
 // pessoas (grade com km, ✈ viagem, a fim de, check-in), filtros, novos check-ins, lugares, bate-papo do Radar.
 (async function () {
   'use strict';
@@ -64,7 +64,7 @@
     $('rdAtivar').classList.add('oculto'); $('rdConteudo').classList.remove('oculto');
     pintarTopo();
     await atualizarLocal(true); await lerConfig(); pintarTopo();
-    recarregar(); carregarCutucadas();
+    recarregar();
   }
   $('bAtivar').addEventListener('click', async () => { $('bAtivar').disabled = true; if (await atualizarLocal(false)) await iniciar(); $('bAtivar').disabled = false; });
   function recarregar() { carregarPessoas(); novosCheckins(); if (aba === 'lugares') carregarLugares(); }
@@ -133,23 +133,6 @@
     document.querySelectorAll('#rdFiltro button').forEach(x => x.classList.toggle('sel', x.dataset.v === filtro));
     carregarPessoas();
   });
-
-  // Cutucadas recebidas
-  async function carregarCutucadas() {
-    const { data } = await sb.rpc('minhas_cutucadas');
-    const box = $('listaCutucadas'); box.innerHTML = '';
-    $('secCutucadas').classList.toggle('oculto', !(data && data.length));
-    (data || []).forEach(c => {
-      const d = el('div', 'rd-cutuca'); const av = el('a', 'av'); av.href = 'perfil.html?id=' + encodeURIComponent(c.de);
-      avatar(av, Object.assign({ id: c.de }, c), 100);
-      const tx = el('div', 'tx'); const n = el('a', null); n.href = av.href; n.append(sexos(c), ' ' + c.apelido);
-      tx.append(n, el('small', null, (c.nova ? '🆕 ' : '') + 'cutucou você ' + tempo(c.criado_em)));
-      const b = el('button', null, '👉 Cutucar de volta'); b.type = 'button';
-      b.addEventListener('click', async () => { b.disabled = true; const { data: r, error: e } = await sb.rpc('cutucar', { p_para: c.de }); toast(e ? e.message : r); });
-      d.append(av, tx, b); box.appendChild(d);
-    });
-    if (window.BASE.avisos) window.BASE.avisos();
-  }
 
   // ---------- "Está a fim de que hoje?" (•••) ----------
   function fundo() { const f = el('div', 'rd-fundo'); f.addEventListener('click', (e) => { if (e.target === f) f.remove(); }); document.body.appendChild(f); return f; }
