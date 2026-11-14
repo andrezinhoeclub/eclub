@@ -9,6 +9,9 @@ on:
       - 'app-comunidade/**'
       - '.github/workflows/apk-comunidade.yml'
 
+permissions:
+  contents: write
+
 jobs:
   montar:
     runs-on: ubuntu-24.04
@@ -68,3 +71,14 @@ jobs:
           name: comunidade-liberal-apk
           path: comunidade-liberal.apk
           retention-days: 30
+
+      # Publica o APK num endereço fixo, usado pelo botão "Baixar o app Android" da comunidade:
+      # https://github.com/andrezinhoeclub/eclub/releases/download/app-android/comunidade-liberal.apk
+      - name: Publicar para download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-android
+          name: App Android da Comunidade Liberal
+          body: Versão 2.${{ github.run_number }} — baixe o arquivo comunidade-liberal.apk abaixo.
+          files: comunidade-liberal.apk
+          make_latest: true
