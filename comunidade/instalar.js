@@ -1,4 +1,4 @@
-// instalar.js — v1.0 — tela "Instalar o app"
+// instalar.js — v1.1 — tela "Instalar o app" (Android: app oficial .apk; iPhone e computador: atalho)
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
@@ -9,8 +9,14 @@
   ordem.forEach(id => lista.appendChild($('p-' + id)));
   $('p-' + ordem[0]).open = true;
 
+  const noApp = /CLApp\//.test(navigator.userAgent);
   function atualizar() {
     const bt = $('bInstalar'), msg = $('mInstalar');
+    if (noApp) { bt.classList.add('oculto'); $('bApk').classList.add('oculto'); msg.textContent = '✓ Você já está usando o app oficial da Comunidade.'; return; }
+    if (P.android) {
+      bt.classList.add('oculto'); $('bApk').classList.remove('oculto');
+      msg.textContent = 'App oficial para Android: protege as fotos contra print.'; return;
+    }
     if (P.instalado) { bt.classList.add('oculto'); msg.textContent = '✓ O app já está instalado neste aparelho. Abra pelo ícone na tela inicial.'; return; }
     if (P.podeInstalar()) { bt.classList.remove('oculto'); msg.textContent = 'Um toque e o ícone aparece na sua tela inicial.'; return; }
     bt.classList.add('oculto');
