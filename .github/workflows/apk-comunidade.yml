@@ -11,7 +11,7 @@ on:
 
 jobs:
   montar:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -37,10 +37,19 @@ jobs:
 
       - name: Ícone do app (feito a partir da logo da comunidade)
         run: |
-          for p in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
-            d=app-comunidade/app/src/main/res/mipmap-${p%%:*}; t=${p##*:}; mkdir -p "$d"
-            convert comunidade/logo-ouro.png -resize $((t*78/100))x$((t*78/100)) -background '#0B0A09' -gravity center -extent ${t}x${t} -flatten "$d/ic_launcher.png"
-          done
+          python3 -c 'import PIL' 2>/dev/null || pip install --quiet --break-system-packages pillow
+          python3 - <<'PY'
+          import os
+          from PIL import Image
+          logo = Image.open('comunidade/logo-ouro.png').convert('RGBA')
+          for pasta, t in [('mdpi', 48), ('hdpi', 72), ('xhdpi', 96), ('xxhdpi', 144), ('xxxhdpi', 192)]:
+              d = 'app-comunidade/app/src/main/res/mipmap-' + pasta
+              os.makedirs(d, exist_ok=True)
+              fundo = Image.new('RGBA', (t, t), (11, 10, 9, 255))
+              l = logo.copy(); l.thumbnail((int(t * 0.78), int(t * 0.78)))
+              fundo.alpha_composite(l, ((t - l.width) // 2, (t - l.height) // 2))
+              fundo.convert('RGB').save(d + '/ic_launcher.png')
+          PY
 
       - name: Montar o APK
         working-directory: app-comunidade
