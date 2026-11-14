@@ -1,0 +1,58 @@
+# Monta o APK da Comunidade Liberal (pasta app-comunidade) sozinho, aqui no GitHub.
+# Para baixar: aba Actions > "APK Comunidade" > a execução mais recente > Artifacts > comunidade-liberal-apk
+name: APK Comunidade
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'app-comunidade/**'
+      - '.github/workflows/apk-comunidade.yml'
+
+jobs:
+  montar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Chave de assinatura (segredos APK_KEYSTORE e APK_SENHA)
+        env:
+          APK_KEYSTORE: ${{ secrets.APK_KEYSTORE }}
+          APK_SENHA: ${{ secrets.APK_SENHA }}
+        run: |
+          if [ -z "$APK_KEYSTORE" ] || [ -z "$APK_SENHA" ]; then
+            echo "::error::Faltam os segredos APK_KEYSTORE e/ou APK_SENHA (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          echo "$APK_KEYSTORE" | base64 -d > app-comunidade/chave.jks
+
+      - name: Ícone do app (feito a partir da logo da comunidade)
+        run: |
+          for p in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+            d=app-comunidade/app/src/main/res/mipmap-${p%%:*}; t=${p##*:}; mkdir -p "$d"
+            convert comunidade/logo-ouro.png -resize $((t*78/100))x$((t*78/100)) -background '#0B0A09' -gravity center -extent ${t}x${t} -flatten "$d/ic_launcher.png"
+          done
+
+      - name: Montar o APK
+        working-directory: app-comunidade
+        env:
+          APK_SENHA: ${{ secrets.APK_SENHA }}
+        run: gradle --no-daemon assembleRelease
+
+      - name: Dar nome ao arquivo
+        run: cp app-comunidade/app/build/outputs/apk/release/app-release.apk comunidade-liberal.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: comunidade-liberal-apk
+          path: comunidade-liberal.apk
+          retention-days: 30
