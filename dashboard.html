@@ -423,6 +423,9 @@ window.GuardaSessao = (function () {
                         <option value="todos">Todos os Status</option>
                         <option value="entrou">✓ Fizeram Check-in</option>
                         <option value="aguardando">○ Aguardando Entrada</option>
+                        <option value="pix">💸 Pagaram no PIX (todos)</option>
+                        <option value="pix_entrou">💸 PIX pago · Entrou</option>
+                        <option value="pix_nao_entrou">💸 PIX pago · Não entrou</option>
                     </select>
                     <button onclick="exportarAuditoriaExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase text-[10px] px-8 py-5 rounded-2xl transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] whitespace-nowrap flex items-center justify-center gap-2">
                         <span class="text-sm">📥</span> Exportar Excel
@@ -1254,8 +1257,23 @@ window.GuardaSessao = (function () {
         // nem por evento. Camarotes migrados para outro evento e reservas de
         // eventos passados que ainda importam para a Auditoria/Migração
         // precisam continuar aparecendo aqui.
+        // O Supabase entrega no máximo 1.000 linhas por pedido. Antes a
+        // Dashboard pedia tudo de uma vez e, passando de 1.000 reservas, o
+        // resto sumia sem aviso (relatórios menores e cliente que "não
+        // aparece" na Auditoria). Agora lê em partes de 1.000 até acabar.
+        async function lerTodasAsLinhas(montarConsulta) {
+            const PASSO = 1000;
+            const todas = [];
+            for (let de = 0; de < 200000; de += PASSO) {
+                const { data, error } = await montarConsulta().range(de, de + PASSO - 1);
+                if (error) return { data: null, error };
+                todas.push(...(data || []));
+                if (!data || data.length < PASSO) break;
+            }
+            return { data: todas, error: null };
+        }
         async function carregarReservas() {
-            const { data, error } = await sb.from('reservas').select('*');
+            const { data, error } = await lerTodasAsLinhas(() => sb.from('reservas').select('*').order('criado_em', { ascending: true }).order('id', { ascending: true }));
             if (error) { mostrarAviso('Erro ao carregar reservas: ' + error.message); return; }
             dadosReservas = data || [];
             renderAniversarios(); renderCamarotesVendidos(); renderMigracaoCamarotes(); renderRelatorios(); renderAuditoria();
@@ -1276,7 +1294,7 @@ window.GuardaSessao = (function () {
         // Relatórios usam isso pra contar solteiras por evento, inclusive de
         // festas passadas.
         async function carregarEntradasSolteiras() {
-            const { data, error } = await sb.from('entradas_solteiras').select('id, cliente_id, criado_em, evento_id, clientes_solteiras(nome, tel)').order('criado_em', { ascending: false });
+            const { data, error } = await lerTodasAsLinhas(() => sb.from('entradas_solteiras').select('id, cliente_id, criado_em, evento_id, clientes_solteiras(nome, tel)').order('criado_em', { ascending: false }).order('id', { ascending: true }));
             if (error) { console.error('Erro ao carregar entradas_solteiras:', error.message); mostrarAviso('Erro ao carregar as entradas das solteiras: ' + error.message); return; }
             dadosEntradasSolteiras = data || [];
             renderEntradasSolteiras();
@@ -1351,7 +1369,10 @@ window.GuardaSessao = (function () {
             // configuracoes/modelos acima).
             sb.channel('dashboard-reservas')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'reservas' }, () => {
-                    carregarReservas();
+                    // Em pico de portaria chegam várias mudanças por segundo:
+                    // espera 2 s e lê uma vez só.
+                    clearTimeout(window.__timerReservasDash);
+                    window.__timerReservasDash = setTimeout(() => carregarReservas(), 2000);
                 })
                 .subscribe();
             sb.channel('dashboard-links-aniversario')
@@ -1964,10 +1985,24 @@ window.GuardaSessao = (function () {
             }
             return `<span class="text-[9px] font-black uppercase text-zinc-500 flex items-center justify-end gap-1">○ Aguardando</span>`;
         }
+        // Busca sem acento (JOAO acha JOÃO) e telefone só com números
+        // (41999... acha "(41) 999...").
+        const semAcentoAud = (v) => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
         function linhaReservaCorresponde(r, ev, terms) {
             const dF = r.criado_em && !isNaN(new Date(r.criado_em)) ? new Date(r.criado_em).toLocaleDateString('pt-BR') : '';
-            const str = `${r.nome || ''} ${r.telefone || ''} ${promoterDaReserva(r)} ${ev?.nome || ''} ${r.cpf || ''} ${dF}`.toUpperCase();
-            return terms.every(t => str.includes(t));
+            const str = semAcentoAud(`${r.nome || ''} ${r.telefone || ''} ${promoterDaReserva(r)} ${ev?.nome || ''} ${r.cpf || ''} ${dF} ${r.email || ''}`);
+            const digitos = `${String(r.telefone || '').replace(/\D/g, '')} ${String(r.cpf || '').replace(/\D/g, '')}`;
+            return terms.map(semAcentoAud).every(t => str.includes(t) || (/^\d{3,}$/.test(t) && digitos.includes(t)));
+        }
+        // PIX pago de verdade: ingresso ou camarote, não cancelado.
+        const pixPagoAud = (r) => /^PIX/.test(String(r.metodo || '').toUpperCase()) && r.pago === true && !r.cancelada;
+        function filtrarStatusAuditoria(res, fStat) {
+            if (fStat === 'entrou') return res.filter(r => r.entrou === true);
+            if (fStat === 'aguardando') return res.filter(r => r.entrou !== true && !r.cancelada);
+            if (fStat === 'pix') return res.filter(pixPagoAud);
+            if (fStat === 'pix_entrou') return res.filter(r => pixPagoAud(r) && r.entrou === true);
+            if (fStat === 'pix_nao_entrou') return res.filter(r => pixPagoAud(r) && r.entrou !== true);
+            return res;
         }
         window.renderAuditoria = () => {
             const tbody = document.getElementById('tabela-auditoria-body');
@@ -1975,14 +2010,13 @@ window.GuardaSessao = (function () {
             const termo = (document.getElementById('busca-auditoria')?.value || '').trim().toUpperCase();
             const fStat = document.getElementById('filtro-status-auditoria')?.value || 'todos';
 
-            let res = [...dadosReservas].sort((a, b) => (a.criado_em < b.criado_em ? 1 : -1));
-            if (fStat === 'entrou') res = res.filter(r => r.entrou === true);
-            else if (fStat === 'aguardando') res = res.filter(r => r.entrou !== true && !r.cancelada);
+            let res = filtrarStatusAuditoria([...dadosReservas].sort((a, b) => (a.criado_em < b.criado_em ? 1 : -1)), fStat);
 
             if (termo.length > 1) {
                 const terms = termo.split(/\s+/);
                 res = res.filter(r => linhaReservaCorresponde(r, dadosEventos.find(e => e.id === r.evento_id), terms));
-            } else {
+            } else if (fStat === 'todos') {
+                // Sem busca e sem filtro: só as 100 mais recentes, para a tela não pesar.
                 res = res.slice(0, 100);
             }
 
@@ -2032,9 +2066,7 @@ window.GuardaSessao = (function () {
         window.exportarAuditoriaExcel = () => {
             const termo = (document.getElementById('busca-auditoria')?.value || '').trim().toUpperCase();
             const fStat = document.getElementById('filtro-status-auditoria')?.value || 'todos';
-            let res = [...dadosReservas].sort((a, b) => (a.criado_em < b.criado_em ? 1 : -1));
-            if (fStat === 'entrou') res = res.filter(r => r.entrou === true);
-            else if (fStat === 'aguardando') res = res.filter(r => r.entrou !== true && !r.cancelada);
+            let res = filtrarStatusAuditoria([...dadosReservas].sort((a, b) => (a.criado_em < b.criado_em ? 1 : -1)), fStat);
             if (termo.length > 1) {
                 const terms = termo.split(/\s+/);
                 res = res.filter(r => linhaReservaCorresponde(r, dadosEventos.find(e => e.id === r.evento_id), terms));
@@ -3663,6 +3695,6 @@ window.GuardaSessao = (function () {
   .ap-rodape b{color:#e3b94e;font-weight:800}
   @media print{.ap-rodape{display:none!important}}
 </style>
-<div id="ap-rodape" class="ap-rodape" data-tela="Dashboard" data-versao="1.8">Desenvolvido por <b>Abre a Porta</b> · Dashboard v1.8 · 13/11/2026</div>
+<div id="ap-rodape" class="ap-rodape" data-tela="Dashboard" data-versao="1.9">Desenvolvido por <b>Abre a Porta</b> · Dashboard v1.9 · 15/11/2026</div>
 </body>
 </html>
