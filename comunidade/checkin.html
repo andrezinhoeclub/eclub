@@ -8,7 +8,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org https://overpass-api.de; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Check-in</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=3.2">
+<link rel="stylesheet" href="estilo.css?v=3.3">
 </head>
 <body>
 <style>
@@ -35,11 +35,7 @@
       <div class="ic">📍</div>
       <h1>Check-in</h1>
       <p class="suave" style="margin:0 0 12px">Está numa casa, bar, clube ou evento? Faça check-in: o GPS confere se você está no lugar. Não precisa ter evento marcado.</p>
-      <div class="chips" id="ckVis" style="justify-content:center">
-        <span class="chip sel" data-v="privado">🔒 Só para mim</span>
-        <span class="chip" data-v="publico">👀 Aparecer no lugar</span>
-        <span class="chip" data-v="feed">📣 No lugar e no Siga-me</span>
-      </div>
+      <p class="suave" style="margin:0;font-size:.85rem">👀 O check-in é público: aparece no lugar, no seu perfil e em Últimas.</p>
       <button class="btn" type="button" id="bProcurar" style="width:100%;margin-top:12px">📡 Achar lugares perto de mim</button>
       <div class="msg" id="mPerto"></div>
     </div>
@@ -65,12 +61,12 @@
   </div>
 </main>
 
-<footer><a href="regras.html">Regras e privacidade</a> · checkin.html v1.2</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · checkin.html v1.4</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
-<script src="base.js?v=3.9"></script>
-<script src="lugares-mapa.js?v=1.1"></script>
-<script src="checkin.js?v=1.2"></script>
+<script src="base.js?v=4.0"></script>
+<script src="lugares-mapa.js?v=1.3"></script>
+<script src="checkin.js?v=1.3"></script>
 </body>
 </html>
