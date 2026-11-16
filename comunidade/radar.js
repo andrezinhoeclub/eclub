@@ -1,4 +1,4 @@
-// radar.js — v2.1 — Radar CL no modelo do CRS. Tudo a partir da SUA localização:
+// radar.js — v2.2 — Radar CL no modelo do CRS. Tudo a partir da SUA localização:
 // pessoas (grade com km, ✈ viagem, a fim de, check-in), filtros, novos check-ins, lugares, bate-papo do Radar.
 (async function () {
   'use strict';
@@ -29,16 +29,21 @@
     } catch (e) { return { cidade: '', uf: '' }; }
   }
   let cidadeAtual = '';
+  // silencioso: só se o GPS já está liberado · 'auto': ao abrir o Radar (sem mensagem de erro) · false: botão
   async function atualizarLocal(silencioso) {
-    if (!silencioso) { $('rdSub').textContent = 'atualizando…'; }
+    const auto = silencioso === 'auto';
+    if (auto) silencioso = false;
+    $('rdSub').textContent = 'atualizando…';
     try {
-      pos = await window.BASE.posicao(silencioso ? 120000 : 0, silencioso);
+      // no app (Android) o celular não informa se o GPS está liberado: lê direto
+      try { pos = await window.BASE.posicao(silencioso || auto ? 60000 : 0, true); }
+      catch (e) { if (silencioso) throw e; pos = await window.BASE.posicao(auto ? 60000 : 0, false); }
       const c = await cidadeDe(pos);
       cidadeAtual = c.cidade || cidadeAtual;
       const { error } = await sb.rpc('radar_atualizar_local', { p_lat: pos.latitude, p_lng: pos.longitude, p_precisao: Math.round(pos.accuracy || 0), p_cidade: c.cidade || null, p_uf: c.uf || null });
       if (error) throw new Error(error.message);
       msg('mRadar'); pintarTopo(); return true;
-    } catch (e) { if (!silencioso) msg('mRadar', 'erro', e.message); pintarTopo(); return false; }
+    } catch (e) { if (!silencioso && !auto) msg('mRadar', 'erro', e.message); pintarTopo(); return false; }
   }
   function pintarTopo() {
     $('rdCidade').textContent = cidadeAtual || (CFG && CFG.ativo ? 'Radar CL' : 'Radar CL');
@@ -63,8 +68,9 @@
     if (!CFG.ativo) { $('rdAtivar').classList.remove('oculto'); $('rdConteudo').classList.add('oculto'); pintarTopo(); return; }
     $('rdAtivar').classList.add('oculto'); $('rdConteudo').classList.remove('oculto');
     pintarTopo();
-    await atualizarLocal(true); await lerConfig(); pintarTopo();
-    recarregar();
+    recarregar();                                      // mostra logo o que já tem…
+    if (await atualizarLocal('auto')) { await lerConfig(); pintarTopo(); recarregar(); }   // …e atualiza pelo GPS na hora
+
   }
   $('bAtivar').addEventListener('click', async () => { $('bAtivar').disabled = true; if (await atualizarLocal(false)) await iniciar(); $('bAtivar').disabled = false; });
   function recarregar() { carregarPessoas(); novosCheckins(); if (aba === 'lugares') carregarLugares(); }
@@ -279,5 +285,12 @@
 
   await iniciar();
   // Enquanto o Radar está aberto, atualiza a localização a cada 5 minutos
-  setInterval(async () => { if (!document.hidden && CFG && CFG.ativo) { await atualizarLocal(true); await lerConfig(); pintarTopo(); novosCheckins(); } }, 300000);
+  setInterval(async () => { if (!document.hidden && CFG && CFG.ativo) { await atualizarLocal('auto'); await lerConfig(); pintarTopo(); novosCheckins(); } }, 300000);
+  // voltou para o Radar (trocou de app/aba): atualiza de novo se já passou 2 minutos
+  let ultimaAuto = Date.now();
+  document.addEventListener('visibilitychange', async () => {
+    if (document.hidden || !CFG || !CFG.ativo || Date.now() - ultimaAuto < 120000) return;
+    ultimaAuto = Date.now();
+    if (await atualizarLocal('auto')) { await lerConfig(); pintarTopo(); recarregar(); }
+  });
 })();
