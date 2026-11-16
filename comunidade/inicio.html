@@ -8,7 +8,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://tile.openstreetmap.org; connect-src https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net https://nominatim.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Início</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=3.2">
+<link rel="stylesheet" href="estilo.css?v=3.3">
 <link rel="stylesheet" href="aovivo-ver.css?v=1.1">
 <style>
 .aviso-rosto{background:#e5484d1f;border:1px solid #e5484d66;border-radius:10px;padding:9px 12px;font-size:.84rem;line-height:1.4;margin-top:8px}
@@ -16,6 +16,21 @@
 .compor .previas .pv button{position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;border:0;background:#000b;color:#fff;font-size:15px;line-height:24px;padding:0;cursor:pointer}
 .acoes-postar{grid-template-columns:repeat(4,1fr)!important}
 .acoes-postar a{background:var(--cartao);font:600 .9rem Inter,sans-serif;color:var(--texto);padding:13px 6px}
+</style>
+<style>
+.ult-tipo{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:0 0 10px}
+.ult-tipo button{background:var(--cartao);border:1px solid var(--linha);color:var(--suave);border-radius:8px;padding:8px 2px;font:600 .82rem Inter,sans-serif;cursor:pointer}
+.ult-tipo button.sel{background:var(--marca-suave);color:var(--marca);border-color:var(--marca)}
+.ult-grade{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(min-width:560px){.ult-grade{grid-template-columns:repeat(5,1fr)}}
+.ult-p{display:flex;flex-direction:column;text-decoration:none;color:var(--texto);min-width:0}
+.ult-p .ft{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--cartao2);display:grid;place-items:center;font-size:2rem}
+.ult-p .ft canvas{width:100%;height:100%;display:block}
+.ult-p .ft .on{position:absolute;right:5px;top:5px;width:11px;height:11px;border-radius:50%;background:#3fcf6b;border:2px solid #111}
+.ult-p .ft em{position:absolute;left:4px;top:4px;background:var(--marca);color:#111;font:800 .62rem Inter,sans-serif;font-style:normal;border-radius:6px;padding:2px 5px;letter-spacing:.05em}
+.ult-p b{font-size:.8rem;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ult-p small{font-size:.72rem;color:var(--suave);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ult-p small.qd{font-size:.68rem}
 </style>
 </head>
 <body>
@@ -70,14 +85,14 @@
   </div>
 </main>
 
-<footer><a href="regras.html">Regras e privacidade</a> · inicio.html v2.9</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · inicio.html v3.0</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
-<script src="base.js?v=3.9"></script>
-<script src="feed.js?v=1.5"></script>
+<script src="base.js?v=4.0"></script>
+<script src="feed.js?v=1.6"></script>
 <script src="editor-foto.js?v=1.2"></script>
 <script src="aovivo-ver.js?v=1.2"></script>
-<script src="inicio.js?v=2.4"></script>
+<script src="inicio.js?v=2.5"></script>
 </body>
 </html>
