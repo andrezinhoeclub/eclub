@@ -1,4 +1,4 @@
-// checkin.js — v1.2 — check-in a qualquer hora: lugares perto pelo GPS, cadastrar o lugar onde estou
+// checkin.js — v1.3 — check-in a qualquer hora: lugares perto pelo GPS, cadastrar o lugar onde estou
 (async function () {
   'use strict';
   const { sb, $, msg, moldura, exigirMembro, flyer, toast } = window.BASE;
@@ -8,14 +8,8 @@
   $('tela').classList.remove('oculto');
   const el = (tag, cls, texto) => { const e = document.createElement(tag); if (cls) e.className = cls; if (texto != null) e.textContent = texto; return e; };
 
-  // Visibilidade (lembrada neste aparelho)
-  let visivel = 'privado';
-  try { visivel = localStorage.getItem('cl_ck_vis') || 'privado'; } catch (e) {}
-  const pintar = () => document.querySelectorAll('#ckVis .chip').forEach(c => c.classList.toggle('sel', c.dataset.v === visivel));
-  document.querySelectorAll('#ckVis .chip').forEach(c => c.addEventListener('click', () => {
-    visivel = c.dataset.v; pintar(); try { localStorage.setItem('cl_ck_vis', visivel); } catch (e) {}
-  }));
-  pintar();
+  // Check-in é sempre público (lugar + perfil + Últimas)
+  const visivel = 'feed';
 
   const posicao = () => window.BASE.posicao();
   const dist = (m) => m >= 1000 ? (m / 1000).toFixed(1).replace('.', ',') + ' km' : m + ' m';
@@ -31,7 +25,7 @@
     if (error || !r || !r.ok) { botao.disabled = false; toast((r && r.mensagem) || (error && error.message) || 'Não foi possível.'); return false; }
     botao.textContent = '✓ Feito'; botao.classList.add('feito');
     try { navigator.vibrate && navigator.vibrate(80); } catch (e) {}
-    toast(r.mensagem + (visivel === 'feed' ? ' · publicado no Siga-me' : ''));
+    toast(r.mensagem);
     return true;
   }
 
