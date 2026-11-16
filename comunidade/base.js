@@ -1,4 +1,4 @@
-// base.js — v3.9 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v4.0 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -448,18 +448,130 @@
     document.body.appendChild(v);
   }
 
-  // Monta uma grade de miniaturas. fotos = [{caminho, album, ...}]
+  // ---------- Galeria: fotos em sequência (‹ ›, arrastar, teclado), com curtir e comentar ----------
+  // itens = [{ url, dono, post, texto, curtidas, eu_curti, comentarios, criado_em }]
+  function abrirGaleria(itens, inicio, opcoes) {
+    const o = opcoes || {};
+    if (!itens || !itens.length) return;
+    let i = Math.max(0, Math.min(inicio || 0, itens.length - 1));
+    const E = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+    const v = E('div', 'visor galeria');
+    const topo = E('div', 'gl-topo');
+    const cont = E('span', 'gl-cont');
+    const fechar = E('button', 'fechar', '✕ Fechar'); fechar.type = 'button';
+    topo.append(cont, fechar);
+    const palco = E('div', 'gl-palco');
+    const ant = E('button', 'gl-seta ant', '‹'); ant.type = 'button'; ant.setAttribute('aria-label', 'Foto anterior');
+    const prox = E('button', 'gl-seta prox', '›'); prox.type = 'button'; prox.setAttribute('aria-label', 'Próxima foto');
+    const base = E('div', 'gl-base');
+    const leg = E('div', 'gl-leg');
+    const acoes = E('div', 'gl-acoes');
+    const bCurtir = E('button'); bCurtir.type = 'button';
+    const bComent = E('button'); bComent.type = 'button';
+    acoes.append(bCurtir, bComent);
+    const coments = E('div', 'gl-coments oculto');
+    const listaC = E('div');
+    const form = E('form', 'gl-novo');
+    const inp = E('input'); inp.type = 'text'; inp.maxLength = 1000; inp.placeholder = 'Escreva um comentário…';
+    const env = E('button', null, 'Enviar'); env.type = 'submit';
+    form.append(inp, env); coments.append(listaC, form);
+    base.append(leg, acoes, coments);
+    v.append(topo, palco, ant, prox, base);
+
+    function pintarAcoes() {
+      const it = itens[i];
+      acoes.classList.toggle('oculto', !it.post);
+      if (!it.post) return;
+      bCurtir.textContent = (it.eu_curti ? '❤️ Curtiu' : '🤍 Curtir') + (it.curtidas ? ' (' + it.curtidas + ')' : '');
+      bCurtir.classList.toggle('curti', !!it.eu_curti);
+      bComent.textContent = '💬 Comentar' + (it.comentarios ? ' (' + it.comentarios + ')' : '');
+      bCurtir.disabled = o.eu && it.dono === o.eu;
+      if (bCurtir.disabled) bCurtir.textContent = '❤️ ' + (it.curtidas || 0) + (it.curtidas === 1 ? ' curtida' : ' curtidas');
+    }
+    function mostrar() {
+      const it = itens[i];
+      palco.innerHTML = '';
+      palco.appendChild(fotoProtegida(it.url, { largura: 1400, dono: it.dono, vistoPor: o.vistoPor }));
+      cont.textContent = itens.length > 1 ? (i + 1) + ' de ' + itens.length : '';
+      ant.classList.toggle('oculto', i === 0); prox.classList.toggle('oculto', i === itens.length - 1);
+      leg.textContent = [it.texto, it.criado_em ? tempo(it.criado_em) : ''].filter(Boolean).join(' · ');
+      coments.classList.add('oculto');
+      pintarAcoes();
+      // já deixa a próxima carregada
+      const nx = itens[i + 1]; if (nx && !nx._pre) { nx._pre = new Image(); nx._pre.referrerPolicy = 'no-referrer'; nx._pre.src = nx.url; }
+    }
+    const ir = (d) => { const n = i + d; if (n < 0 || n >= itens.length) return; i = n; mostrar(); };
+    ant.addEventListener('click', (e) => { e.stopPropagation(); ir(-1); });
+    prox.addEventListener('click', (e) => { e.stopPropagation(); ir(1); });
+    // arrastar para o lado (celular)
+    let x0 = null, y0 = null;
+    palco.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+    palco.addEventListener('touchend', (e) => {
+      if (x0 == null) return;
+      const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null;
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) ir(dx < 0 ? 1 : -1);
+    });
+    const fim = () => { v.remove(); document.removeEventListener('keydown', tecla); document.body.classList.remove('sem-rolar'); };
+    const tecla = (e) => { if (e.target === inp) return; if (e.key === 'Escape') fim(); if (e.key === 'ArrowRight') ir(1); if (e.key === 'ArrowLeft') ir(-1); };
+    fechar.addEventListener('click', fim);
+    palco.addEventListener('click', (e) => { if (e.target === palco) fim(); });
+    document.addEventListener('keydown', tecla);
+
+    bCurtir.addEventListener('click', async () => {
+      const it = itens[i]; if (!it.post) return;
+      bCurtir.disabled = true;
+      const { data, error } = await sb.rpc('alternar_curtida', { p_post: it.post });
+      bCurtir.disabled = false;
+      if (error || !data || !data[0]) { toast('Não foi possível curtir.'); return; }
+      it.eu_curti = data[0].curtido; it.curtidas = data[0].total; pintarAcoes();
+      if (o.aoMudar) o.aoMudar(it);
+    });
+    async function carregarComentarios() {
+      const it = itens[i];
+      const { data } = await sb.rpc('comentarios_do_post', { p_post: it.post });
+      listaC.innerHTML = '';
+      if (!data || !data.length) listaC.appendChild(E('p', 'suave', 'Nenhum comentário ainda.'));
+      (data || []).forEach(k => {
+        const d = E('div', 'coment');
+        const a = E('a', null, k.apelido); a.href = 'perfil.html?id=' + encodeURIComponent(k.autor);
+        d.append(a, ' ' + k.texto + ' ', E('span', 'suave', '· ' + tempo(k.criado_em)));
+        listaC.appendChild(d);
+      });
+    }
+    bComent.addEventListener('click', () => {
+      coments.classList.toggle('oculto');
+      if (!coments.classList.contains('oculto')) { carregarComentarios(); inp.focus(); }
+    });
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const it = itens[i]; const t = inp.value.trim(); if (!t || !it.post) return;
+      env.disabled = true;
+      const { data: { user } } = await sb.auth.getUser();
+      const { error } = await sb.from('comentarios').insert({ post: it.post, autor: user.id, texto: t });
+      env.disabled = false;
+      if (error) { toast(/Limite/.test(error.message) ? error.message : 'Não foi possível comentar.'); return; }
+      inp.value = ''; it.comentarios = (it.comentarios || 0) + 1; pintarAcoes(); carregarComentarios();
+    });
+
+    document.body.classList.add('sem-rolar');
+    document.body.appendChild(v);
+    mostrar();
+  }
+
+  // Monta uma grade de miniaturas. fotos = [{caminho, album, ...}] — o toque abre a galeria em sequência
   async function gradeFotos(container, fotos, opcoes) {
     const o = opcoes || {};
     container.innerHTML = '';
     const urls = await links(fotos.map(f => f.caminho));
-    fotos.forEach(f => {
-      if (!urls[f.caminho]) return;
+    const validas = fotos.filter(f => urls[f.caminho]);
+    const itens = validas.map(f => Object.assign({}, f, { url: urls[f.caminho], dono: o.dono || f.dono }));
+    validas.forEach((f, n) => {
       const item = document.createElement('div'); item.className = 'item';
       const dono = o.dono || f.dono;
       item.appendChild(fotoProtegida(urls[f.caminho], { cortar: true, largura: 360, dono, vistoPor: o.vistoPor }));
       if (o.etiqueta) { const e = o.etiqueta(f); if (e) { const t = document.createElement('span'); t.className = 'etiqueta'; t.textContent = e; item.appendChild(t); } }
-      item.addEventListener('click', () => (o.aoClicar ? o.aoClicar(f, urls[f.caminho]) : abrirVisor(urls[f.caminho], dono, o.vistoPor)));
+      if (o.selo) { const e = o.selo(f); if (e) { const t = document.createElement('span'); t.className = 'selo-foto'; t.textContent = e; item.appendChild(t); } }
+      item.addEventListener('click', () => (o.aoClicar ? o.aoClicar(f, urls[f.caminho]) : abrirGaleria(itens, n, { vistoPor: o.vistoPor, eu: o.eu, aoMudar: o.aoMudar })));
       container.appendChild(item);
     });
   }
@@ -963,7 +1075,7 @@
   window.SUPORTE_conversa = conversaSuporte;
 
   window.BASE = { sb, $, msg, idade, dataBR, formacao, exigirLogin, exigirMembro, sair, prepararFoto,
-                  links, definirMarca, moldura, abrirVisor, gradeFotos, fotoProtegida, visto, idades, tempo,
+                  links, definirMarca, moldura, abrirVisor, abrirGaleria, gradeFotos, fotoProtegida, visto, idades, tempo,
                   sexos, avatar, toast, emBreve, icone, flyer, CAMPOS, signo, mesDe, UFS, NOME_TIPO, NOME: A.NOME,
                   perguntarQuem, estadoSessao: () => estadoSessao, posicao,
                   codigoNesteAparelho: (sim) => { if (sim === undefined) return usaCodigo(); gravarLS(CHAVE_COD, sim ? '1' : null); } };
