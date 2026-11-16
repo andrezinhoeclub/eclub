@@ -1,4 +1,4 @@
-// entrar.js — v1.8 — login, cadastro, convite (completar cadastro) e recuperação de senha
+// entrar.js — v1.9 — login, cadastro, convite (completar cadastro) e recuperação de senha
 (function () {
   'use strict';
 
@@ -86,7 +86,7 @@
         : 'Sua conta está suspensa enquanto a administração analisa uma denúncia.');
       return;
     }
-    location.replace(p.status === 'aprovado' ? 'inicio.html' : 'verificacao.html');
+    location.replace(p.status === 'aprovado' ? 'inicio.html?aba=ultimas' : 'verificacao.html');
   }
 
   // ---------- CONVITE: completar o cadastro ----------
