@@ -188,6 +188,30 @@ label.campo{display:block;font-size:.84rem;color:var(--suave);margin:12px 0 6px}
 body.discreta .foto-protegida:not(.revelada){filter:blur(18px) saturate(.6)}
 .visor{position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:70;padding:16px}
 .visor canvas{max-width:100%;max-height:100%;border-radius:6px}
+.galeria{flex-direction:column;justify-content:flex-start;padding:0;background:#000;z-index:90}
+.galeria .gl-topo{width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;min-height:54px}
+.galeria .gl-cont{color:#ddd;font-weight:600;font-size:.92rem}
+.galeria .fechar{position:static}
+.galeria .gl-palco{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;touch-action:pan-y}
+.galeria .gl-palco canvas{max-width:100%;max-height:100%;object-fit:contain}
+.galeria .gl-seta{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:64px;border:0;border-radius:10px;background:rgba(0,0,0,.45);color:#fff;font-size:2.4rem;line-height:1;cursor:pointer;z-index:2}
+.galeria .gl-seta.ant{left:6px}.galeria .gl-seta.prox{right:6px}
+.galeria .gl-base{width:100%;max-width:640px;padding:8px 12px calc(12px + env(safe-area-inset-bottom));color:#eee;max-height:45vh;overflow:auto}
+.galeria .gl-leg{font-size:.9rem;color:#ccc;margin-bottom:8px;white-space:pre-wrap}
+.galeria .gl-leg:empty{display:none}
+.galeria .gl-acoes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.galeria .gl-acoes button{background:#222;border:1px solid #444;color:#eee;border-radius:10px;padding:10px;font:600 .92rem Inter,sans-serif;cursor:pointer}
+.galeria .gl-acoes button.curti{border-color:#e5484d;color:#ff9a9d}
+.galeria .gl-acoes button:disabled{opacity:1;cursor:default}
+.galeria .gl-coments{margin-top:10px;font-size:.9rem}
+.galeria .gl-coments .coment{padding:6px 0;border-top:1px solid #333}
+.galeria .gl-coments .coment a{color:var(--marca);font-weight:700;text-decoration:none}
+.galeria .gl-novo{display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:8px}
+.galeria .gl-novo input{background:#111;color:#eee;border:1px solid #444;border-radius:10px;padding:10px}
+.galeria .gl-novo button{background:var(--marca);border:0;border-radius:10px;padding:0 14px;font-weight:700;cursor:pointer}
+body.sem-rolar{overflow:hidden}
+.fotos-grade .item{position:relative}
+.selo-foto{position:absolute;left:4px;bottom:4px;background:rgba(0,0,0,.65);color:#fff;border-radius:8px;padding:2px 6px;font-size:.72rem;font-weight:600}
 .visor .fechar{position:absolute;top:14px;right:14px;background:#fff;border:0;color:#111;border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600}
 
 /* ---------- Planos ---------- */
