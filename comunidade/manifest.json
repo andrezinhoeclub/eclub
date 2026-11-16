@@ -5,7 +5,7 @@
   "description": "Comunidade liberal de casais e solteiros, só para maiores de 18 anos, com perfis verificados.",
   "lang": "pt-BR",
   "dir": "ltr",
-  "start_url": "./inicio.html",
+  "start_url": "./inicio.html?aba=ultimas",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
