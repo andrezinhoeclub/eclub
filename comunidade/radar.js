@@ -1,4 +1,4 @@
-// radar.js — v2.2 — Radar CL no modelo do CRS. Tudo a partir da SUA localização:
+// radar.js — v2.3 — Radar CL no modelo do CRS. Tudo a partir da SUA localização:
 // pessoas (grade com km, ✈ viagem, a fim de, check-in), filtros, novos check-ins, lugares, bate-papo do Radar.
 (async function () {
   'use strict';
@@ -6,6 +6,16 @@
   const { perfil: eu, assinatura } = await exigirMembro();
   moldura(eu, assinatura, 'radar');
   $('carregando').classList.add('oculto');
+  // O Radar funciona só no app oficial (Android). No computador/navegador mostra o aviso para baixar.
+  if (!/CLApp\//.test(navigator.userAgent)) {
+    const android = /Android/i.test(navigator.userAgent);
+    $('soApp').classList.remove('oculto');
+    $('bBaixarApp').classList.toggle('oculto', !android);
+    $('txtSoApp').textContent = android
+      ? 'Baixe o app da Comunidade Liberal, entre com a sua conta e toque em Radar.'
+      : 'Abra a Comunidade pelo app no seu celular e toque em Radar.';
+    return;
+  }
   $('tela').classList.remove('oculto');
   const el = (tag, cls, texto) => { const e = document.createElement(tag); if (cls) e.className = cls; if (texto != null) e.textContent = texto; return e; };
   const km = (n) => String(Number(n).toFixed(1)).replace('.', ',') + ' km';
