@@ -1,5 +1,5 @@
-// lugares-mapa.js — v1.1 — achar casas pelo GPS e pelo nome: lugares da Comunidade + mapa gratuito (OpenStreetMap)
-// Usado pelo Check-in e pelo Radar. window.LUGARES.montar(caixa, { visivel: () => 'privado'|'publico'|'feed', aoFazer })
+// lugares-mapa.js — v1.3 — achar casas pelo GPS e pelo nome: lugares da Comunidade + mapa gratuito (OpenStreetMap)
+// Usado pelo Check-in e pelo Radar. window.LUGARES.montar(caixa, { aoFazer } — check-in sempre público)
 (function () {
   'use strict';
   const { sb, flyer, toast } = window.BASE;
@@ -80,7 +80,7 @@
       const end = [l.endereco, l.cidade && (l.cidade + (l.uf ? ' - ' + l.uf : ''))].filter(Boolean).join(', ');
       if (end) tx.appendChild(el('small', null, end));
       const b = el('button', null, dentro ? 'Check-in' : 'Longe'); b.type = 'button'; b.disabled = !dentro;
-      if (l.meu_ultimo && Date.now() - new Date(l.meu_ultimo).getTime() < 6 * 3600e3) { b.textContent = '✓ Feito'; b.classList.add('feito'); }
+      if (l.meu_ultimo && Date.now() - new Date(l.meu_ultimo).getTime() < 6 * 3600e3) { b.textContent = '✓ Feito'; b.classList.add('feito'); b.disabled = true; }
       b.addEventListener('click', async () => {
         b.disabled = true;
         let id = l.id;
@@ -92,12 +92,12 @@
           id = data;
         }
         const { data: r0, error: e } = await sb.rpc('fazer_checkin', { p_lugar: id, p_lat: pos.latitude, p_lng: pos.longitude,
-          p_precisao: Math.round(pos.accuracy || 0), p_visivel: o.visivel ? o.visivel() : 'privado', p_evento: null });
+          p_precisao: Math.round(pos.accuracy || 0), p_visivel: 'feed', p_evento: null });
         const r = r0 && r0[0];
         if (e || !r || !r.ok) { b.disabled = false; toast((r && r.mensagem) || (e && e.message) || 'Não foi possível.'); return; }
         b.textContent = '✓ Feito'; b.classList.add('feito');
         try { navigator.vibrate && navigator.vibrate(80); } catch (x) {}
-        toast(r.mensagem + ((o.visivel && o.visivel() === 'feed') ? ' · publicado no Siga-me' : ''));
+        toast(r.mensagem);
         if (o.aoFazer) o.aoFazer(id);
       });
       d.append(th, tx, b);
