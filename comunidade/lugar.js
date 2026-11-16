@@ -1,4 +1,4 @@
-// lugar.js — v1.4 — página do lugar: check-in por GPS, informações, quem já esteve, avaliações e fotos
+// lugar.js — v1.6 — página do lugar: check-in por GPS, informações, quem já esteve, avaliações e fotos
 (async function () {
   'use strict';
   const { sb, $, msg, moldura, exigirMembro, flyer, avatar, sexos, toast, prepararFoto, UFS } = window.BASE;
@@ -66,29 +66,44 @@
   // ---------- Check-in por GPS ----------
   const qs = new URLSearchParams(location.search);
   const eventoCk = Number(qs.get('evento')) || null;
-  let CK = null, visivel = 'privado';
+  let CK = null; const visivel = 'feed';   // check-in sempre público
   const posicao = () => window.BASE.posicao();
+  // Dentro de casas o GPS varia: junta leituras por até 8 s e fica com a mais precisa
+  async function posicaoBoa() {
+    let melhor = await posicao();
+    if (melhor.accuracy <= 40 || !navigator.geolocation.watchPosition) return melhor;
+    msg('ckMsg', 'info', '📡 Melhorando a precisão do GPS (' + Math.round(melhor.accuracy) + ' m)…');
+    await new Promise(fim => {
+      let w = null;
+      const parar = () => { try { navigator.geolocation.clearWatch(w); } catch (e) {} fim(); };
+      const t = setTimeout(parar, 8000);
+      w = navigator.geolocation.watchPosition(p => {
+        if (p.coords.accuracy < melhor.accuracy) melhor = p.coords;
+        if (melhor.accuracy <= 40) { clearTimeout(t); parar(); }
+      }, () => { clearTimeout(t); parar(); }, { enableHighAccuracy: true, maximumAge: 0, timeout: 8000 });
+    });
+    return melhor;
+  }
   const hora = (iso) => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-  function pintarVis() { document.querySelectorAll('#ckVis .chip').forEach(c => c.classList.toggle('sel', c.dataset.v === visivel)); }
-  document.querySelectorAll('#ckVis .chip').forEach(c => c.addEventListener('click', async () => {
-    visivel = c.dataset.v; pintarVis();
-    // já fez check-in nas últimas horas? muda a visibilidade na hora
-    if (CK && CK.meu_ultimo && Date.now() - new Date(CK.meu_ultimo).getTime() < 6 * 3600e3) {
-      await sb.rpc('mudar_visibilidade_checkin', { p_lugar: id, p_visivel: visivel === 'feed' ? 'publico' : visivel });
-      toast(visivel !== 'privado' ? 'Agora você aparece na página do lugar' : 'Seu check-in agora é só seu'); carregarCheckin(); carregarQuem();
-    }
-  }));
 
   async function carregarCheckin() {
     const { data } = await sb.rpc('lugar_checkin_info', { p_lugar: id });
     CK = data && data[0]; if (!CK) return;
     const temLocal = CK.lat != null && CK.lng != null;
-    if (CK.meu_visivel && !(visivel === 'feed' && CK.meu_visivel === 'publico')) { visivel = CK.meu_visivel; pintarVis(); }
     $('ckAgora').textContent = CK.agora_total ? '🔥 ' + CK.agora_total + (CK.agora_total === 1 ? ' perfil fez' : ' perfis fizeram') + ' check-in nas últimas 12h' : '';
+    const meu = (CK.agora || []).find(p => p.eu || p.membro === eu.id);
+    $('ckBox').classList.toggle('ck-feito', !!meu);
+    $('ckSair').classList.toggle('oculto', !meu);
     if (!temLocal) $('ckStatus').textContent = 'Este lugar ainda não tem a localização marcada, então o check-in ainda não funciona aqui.';
-    else if (CK.meu_ultimo) $('ckStatus').textContent = '✓ Seu último check-in aqui: ' + hora(CK.meu_ultimo) + '. O check-in vale como "estive aqui" e libera avaliar o lugar.';
-    else $('ckStatus').textContent = 'Está aqui agora? Faça check-in: o celular confere pelo GPS se você está no lugar (até ' + CK.raio_m + ' m). Vale como "estive aqui" e libera avaliar o lugar.';
-    $('ckFazer').disabled = !temLocal;
+    else if (meu) {
+      $('ckStatus').innerHTML = '';
+      const b = el('b', 'ck-ok', '✅ Check-in confirmado aqui às ' + new Date(meu.quando).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+      $('ckStatus').append(b, el('span', null, ' Aparece aqui no lugar, no seu perfil e em Últimas.'));
+    }
+    else if (CK.meu_ultimo) $('ckStatus').textContent = '✓ Seu último check-in aqui: ' + hora(CK.meu_ultimo) + '. Está aqui de novo? Faça um novo check-in.';
+    else $('ckStatus').textContent = 'Está aqui agora? Faça check-in: o celular confere pelo GPS se você está no lugar (até ' + CK.raio_m + ' m). Vale como "estive aqui", libera avaliar o lugar e aparece em Últimas.';
+    $('ckFazer').disabled = !temLocal || !!meu;
+    $('ckFazer').textContent = meu ? '✓ Você está com check-in aqui' : '📍 Fazer check-in agora';
     if (temLocal) $('mapa').href = 'https://www.google.com/maps/search/?api=1&query=' + CK.lat + ',' + CK.lng;
     // Quem está aqui agora (só quem escolheu aparecer)
     const box = $('ckLista'); box.innerHTML = '';
@@ -96,7 +111,8 @@
       const a = el('a', 'ck-pessoa'); a.href = p.membro === eu.id ? 'meu-perfil.html' : 'perfil.html?id=' + encodeURIComponent(p.membro);
       const av = el('span', 'av'); avatar(av, p, 80);
       const t = el('div'); const b = el('b'); b.append(sexos(p), ' ' + p.apelido + (p.uf ? ' . ' + p.uf : ''));
-      t.append(b, el('small', 'suave', ' · check-in ' + new Date(p.quando).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })));
+      const eh = p.eu || p.membro === eu.id;
+      t.append(b, el('small', 'suave', (eh ? ' · você' : '') + ' · check-in ' + new Date(p.quando).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })));
       a.append(av, t); box.appendChild(a);
     });
     // Marcar a localização (admin, quem criou, responsável)
@@ -108,7 +124,7 @@
   $('ckFazer').addEventListener('click', async () => {
     $('ckFazer').disabled = true; msg('ckMsg', 'info', '📡 Pegando a sua localização pelo GPS…');
     try {
-      const c = await posicao();
+      const c = await posicaoBoa();
       const { data, error } = await sb.rpc('fazer_checkin', { p_lugar: id, p_lat: c.latitude, p_lng: c.longitude,
         p_precisao: Math.round(c.accuracy || 0), p_visivel: visivel, p_evento: eventoCk });
       if (error) throw new Error(error.message);
@@ -116,7 +132,14 @@
       msg('ckMsg', r && r.ok ? 'ok' : 'erro', (r && r.mensagem) || 'Não foi possível.');
       if (r && r.ok) { try { navigator.vibrate && navigator.vibrate(80); } catch (e) {} carregarCheckin(); carregarQuem(); carregar_estive(); }
     } catch (e) { msg('ckMsg', 'erro', e.message); }
-    $('ckFazer').disabled = false;
+    if (!$('ckBox').classList.contains('ck-feito')) $('ckFazer').disabled = false;
+  });
+  $('ckSair').addEventListener('click', async () => {
+    $('ckSair').disabled = true;
+    const { error } = await sb.rpc('fazer_checkout');
+    $('ckSair').disabled = false;
+    if (error) { toast(error.message); return; }
+    toast('Check-out feito ✓'); msg('ckMsg'); carregarCheckin(); carregarQuem();
   });
   // depois do check-in, libera o botão de avaliar sem recarregar a página
   function carregar_estive() { if (L) L.estive = true; }
