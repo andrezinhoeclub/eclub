@@ -1,4 +1,4 @@
-// inicio.js — v2.4 — Siga-me / Últimas: destaques, CL Ao Vivo (stories), publicar e feed
+// inicio.js — v2.5 — Siga-me / Últimas: destaques, CL Ao Vivo (stories), publicar e feed
 (async function () {
   'use strict';
   const { sb, $, msg, links, fotoProtegida, avatar, tempo, prepararFoto, moldura, exigirMembro, emBreve, UFS } = window.BASE;
@@ -110,9 +110,54 @@
   if (params.get('postar') === 'foto') abrirCompor(true);
 
   // ---------- Abas ----------
-  $('abaPub').textContent = modoUltimas ? 'Últimas' : 'Publicações';
+  // Últimas (igual ao CRS): Fotolog · Perfis (membros novos) · Acessos (quem entrou por último)
+  $('abaPub').textContent = modoUltimas ? '📷 Fotolog' : 'Publicações';
+  if (modoUltimas) {
+    const [, b2, b3] = document.querySelectorAll('#abas button');
+    b2.dataset.aba = 'perfis'; b2.textContent = '🆕 Perfis';
+    b3.dataset.aba = 'acessos'; b3.textContent = '🟢 Acessos';
+  }
+  let tipoUlt = '';
+  const segTipo = document.createElement('div'); segTipo.className = 'ult-tipo oculto';
+  [['', 'Todos'], ['casal', 'Casais'], ['solteiro', 'Homens'], ['solteira', 'Mulheres']].forEach(([v, t]) => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.dataset.v = v; if (!v) b.classList.add('sel');
+    b.addEventListener('click', () => { tipoUlt = v; segTipo.querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b)); mostrarAba(abaAtual); });
+    segTipo.appendChild(b);
+  });
+  $('lista').before(segTipo);
+  let abaAtual = 'pub';
+
+  async function gradePerfis(lista) {
+    const box = $('lista'); box.innerHTML = '<p class="suave" style="text-align:center">Carregando…</p>';
+    const { data, error } = await sb.rpc('ultimas_perfis', { p_lista: lista, p_tipo: tipoUlt || null, p_uf: null });
+    box.innerHTML = '';
+    if (error || !data || !data.length) {
+      const c = document.createElement('div'); c.className = 'cartao';
+      c.appendChild(Object.assign(document.createElement('p'), { className: 'suave', textContent: error ? 'Não foi possível carregar.' : 'Ninguém por aqui ainda.' }));
+      box.appendChild(c); return;
+    }
+    const u = await links(data.map(p => p.foto_perfil).filter(Boolean));
+    const g = document.createElement('div'); g.className = 'ult-grade';
+    data.forEach(p => {
+      const a = document.createElement('a'); a.className = 'ult-p'; a.href = 'perfil.html?id=' + encodeURIComponent(p.id);
+      const f = document.createElement('span'); f.className = 'ft';
+      if (p.foto_perfil && u[p.foto_perfil]) f.appendChild(fotoProtegida(u[p.foto_perfil], { cortar: true, largura: 260, dono: p.id }));
+      else f.textContent = p.tipo === 'casal' ? '💑' : (p.tipo === 'solteira' ? '👩' : '👨');
+      if (p.online) f.appendChild(Object.assign(document.createElement('i'), { className: 'on', title: 'online agora' }));
+      if (lista === 'novos' && Date.now() - new Date(p.quando).getTime() < 3 * 86400e3) f.appendChild(Object.assign(document.createElement('em'), { textContent: 'NOVO' }));
+      const n = document.createElement('b'); n.className = 'sx-' + p.tipo; n.append(window.BASE.sexos(p), ' ' + p.apelido);
+      const c = document.createElement('small'); c.textContent = [p.uf, p.cidade].filter(Boolean).join(' . ');
+      const q = document.createElement('small'); q.className = 'qd'; q.textContent = (lista === 'novos' ? 'entrou ' : '') + tempo(p.quando);
+      a.append(f, n, c, q); g.appendChild(a);
+    });
+    box.appendChild(g);
+  }
+
   function mostrarAba(aba) {
+    abaAtual = aba;
     document.querySelectorAll('#abas button').forEach(b => b.classList.toggle('sel', b.dataset.aba === aba));
+    segTipo.classList.toggle('oculto', !(aba === 'perfis' || aba === 'acessos'));
+    if (aba === 'perfis' || aba === 'acessos') { gradePerfis(aba === 'perfis' ? 'novos' : 'acessos'); return; }
     if (aba === 'pub') {
       window.FEED.lista($('lista'), eu, modoUltimas ? 'ultimas' : 'seguindo', null,
         modoUltimas ? 'Ainda não há publicações.'
@@ -143,5 +188,5 @@
     });
   }
 
-  mostrarAba(params.get('ver') === 'atividades' ? 'ativ' : 'pub');
+  mostrarAba(params.get('ver') === 'atividades' ? 'ativ' : (modoUltimas && params.get('ver') === 'perfis' ? 'perfis' : 'pub'));
 })();
