@@ -1,4 +1,4 @@
-// feed.js — v1.5 — publicações (curtir, comentar, seguir) e mural de recados
+// feed.js — v1.6 — publicações (curtir, comentar, seguir) e mural de recados
 (function () {
   'use strict';
   const { sb, links, fotoProtegida, abrirVisor, sexos, avatar, tempo, toast, flyer } = window.BASE;
@@ -157,11 +157,11 @@
       const g = el('div', 'fotos n' + Math.min(p.fotos.length, 4));
       c.appendChild(g);
       links(p.fotos).then(u => {
-        p.fotos.forEach(f => {
-          if (!u[f]) return;
+        const itens = p.fotos.filter(f => u[f]).map(f => ({ url: u[f], dono: p.autor }));
+        p.fotos.filter(f => u[f]).forEach((f, n) => {
           const box = el('div', 'f');
           box.appendChild(fotoProtegida(u[f], p.fotos.length === 1 ? { largura: 1000, dono: p.autor } : { cortar: true, largura: 500, dono: p.autor }));
-          box.addEventListener('click', () => abrirVisor(u[f], p.autor));
+          box.addEventListener('click', () => window.BASE.abrirGaleria(itens, n));
           g.appendChild(box);
         });
       });
