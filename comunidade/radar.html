@@ -15,6 +15,14 @@
 
 <main>
   <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
+  <div class="cartao oculto" id="soApp" style="text-align:center">
+    <div style="font-size:2.6rem">📡📱</div>
+    <h1 style="margin:6px 0">O Radar CL funciona só pelo celular</h1>
+    <p class="suave">O Radar usa o <b>GPS do celular</b> para mostrar quem está perto de você, os check-ins e o bate-papo do Radar. Pelo computador não dá para saber a sua localização com precisão, por isso ele só funciona no app da Comunidade no celular.</p>
+    <p class="suave" id="txtSoApp"></p>
+    <a class="btn" id="bBaixarApp" href="https://github.com/andrezinhoeclub/eclub/releases/download/app-android/comunidade-liberal.apk" style="width:100%">🤖 Baixar o app para Android</a>
+    <a class="btn secundario" href="instalar.html" style="width:100%;margin-top:8px">Como instalar o app</a>
+  </div>
   <div class="oculto" id="tela">
 
     <!-- Barrinha fixa ao rolar (como no CRS) -->
@@ -102,11 +110,11 @@
   </div>
 </main>
 
-<footer><a href="regras.html">Regras e privacidade</a> · radar.html v2.2</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · radar.html v2.3</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="base.js?v=4.0"></script>
-<script src="radar.js?v=2.2"></script>
+<script src="radar.js?v=2.3"></script>
 </body>
 </html>
