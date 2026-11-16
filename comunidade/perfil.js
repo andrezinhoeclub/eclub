@@ -1,4 +1,4 @@
-// perfil.js — v2.8 — perfil de um membro (capa, faixas, medalhas e visitas, como no CRS)
+// perfil.js — v2.9 — perfil de um membro (capa, faixas, medalhas e visitas, como no CRS)
 (async function () {
   'use strict';
   const { sb, $, msg, idades, visto, avatar, sexos, gradeFotos, moldura, exigirMembro, emBreve, toast,
@@ -282,11 +282,12 @@
   $('tela').classList.remove('oculto');
 
   // ---------- Fotolog ----------
-  const { data: publicas } = await sb.from('fotos').select('caminho, album')
-    .eq('dono', id).eq('album', 'publico').order('criado_em', { ascending: false });
+  // fotos do perfil + fotos das publicações, em sequência, com curtir e comentar (igual ao Real Fotolog do CRS)
+  const { data: publicas } = await sb.rpc('fotolog_de', { p_id: id });
   $('qFotos').textContent = (publicas || []).length;
   $('nFotos').textContent = (publicas || []).length;
-  if (publicas && publicas.length) await gradeFotos($('gradePublica'), publicas, { dono: id });
+  if (publicas && publicas.length) await gradeFotos($('gradePublica'), publicas, { dono: id, eu: eu.id,
+    selo: f => f.curtidas ? '❤️ ' + f.curtidas : '' });
   else $('semFotos').classList.remove('oculto');
 
   // ---------- Álbum privado ----------
