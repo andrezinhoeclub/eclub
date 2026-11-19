@@ -1,4 +1,4 @@
-// checkin.js — v1.3 — check-in a qualquer hora: lugares perto pelo GPS, cadastrar o lugar onde estou
+// checkin.js — v1.4 — check-in a qualquer hora: lugares perto pelo GPS, cadastrar o lugar onde estou
 (async function () {
   'use strict';
   const { sb, $, msg, moldura, exigirMembro, flyer, toast } = window.BASE;
@@ -67,5 +67,5 @@
 
   const qsB = new URLSearchParams(location.search);
   if (qsB.get('busca')) busca.buscar(qsB.get('busca'));
-  else if (qsB.get('auto')) $('bProcurar').click();
+  else $('bProcurar').click();   // abriu o Check-in: já procura os lugares perto pelo GPS, sem precisar tocar
 })();
