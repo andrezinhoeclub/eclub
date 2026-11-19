@@ -114,3 +114,9 @@
 .rd-msg .bal button{background:none;border:0;color:var(--suave);font-size:.72rem;cursor:pointer;padding:0;margin-left:6px}
 .rd-cfg label{display:flex;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--linha);cursor:pointer;text-align:left}
 .rd-cfg input[type=checkbox]{width:20px;height:20px;accent-color:var(--marca);flex:0 0 20px}
+
+/* online agora */
+.rd-p.on .foto{box-shadow:0 0 0 3px #2fb344}
+.rd-p .b-on{position:absolute;right:6%;top:6%;width:16px;height:16px;border-radius:50%;background:#2fd15a;border:3px solid var(--fundo,#0b0a09);z-index:2}
+.rd-p .status{display:block;font-size:.72rem;color:var(--suave);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rd-p .status.on{color:#3fd06b;font-weight:700}
