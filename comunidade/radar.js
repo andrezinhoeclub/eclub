@@ -1,4 +1,4 @@
-// radar.js — v2.3 — Radar CL no modelo do CRS. Tudo a partir da SUA localização:
+// radar.js — v2.4 — Radar CL no modelo do CRS. Tudo a partir da SUA localização:
 // pessoas (grade com km, ✈ viagem, a fim de, check-in), filtros, novos check-ins, lugares, bate-papo do Radar.
 (async function () {
   'use strict';
@@ -135,6 +135,9 @@
       a.append(f, nome, k);
       if (p.checkin_nome) a.appendChild(el('span', 'lugar', p.checkin_nome));
       else a.appendChild(el('span', 'onde', p.cidade_atual || ''));
+      // online agora (bolinha e anel verdes) ou quando foi visto pela última vez
+      if (p.online) { a.classList.add('on'); f.appendChild(el('span', 'b-on')); a.appendChild(el('span', 'status on', '● online agora')); }
+      else if (p.visto_em) a.appendChild(el('span', 'status', 'visto ' + tempo(p.visto_em)));
       box.appendChild(a);
     });
   }
