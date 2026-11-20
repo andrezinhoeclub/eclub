@@ -1,7 +1,10 @@
-// base.js — v4.1 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v4.2 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
+  // App da Play Store (CLLoja): as fotos vêm desfocadas por padrão e só aparecem com 2 toques
+  const LOJA = /CLLoja/.test(navigator.userAgent);
+  const DISC = LOJA ? 'ligada' : 'desligada';
   if (!window.supabase || !A.SUPABASE_URL) {
     document.body.textContent = 'Site não configurado (config.js).';
     throw new Error('sem config');
@@ -148,8 +151,8 @@
       const teclado = (e) => { if (!t.isConnected) return document.removeEventListener('keydown', teclado); if (/^\d$/.test(e.key)) tecla(e.key); else if (e.key === 'Backspace') tecla('⌫'); };
       document.addEventListener('keydown', teclado);
       const modos = t.querySelectorAll('.modos button');
-      const pintarModo = () => modos.forEach(b => b.classList.toggle('sel', pref('discreta', 'desligada') === b.dataset.d));
-      modos.forEach(b => b.addEventListener('click', () => { salvarPref('discreta', b.dataset.d); pintarModo(); }));
+      const pintarModo = () => modos.forEach(b => b.classList.toggle('sel', pref('discreta', DISC) === b.dataset.d));
+      modos.forEach(b => b.addEventListener('click', () => { const ap = () => { salvarPref('discreta', b.dataset.d); pintarModo(); }; if (b.dataset.d === 'desligada') confirmar18(ap); else ap(); }));
       pintarModo();
       t.querySelector('.outra').addEventListener('click', (e) => { e.preventDefault(); desconectar(''); });
       document.body.appendChild(t); document.body.style.overflow = 'hidden';
@@ -389,7 +392,9 @@
     // Navegação discreta: a foto vem desfocada; o primeiro toque revela
     c.addEventListener('click', e => {
       if (document.body.classList.contains('discreta') && !c.classList.contains('revelada')) {
-        c.classList.add('revelada'); e.stopPropagation(); e.preventDefault();
+        e.stopPropagation(); e.preventDefault();
+        if (LOJA && !c.classList.contains('quase')) { c.classList.add('quase'); toast('Toque de novo para ver a foto (18+)'); return; }
+        c.classList.add('revelada');
       }
     }, true);
     const img = new Image();
@@ -597,6 +602,16 @@
 
 
   // ---------- Preferências deste aparelho (modo escuro, letras, discreta) ----------
+  // Na versão da loja, tirar o desfoque de todas as fotos pede confirmação de maioridade (2 ações)
+  function confirmar18(feito) {
+    if (!LOJA) { feito(); return; }
+    const f = document.createElement('div'); f.className = 'dialogo-18';
+    f.innerHTML = '<div class="caixa"><b>Mostrar as fotos sem desfoque?</b><p>Algumas fotos podem ter conteúdo adulto. Confirme que você tem 18 anos ou mais.</p>' +
+      '<button type="button" class="btn sim">Tenho 18 anos ou mais</button><button type="button" class="btn secundario nao">Cancelar</button></div>';
+    f.querySelector('.sim').addEventListener('click', () => { f.remove(); feito(); });
+    f.querySelector('.nao').addEventListener('click', () => f.remove());
+    document.body.appendChild(f);
+  }
   function pref(chave, padrao) { try { return localStorage.getItem('pref_' + chave) || padrao; } catch (e) { return padrao; } }
   function salvarPref(chave, valor) { try { localStorage.setItem('pref_' + chave, valor); } catch (e) {} aplicarPrefs(); }
   function aplicarPrefs() {
@@ -605,7 +620,7 @@
     const ligar = escuro === 'liga' || (escuro === 'noite' && (h >= 19 || h < 7));
     document.documentElement.dataset.tema = ligar ? 'escuro' : 'claro';
     document.documentElement.classList.toggle('letras-grandes', pref('letras', 'normais') === 'grandes');
-    if (document.body) document.body.classList.toggle('discreta', pref('discreta', 'desligada') === 'ligada');
+    if (document.body) document.body.classList.toggle('discreta', pref('discreta', DISC) === 'ligada');
   }
   aplicarPrefs();
 
@@ -911,8 +926,9 @@
       opcoes.forEach(([valor, rot]) => {
         const o = document.createElement('span'); o.textContent = rot;
         if (pref(chave, padrao) === valor) o.classList.add('sel');
-        o.addEventListener('click', (e) => { e.stopPropagation(); salvarPref(chave, valor);
-          a.querySelectorAll('span').forEach(x => x.classList.toggle('sel', x === o)); });
+        o.addEventListener('click', (e) => { e.stopPropagation();
+          const aplicar = () => { salvarPref(chave, valor); a.querySelectorAll('span').forEach(x => x.classList.toggle('sel', x === o)); };
+          if (chave === 'discreta' && valor === 'desligada') confirmar18(aplicar); else aplicar(); });
         a.appendChild(o);
       });
       return a;
@@ -956,7 +972,7 @@
     item('pagamento', 'Pagamento', 'planos.html',
       assinatura.admin ? etiqueta('administração') : assinatura.isento ? etiqueta('isento') :
       assinatura.ativa ? etiqueta(assinatura.dias_restantes + ' dias restantes') : etiqueta('vencido', 'vencido'));
-    item('olho', 'Navegação Discreta', () => {}, alternador('discreta', [['desligada', 'Desligada'], ['ligada', 'Ligada']], 'desligada'));
+    item('olho', 'Navegação Discreta', () => {}, alternador('discreta', [['desligada', 'Desligada'], ['ligada', 'Ligada']], DISC));
     item('lua', 'Modo Escuro', () => {}, alternador('escuro', [['desliga', 'Desliga'], ['noite', 'só à noite'], ['liga', 'Liga']], 'liga'));
 
     secao('Minhas Coisas');
