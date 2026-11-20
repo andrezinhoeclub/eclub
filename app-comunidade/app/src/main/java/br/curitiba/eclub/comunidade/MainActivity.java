@@ -1,8 +1,9 @@
 package br.curitiba.eclub.comunidade;
 
-// Comunidade Liberal — app Android (v2.1)
+// Comunidade Liberal — app Android (v2.2)
 // Abre a comunidade dentro do próprio app e liga a proteção de tela do Android (FLAG_SECURE):
 // print e gravação de tela saem pretos. Câmera, galeria e GPS (check-in / Radar) funcionam.
+// v2.2: a permissão do GPS fica guardada e a atualização é baixada e instalada por dentro do app.
 
 import android.Manifest;
 import android.app.Activity;
@@ -14,7 +15,11 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.provider.MediaStore;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
@@ -30,6 +35,7 @@ import androidx.core.content.FileProvider;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -52,6 +58,7 @@ public class MainActivity extends Activity {
     private Uri fotoDaCamera;
     private GeolocationPermissions.Callback retornoLocal;
     private String origemLocal;
+    private boolean instalarAoVoltar = false;
 
     @Override
     protected void onCreate(Bundle salvo) {
@@ -93,7 +100,7 @@ public class MainActivity extends Activity {
             @Override
             public void onGeolocationPermissionsShowPrompt(String origem, GeolocationPermissions.Callback retorno) {
                 if (temLocalizacao()) {
-                    retorno.invoke(origem, true, false);
+                    retorno.invoke(origem, true, true);   // guarda: não pergunta de novo a cada tela
                 } else {
                     retornoLocal = retorno;
                     origemLocal = origem;
@@ -129,6 +136,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        // voltou da tela "permitir instalar": continua a atualização já baixada
+        if (instalarAoVoltar && podeInstalar()) { instalarAoVoltar = false; instalarBaixado(); return; }
         verificarAtualizacao();
     }
 
@@ -168,16 +177,119 @@ public class MainActivity extends Activity {
         if (isFinishing()) return;
         new AlertDialog.Builder(this)
                 .setTitle("Nova versão do app")
-                .setMessage("Saiu uma versão nova do app da Comunidade Liberal. Toque em Atualizar, abra o arquivo baixado e instale por cima (você não perde nada).")
-                .setPositiveButton("Atualizar", (d, w) -> {
+                .setMessage("Saiu uma versão nova do app da Comunidade Liberal. Toque em Atualizar: o app baixa e abre a instalação sozinho (você não perde nada).")
+                .setPositiveButton("Atualizar", (d, w) -> baixarAtualizacao())
+                .setNegativeButton("Depois", null)
+                .show();
+    }
+
+    // ---------- Atualização por dentro do app (sem passar pelo navegador) ----------
+    private File arquivoAtualizacao() {
+        File pasta = new File(getCacheDir(), "atualizacao");
+        if (!pasta.exists()) pasta.mkdirs();
+        return new File(pasta, "comunidade-liberal.apk");
+    }
+
+    private void baixarAtualizacao() {
+        LinearLayout caixa = new LinearLayout(this);
+        caixa.setOrientation(LinearLayout.VERTICAL);
+        int m = (int) (20 * getResources().getDisplayMetrics().density);
+        caixa.setPadding(m, m, m, m / 2);
+        final TextView texto = new TextView(this);
+        texto.setText("Baixando a versão nova…");
+        final ProgressBar barra = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        barra.setMax(100);
+        caixa.addView(texto);
+        caixa.addView(barra);
+        final AlertDialog janela = new AlertDialog.Builder(this).setTitle("Atualizando o app").setView(caixa).setCancelable(false).show();
+        new Thread(() -> {
+            try {
+                HttpURLConnection c = null;
+                String endereco = APK_URL;
+                for (int k = 0; k < 5; k++) {                     // o GitHub redireciona para o arquivo
+                    c = (HttpURLConnection) new URL(endereco).openConnection();
+                    c.setInstanceFollowRedirects(false);
+                    c.setConnectTimeout(15000);
+                    c.setReadTimeout(30000);
+                    int cod = c.getResponseCode();
+                    if (cod >= 300 && cod < 400 && c.getHeaderField("Location") != null) {
+                        endereco = new URL(new URL(endereco), c.getHeaderField("Location")).toString();
+                        c.disconnect();
+                        continue;
+                    }
+                    break;
+                }
+                if (c == null || c.getResponseCode() != 200) throw new Exception("http");
+                long total = c.getContentLengthLong();
+                File destino = arquivoAtualizacao();
+                InputStream in = c.getInputStream();
+                FileOutputStream out = new FileOutputStream(destino);
+                byte[] buf = new byte[65536];
+                long lido = 0;
+                int n, ultimo = -1;
+                while ((n = in.read(buf)) > 0) {
+                    out.write(buf, 0, n);
+                    lido += n;
+                    if (total > 0) {
+                        final int pct = (int) (lido * 100 / total);
+                        if (pct != ultimo) { ultimo = pct; runOnUiThread(() -> barra.setProgress(pct)); }
+                    }
+                }
+                out.close();
+                in.close();
+                runOnUiThread(() -> {
+                    try { janela.dismiss(); } catch (Exception ignorar) { }
+                    if (podeInstalar()) instalarBaixado(); else pedirPermissaoInstalar();
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    try { janela.dismiss(); } catch (Exception ignorar) { }
+                    new AlertDialog.Builder(this).setTitle("Não deu para baixar")
+                            .setMessage("Confira a internet e tente de novo. Se preferir, baixe pelo navegador.")
+                            .setPositiveButton("Tentar de novo", (d, w) -> baixarAtualizacao())
+                            .setNegativeButton("Pelo navegador", (d, w) -> {
+                                try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(APK_URL))); } catch (ActivityNotFoundException x) { }
+                            })
+                            .show();
+                });
+            }
+        }).start();
+    }
+
+    private boolean podeInstalar() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.O || getPackageManager().canRequestPackageInstalls();
+    }
+
+    // Só na primeira atualização: o Android pede para liberar "instalar apps" para a Comunidade
+    private void pedirPermissaoInstalar() {
+        new AlertDialog.Builder(this)
+                .setTitle("Falta só uma liberação")
+                .setMessage("Na próxima tela, ative \"Permitir desta fonte\" e volte para o app. Isso é pedido uma única vez; nas próximas atualizações é só tocar em Instalar.")
+                .setPositiveButton("Liberar", (d, w) -> {
+                    instalarAoVoltar = true;
                     try {
-                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(APK_URL)));
+                        startActivity(new Intent("android.settings.MANAGE_UNKNOWN_APP_SOURCES", Uri.parse("package:" + getPackageName())));
                     } catch (ActivityNotFoundException e) {
-                        // sem navegador: ignora
+                        instalarAoVoltar = false;
+                        instalarBaixado();
                     }
                 })
                 .setNegativeButton("Depois", null)
                 .show();
+    }
+
+    private void instalarBaixado() {
+        File apk = arquivoAtualizacao();
+        if (!apk.exists()) { baixarAtualizacao(); return; }
+        try {
+            Uri u = FileProvider.getUriForFile(this, getPackageName() + ".arquivos", apk);
+            Intent i = new Intent(Intent.ACTION_VIEW);
+            i.setDataAndType(u, "application/vnd.android.package-archive");
+            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+        } catch (Exception e) {
+            try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(APK_URL))); } catch (ActivityNotFoundException x) { }
+        }
     }
 
     private String enderecoInicial(Intent i) {
@@ -270,7 +382,7 @@ public class MainActivity extends Activity {
         boolean ok = false;
         for (int r : respostas) if (r == PackageManager.PERMISSION_GRANTED) ok = true;
         if (pedido == PERMISSAO_LOCAL && retornoLocal != null) {
-            retornoLocal.invoke(origemLocal, ok, false);
+            retornoLocal.invoke(origemLocal, ok, ok);
             retornoLocal = null;
         } else if (pedido == PERMISSAO_CAMERA) {
             if (ok) abrirCamera(); else cancelarArquivo();
