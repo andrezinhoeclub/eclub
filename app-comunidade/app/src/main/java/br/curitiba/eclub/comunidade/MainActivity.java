@@ -1,9 +1,10 @@
 package br.curitiba.eclub.comunidade;
 
-// Comunidade Liberal — app Android (v2.2)
+// Comunidade Liberal — app Android (v2.3)
 // Abre a comunidade dentro do próprio app e liga a proteção de tela do Android (FLAG_SECURE):
 // print e gravação de tela saem pretos. Câmera, galeria e GPS (check-in / Radar) funcionam.
 // v2.2: a permissão do GPS fica guardada e a atualização é baixada e instalada por dentro do app.
+// v2.3: versão da Play Store (BuildConfig.LOJA): confirmação de 18+, fotos desfocadas por padrão, sem auto-atualização.
 
 import android.Manifest;
 import android.app.Activity;
@@ -17,6 +18,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -32,6 +34,10 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import androidx.core.content.FileProvider;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -71,7 +77,20 @@ public class MainActivity extends Activity {
 
         web = new WebView(this);
         web.setBackgroundColor(Color.parseColor("#0B0A09"));
-        setContentView(web);
+        // Moldura em volta do site: no Android 15+ (versão da loja) o app ocupa a tela toda,
+        // então afasta o conteúdo da barra de cima, da barra de baixo e do teclado.
+        FrameLayout moldura = new FrameLayout(this);
+        moldura.setBackgroundColor(Color.BLACK);
+        moldura.addView(web, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        setContentView(moldura);
+        if (BuildConfig.LOJA) {
+            WindowCompat.setDecorFitsSystemWindows(getWindow(), false);   // tela toda em qualquer Android
+            ViewCompat.setOnApplyWindowInsetsListener(moldura, (v, ins) -> {
+                Insets b = ins.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.ime());
+                v.setPadding(b.left, b.top, b.right, b.bottom);
+                return WindowInsetsCompat.CONSUMED;
+            });
+        }
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -82,7 +101,7 @@ public class MainActivity extends Activity {
         s.setAllowContentAccess(true);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " CLApp/2.0");
+        s.setUserAgentString(s.getUserAgentString() + " CLApp/2.0" + (BuildConfig.LOJA ? " CLLoja" : ""));
 
         CookieManager cookies = CookieManager.getInstance();
         cookies.setAcceptCookie(true);
@@ -131,6 +150,20 @@ public class MainActivity extends Activity {
         } else {
             web.loadUrl(enderecoInicial(getIntent()));
         }
+        if (BuildConfig.LOJA) confirmarMaioridade();
+    }
+
+    // Versão da Play Store: confirma a maioridade na primeira vez que abre o app
+    private void confirmarMaioridade() {
+        final SharedPreferences prefs = getSharedPreferences("app", MODE_PRIVATE);
+        if (prefs.getBoolean("maior18", false)) return;
+        new AlertDialog.Builder(this)
+                .setTitle("Somente para maiores de 18 anos")
+                .setMessage("A Comunidade Liberal é uma comunidade de encontros para adultos. Para continuar, confirme que você tem 18 anos ou mais.")
+                .setCancelable(false)
+                .setPositiveButton("Tenho 18 anos ou mais", (d, w) -> prefs.edit().putBoolean("maior18", true).apply())
+                .setNegativeButton("Sair", (d, w) -> finish())
+                .show();
     }
 
     @Override
@@ -143,6 +176,7 @@ public class MainActivity extends Activity {
 
     // ---------- Aviso de versão nova (no máximo a cada 6 horas) ----------
     private void verificarAtualizacao() {
+        if (BuildConfig.LOJA) return;                // na Play Store quem atualiza é a própria loja
         final SharedPreferences prefs = getSharedPreferences("app", MODE_PRIVATE);
         long agora = System.currentTimeMillis();
         if (agora - prefs.getLong("ultima_verificacao", 0) < 6L * 3600 * 1000) return;
