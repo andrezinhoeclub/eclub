@@ -1,4 +1,4 @@
-// base.js — v4.0 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v4.1 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -215,9 +215,28 @@
   async function estadoPermissao() {
     try { const r = await navigator.permissions.query({ name: 'geolocation' }); return r.state; } catch (e) { return 'desconhecido'; }
   }
+  // GPS sem travar: pega logo a posição aproximada (rede/Wi-Fi) e vai melhorando com o GPS.
+  // Termina assim que tiver uma boa (até 80 m); com 6 s aceita até 300 m; com 12 s, a melhor que tiver.
   function lerGPS(maxIdade) {
-    return new Promise((ok, falha) => navigator.geolocation.getCurrentPosition(p => ok(p.coords), falha,
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: maxIdade || 0 }));
+    return new Promise((ok, falha) => {
+      const geo = navigator.geolocation;
+      let melhor = null, ultimoErro = null, fim = false, w = null, t1 = null, t2 = null, t3 = null;
+      const terminar = (pos, erro) => {
+        if (fim) return; fim = true; clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
+        try { if (w != null) geo.clearWatch(w); } catch (e) {}
+        if (pos) ok(pos); else falha(erro || { code: 3 });
+      };
+      const chegou = (p) => {
+        if (!melhor || p.coords.accuracy < melhor.accuracy) melhor = p.coords;
+        if (melhor.accuracy <= 80) terminar(melhor);
+      };
+      const erro = (e) => { ultimoErro = e; if (e && e.code === 1) terminar(null, e); };
+      try { geo.getCurrentPosition(chegou, erro, { enableHighAccuracy: false, timeout: 8000, maximumAge: Math.max(maxIdade || 0, 30000) }); } catch (e) {}
+      try { w = geo.watchPosition(chegou, erro, { enableHighAccuracy: true, timeout: 25000, maximumAge: maxIdade || 0 }); } catch (e) {}
+      t1 = setTimeout(() => { if (melhor && melhor.accuracy <= 300) terminar(melhor); }, 6000);   // já serve
+      t3 = setTimeout(() => { if (melhor) terminar(melhor); }, 12000);                             // a melhor que tiver
+      t2 = setTimeout(() => terminar(melhor, ultimoErro && ultimoErro.code !== 3 ? ultimoErro : { code: 3 }), 25000);
+    });
   }
   async function posicao(maxIdade, silencioso) {
     if (!navigator.geolocation) throw new Error('Este aparelho não informa a localização.');
