@@ -1,4 +1,4 @@
-// base.js — v4.2 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v4.3 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -643,10 +643,10 @@
   const flyer = (caminho) => caminho ? sb.storage.from('eventos').getPublicUrl(caminho).data.publicUrl : null;
 
   // ---------- Pequenas utilidades ----------
-  function toast(texto) {
+  function toast(texto, tempoMs) {
     document.querySelectorAll('.aviso-toast').forEach(t => t.remove());
     const t = document.createElement('div'); t.className = 'aviso-toast'; t.textContent = texto;
-    document.body.appendChild(t); setTimeout(() => t.remove(), 2600);
+    document.body.appendChild(t); setTimeout(() => t.remove(), tempoMs || 2600);
   }
   const emBreve = () => toast('Em breve nesta comunidade 😉');
 
@@ -826,8 +826,27 @@
     document.addEventListener('contextmenu', (e) => { if (e.target.closest('canvas,img')) e.preventDefault(); });
   }
 
+  // ---------- Radar ligado automaticamente no app ----------
+  // Entrou no app: liga/atualiza o Radar (no máximo a cada 5 min), menos para quem desligou de propósito.
+  async function radarAuto(pagina) {
+    if (!/CLApp\//.test(navigator.userAgent) || pagina === 'radar' || !navigator.geolocation) return;
+    if (Date.now() - (parseInt(lerLS('cl_radar_auto'), 10) || 0) < 5 * 60000) return;
+    gravarLS('cl_radar_auto', String(Date.now()));
+    try {
+      if (await estadoPermissao() === 'denied') return;
+      // primeira vez: explica e o celular pergunta; depois, lê direto, sem telas
+      const c = lerLS('cl_gps_explicado') === '1' ? await lerGPS(120000) : await posicao(120000);
+      const { data } = await sb.rpc('radar_auto', { p_lat: c.latitude, p_lng: c.longitude, p_precisao: Math.round(c.accuracy || 0), p_cidade: null, p_uf: null });
+      if (data === true && lerLS('cl_radar_aviso') !== '1') {
+        gravarLS('cl_radar_aviso', '1');
+        toast('📡 Seu Radar está ligado: os membros veem só a distância. Para ficar invisível ou desligar, abra o Radar e toque em ⚙️.', 8000);
+      }
+    } catch (e) { /* sem GPS agora: tenta na próxima */ }
+  }
+
   async function moldura(perfil, assinatura, ativo) {
     if (!(assinatura && assinatura.admin)) protegerTela();
+    setTimeout(() => radarAuto(ativo), 1500);
     const pag = (n, rotulo, href, extra) =>
       '<' + (href ? 'a href="' + href + '"' : 'button type="button"') + ' data-id="' + n + '" aria-label="' + rotulo + '"' + (extra || '') + '>' +
       icone(n) + '<span class="bolinha" id="b_' + n + '"></span></' + (href ? 'a' : 'button') + '>';
