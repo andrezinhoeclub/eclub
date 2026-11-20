@@ -1,9 +1,12 @@
 // App Android da Comunidade Liberal — abre o site dentro do app e bloqueia print/gravação de tela
+// Duas versões ("sabores"):
+//   site → APK baixado pelo site (se atualiza sozinho por dentro do app)
+//   loja → AAB para a Google Play Store (fotos desfocadas por padrão, confirmação de 18+, sem auto-atualização)
 plugins { id 'com.android.application' }
 
 android {
     namespace 'br.curitiba.eclub.comunidade'
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         applicationId 'br.curitiba.eclub.comunidade'
@@ -12,6 +15,26 @@ android {
         // cada montagem no GitHub ganha um número maior, para atualizar por cima do app instalado
         versionCode(10 + (System.getenv('GITHUB_RUN_NUMBER') ?: '0').toInteger())
         versionName('2.' + (System.getenv('GITHUB_RUN_NUMBER') ?: '0'))
+    }
+
+    buildFeatures { buildConfig true }
+
+    flavorDimensions 'canal'
+    productFlavors {
+        site {
+            dimension 'canal'
+            buildConfigField 'boolean', 'LOJA', 'false'
+        }
+        loja {
+            dimension 'canal'
+            targetSdk 36                      // exigência atual da Play Store (Android 16)
+            buildConfigField 'boolean', 'LOJA', 'true'
+        }
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
     }
 
     signingConfigs {
