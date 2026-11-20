@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Só no APK do site: permite baixar e instalar a versão nova por dentro do app.
+     A versão da Play Store não tem esta permissão (lá quem atualiza é a própria loja). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+</manifest>
