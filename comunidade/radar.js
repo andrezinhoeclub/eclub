@@ -1,4 +1,4 @@
-// radar.js — v2.4 — Radar CL no modelo do CRS. Tudo a partir da SUA localização:
+// radar.js — v2.5 — Radar CL no modelo do CRS. Tudo a partir da SUA localização:
 // pessoas (grade com km, ✈ viagem, a fim de, check-in), filtros, novos check-ins, lugares, bate-papo do Radar.
 (async function () {
   'use strict';
@@ -73,8 +73,21 @@
     if (await atualizarLocal(false)) { await lerConfig(); pintarTopo(); recarregar(); toast('Radar atualizado ✓'); }
   });
 
+  let tentouAuto = false;
   async function iniciar() {
     await lerConfig();
+    // Radar desligado mas a pessoa nunca desligou de propósito: liga sozinho
+    if (!CFG.ativo && !tentouAuto) {
+      tentouAuto = true;
+      $('rdSub').textContent = 'ligando o Radar…';
+      try {
+        pos = await window.BASE.posicao(60000);
+        const c = await cidadeDe(pos);
+        cidadeAtual = c.cidade || cidadeAtual;
+        const { data } = await sb.rpc('radar_auto', { p_lat: pos.latitude, p_lng: pos.longitude, p_precisao: Math.round(pos.accuracy || 0), p_cidade: c.cidade || null, p_uf: c.uf || null });
+        if (data === true) await lerConfig();
+      } catch (e) { /* sem GPS: mostra o botão de ativar */ }
+    }
     if (!CFG.ativo) { $('rdAtivar').classList.remove('oculto'); $('rdConteudo').classList.add('oculto'); pintarTopo(); return; }
     $('rdAtivar').classList.add('oculto'); $('rdConteudo').classList.remove('oculto');
     pintarTopo();
