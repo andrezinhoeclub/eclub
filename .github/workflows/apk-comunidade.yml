@@ -1,5 +1,6 @@
-# Monta o APK da Comunidade Liberal (pasta app-comunidade) sozinho, aqui no GitHub.
-# Para baixar: aba Actions > "APK Comunidade" > a execução mais recente > Artifacts > comunidade-liberal-apk
+# Monta o app da Comunidade Liberal (pasta app-comunidade) sozinho, aqui no GitHub:
+#   comunidade-liberal.apk            → APK baixado pelo site
+#   comunidade-liberal-playstore.aab  → arquivo para enviar na Google Play Store
 name: APK Comunidade
 
 on:
@@ -25,7 +26,7 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.9'
+          gradle-version: '8.11.1'
 
       - name: Chave de assinatura (segredos APK_KEYSTORE e APK_SENHA)
         env:
@@ -61,17 +62,20 @@ jobs:
         run: |
           # tira espaços ou quebras de linha que às vezes vêm junto ao colar a senha
           export APK_SENHA="$(printf '%s' "$APK_SENHA" | tr -d '[:space:]')"
-          gradle --no-daemon assembleRelease
+          gradle --no-daemon assembleSiteRelease bundleLojaRelease
 
       - name: Dar nome ao arquivo
         run: |
-          cp app-comunidade/app/build/outputs/apk/release/app-release.apk comunidade-liberal.apk
+          cp app-comunidade/app/build/outputs/apk/site/release/app-site-release.apk comunidade-liberal.apk
+          cp app-comunidade/app/build/outputs/bundle/lojaRelease/app-loja-release.aab comunidade-liberal-playstore.aab
           echo "CODIGO=$((10 + ${{ github.run_number }}))" >> "$GITHUB_ENV"
 
       - uses: actions/upload-artifact@v4
         with:
           name: comunidade-liberal-apk
-          path: comunidade-liberal.apk
+          path: |
+            comunidade-liberal.apk
+            comunidade-liberal-playstore.aab
           retention-days: 30
 
       # Publica o APK num endereço fixo, usado pelo botão "Baixar o app Android" da comunidade:
@@ -81,6 +85,8 @@ jobs:
         with:
           tag_name: app-android
           name: App Android da Comunidade Liberal
-          body: "Versão 2.${{ github.run_number }} (codigo ${{ env.CODIGO }}) — baixe o arquivo comunidade-liberal.apk abaixo."
-          files: comunidade-liberal.apk
+          body: "Versão 2.${{ github.run_number }} (codigo ${{ env.CODIGO }}) — baixe o arquivo comunidade-liberal.apk abaixo. (O arquivo .aab é o da Google Play Store.)"
+          files: |
+            comunidade-liberal.apk
+            comunidade-liberal-playstore.aab
           make_latest: true
