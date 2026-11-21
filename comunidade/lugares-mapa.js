@@ -1,4 +1,4 @@
-// lugares-mapa.js — v1.3 — achar casas pelo GPS e pelo nome: lugares da Comunidade + mapa gratuito (OpenStreetMap)
+// lugares-mapa.js — v1.4 — achar casas pelo GPS e pelo nome: lugares da Comunidade + mapa gratuito (OpenStreetMap)
 // Usado pelo Check-in e pelo Radar. window.LUGARES.montar(caixa, { aoFazer } — check-in sempre público)
 (function () {
   'use strict';
@@ -20,8 +20,12 @@
       'nwr(around:' + raio + ',' + pos.latitude + ',' + pos.longitude + ')["amenity"~"^(nightclub|bar|pub|stripclub|swingerclub|love_hotel|biergarten|events_venue)$"]["name"];' +
       'nwr(around:' + raio + ',' + pos.latitude + ',' + pos.longitude + ')["tourism"="motel"]["name"];' +
       ');out center 40;';
+    // o mapa gratuito às vezes demora: desiste depois de 8 s (os lugares da Comunidade já estão na tela)
+    const ctl = window.AbortController ? new AbortController() : null;
+    const t = setTimeout(() => { try { ctl && ctl.abort(); } catch (e) {} }, 8000);
     const r = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(q),
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, referrerPolicy: 'strict-origin-when-cross-origin' });
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, referrerPolicy: 'strict-origin-when-cross-origin',
+      signal: ctl ? ctl.signal : undefined }).finally(() => clearTimeout(t));
     const j = await r.json();
     return (j.elements || []).map(e => {
       const lat = e.lat != null ? e.lat : e.center && e.center.lat, lng = e.lon != null ? e.lon : e.center && e.center.lon, t = e.tags || {};
@@ -117,13 +121,19 @@
       itens.forEach(l => lista.appendChild(linha(l)));
     }
 
+    let vezPerto = 0;
     async function perto(p) {
       pos = p || pos;
       if (!pos) return;
+      const meu = pos, vez = ++vezPerto;
       msgx('info', '🔎 Procurando lugares perto de você…');
-      const [{ data: nossos }, mapa] = await Promise.all([
-        sb.rpc('lugares_perto', { p_lat: pos.latitude, p_lng: pos.longitude, p_km: 3 }),
-        mapaPerto(pos, 1500).catch(() => [])]);
+      // 1º os lugares da Comunidade (rápido), depois junta os do mapa quando chegarem
+      const mapaP = mapaPerto(meu, 1500).catch(() => []);
+      const { data: nossos } = await sb.rpc('lugares_perto', { p_lat: meu.latitude, p_lng: meu.longitude, p_km: 3 });
+      if (vez !== vezPerto) return;
+      if (nossos && nossos.length) { msgx(); pintar(juntar(nossos, []), 'Perto de você'); msgx('info', '🗺️ Buscando mais lugares no mapa…'); }
+      const mapa = await mapaP;
+      if (vez !== vezPerto) return;
       msgx();
       pintar(juntar(nossos || [], mapa), 'Perto de você');
     }
