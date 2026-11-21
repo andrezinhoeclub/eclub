@@ -1,4 +1,4 @@
-// checkin.js — v1.4 — check-in a qualquer hora: lugares perto pelo GPS, cadastrar o lugar onde estou
+// checkin.js — v1.5 — check-in a qualquer hora: lugares perto pelo GPS, cadastrar o lugar onde estou
 (async function () {
   'use strict';
   const { sb, $, msg, moldura, exigirMembro, flyer, toast } = window.BASE;
@@ -29,15 +29,36 @@
     return true;
   }
 
-  $('bProcurar').addEventListener('click', async () => {
-    $('bProcurar').disabled = true; msg('mPerto', 'info', '📡 Pegando a sua localização pelo GPS…');
-    try { pos = await posicao(); } catch (e) { msg('mPerto', 'erro', e.message); $('bProcurar').disabled = false; return; }
+  // Última localização que o celular já sabe (do Radar/uso recente): sai na hora, sem esperar o GPS
+  const rapida = () => new Promise(ok => {
+    try { navigator.geolocation.getCurrentPosition(p => ok(p.coords), () => ok(null), { enableHighAccuracy: false, maximumAge: 10 * 60000, timeout: 2500 }); }
+    catch (e) { ok(null); }
+  });
+  const distM = (a, b) => { const R = 6371000, r = Math.PI / 180, dLa = (b.latitude - a.latitude) * r, dLo = (b.longitude - a.longitude) * r;
+    const h = Math.sin(dLa / 2) ** 2 + Math.cos(a.latitude * r) * Math.cos(b.latitude * r) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
+  function mostrarPerto(p) {
+    pos = p;
+    $('secPerto').classList.remove('oculto'); $('secNovo').classList.remove('oculto');
+    busca.definirPosicao(pos); return busca.perto(pos);
+  }
+
+  $('bProcurar').addEventListener('click', async (ev) => {
+    $('bProcurar').disabled = true;
+    let mostrado = null;
+    // ao abrir a tela: mostra logo os lugares com a localização que o celular já tem
+    if (ev && ev.isTrusted === false || !ev) {
+      const q = await rapida();
+      if (q) { mostrado = q; mostrarPerto(q); }
+    }
+    msg('mPerto', 'info', mostrado ? '📡 Confirmando a sua localização pelo GPS…' : '📡 Pegando a sua localização pelo GPS…');
+    let fina;
+    try { fina = await posicao(); } catch (e) { $('bProcurar').disabled = false; if (!mostrado) { msg('mPerto', 'erro', e.message); return; } fina = mostrado; }
     $('bProcurar').disabled = false;
-    if (pos.accuracy > 300) msg('mPerto', 'info', '⚠️ O GPS está impreciso (' + Math.round(pos.accuracy) + ' m). Se o lugar não aparecer, vá para perto da entrada e procure de novo.');
+    if (fina.accuracy > 300) msg('mPerto', 'info', '⚠️ O GPS está impreciso (' + Math.round(fina.accuracy) + ' m). Se o lugar não aparecer, vá para perto da entrada e procure de novo.');
     else msg('mPerto');
     $('bProcurar').textContent = '🔄 Procurar de novo';
-    $('secPerto').classList.remove('oculto'); $('secNovo').classList.remove('oculto');
-    busca.definirPosicao(pos); await busca.perto(pos);
+    // só refaz a lista se a localização boa for diferente da rápida (mais de 150 m)
+    if (!mostrado || distM(mostrado, fina) > 150) await mostrarPerto(fina); else pos = fina;
     // Onde estou (cidade/UF) pelo mapa gratuito do OpenStreetMap, para cadastrar um lugar novo
     onde = null; $('nOnde').textContent = '';
     try {
