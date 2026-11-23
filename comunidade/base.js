@@ -1,10 +1,13 @@
-// base.js — v4.4 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v4.5 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
   // App da Play Store (CLLoja): as fotos vêm desfocadas por padrão e só aparecem com 2 toques
   const LOJA = /CLLoja/.test(navigator.userAgent);
   const DISC = LOJA ? 'ligada' : 'desligada';
+  // Dentro do app Android (qualquer um dos dois) o Android bloqueia print de tela (FLAG_SECURE).
+  // Fora do app (navegador no celular/PC) isso não existe em lugar nenhum — por isso as fotos só aparecem aqui dentro.
+  const EH_APP = /CLApp\//.test(navigator.userAgent);
   if (!window.supabase || !A.SUPABASE_URL) {
     document.body.textContent = 'Site não configurado (config.js).';
     throw new Error('sem config');
@@ -377,10 +380,11 @@
   // Desenha a foto num quadro com a marca d'água do DONO DA FOTO (nº + apelido).
   // opcoes.dono = id do dono (o nº e o apelido são buscados uma vez e guardados)
   // Sem dono informado, usa a marca de quem está vendo (proteção contra print).
-  let marcaTexto = '', marcaVisitante = '';
+  let marcaTexto = '', marcaVisitante = '', meuId = null;
   function definirMarca(perfil) {
     marcaTexto = 'nº ' + perfil.numero + ' · ' + perfil.apelido;
     marcaVisitante = marcaTexto;
+    meuId = perfil.id;
     marcas[perfil.id] = Promise.resolve(marcaTexto);
   }
   const marcas = {};
@@ -403,8 +407,27 @@
     return marcas[id];
   }
 
+  // Fora do app: em vez da foto (que daria pra printar sem bloqueio nenhum), mostra um aviso no lugar dela
+  function fotoSoApp(o) {
+    const pequena = o.largura <= 120;
+    const d = document.createElement('div');
+    d.className = 'foto-protegida foto-so-app';
+    d.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;' +
+      'width:' + o.largura + 'px;height:' + (o.cortar ? o.largura : Math.round(o.largura * 1.25)) + 'px;max-height:100%;' +
+      'background:rgba(127,127,127,.18);color:var(--suave,#999);text-align:center;padding:4px;box-sizing:border-box;overflow:hidden';
+    const icone = document.createElement('div'); icone.textContent = '🔒'; icone.style.fontSize = pequena ? '1rem' : '1.7rem';
+    d.appendChild(icone);
+    if (!pequena) {
+      const t = document.createElement('div'); t.textContent = 'Foto só no app'; t.style.cssText = 'font-size:.72rem;font-weight:600';
+      const a = document.createElement('a'); a.href = 'instalar.html'; a.textContent = 'Instalar o app'; a.style.cssText = 'font-size:.68rem;color:var(--marca);text-decoration:underline';
+      d.append(t, a);
+    }
+    return d;
+  }
   function fotoProtegida(url, opcoes) {
     const o = Object.assign({ largura: 900, cortar: false, alt: '' }, opcoes || {});
+    // Fora do app só trava foto de OUTRA pessoa — gerenciar as próprias fotos continua funcionando no navegador
+    if (!EH_APP && o.dono && o.dono !== meuId) return fotoSoApp(o);
     const c = document.createElement('canvas');
     c.className = 'foto-protegida';
     c.setAttribute('role', 'img');
