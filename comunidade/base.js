@@ -1,4 +1,4 @@
-// base.js — v4.3 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v4.4 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -312,16 +312,38 @@
   }
 
   // Reduz a foto, tira dados escondidos (GPS, modelo do celular) e devolve JPEG
+  const MAX_FOTO = 1600;
+  // Caminho rápido: pede pro navegador decodificar já no tamanho pequeno (em vez de decodificar a foto
+  // inteira da câmera, que pode vir enorme, e só depois reduzir — isso é o que deixava o envio lento)
+  async function prepararFotoRapido(arquivo) {
+    if (!window.createImageBitmap) return null;
+    let orig;
+    try { orig = await createImageBitmap(arquivo); } catch (e) { return null; }
+    const escala = Math.min(1, MAX_FOTO / Math.max(orig.width, orig.height));
+    const w = Math.max(1, Math.round(orig.width * escala)), h = Math.max(1, Math.round(orig.height * escala));
+    let pequena = orig;
+    if (escala < 1) {
+      try { pequena = await createImageBitmap(arquivo, { resizeWidth: w, resizeHeight: h, resizeQuality: 'medium' }); }
+      catch (e) { pequena = orig; }
+    }
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    c.getContext('2d').drawImage(pequena, 0, 0, w, h);
+    try { orig.close(); } catch (e) {} try { pequena.close(); } catch (e) {}
+    return new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.85));
+  }
   async function prepararFoto(arquivo) {
     if (!arquivo || !/^image\//.test(arquivo.type)) throw new Error('Envie apenas fotos (JPG ou PNG).');
     if (arquivo.size > 25 * 1024 * 1024) throw new Error('Foto muito grande.');
+    try {
+      const rapido = await prepararFotoRapido(arquivo);
+      if (rapido) return rapido;
+    } catch (e) { /* cai no caminho de sempre, abaixo */ }
     const url = URL.createObjectURL(arquivo);
     try {
       const img = new Image();
       img.src = url;
       await img.decode();
-      const max = 1600;
-      const escala = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const escala = Math.min(1, MAX_FOTO / Math.max(img.naturalWidth, img.naturalHeight));
       const c = document.createElement('canvas');
       c.width = Math.round(img.naturalWidth * escala);
       c.height = Math.round(img.naturalHeight * escala);
