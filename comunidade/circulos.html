@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Círculos</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=3.6">
+</head>
+<body>
+<style>
+.ci-cab{display:flex;align-items:center;gap:10px;padding:12px 14px}
+.ci-cab h1{margin:0;font-size:1.2rem;flex:1}
+.ci-intro{padding:14px;font-size:.9rem;line-height:1.55;color:var(--suave)}
+.ci-intro b{color:var(--texto)}
+.ci-abas{display:flex;background:var(--cartao);border-bottom:1px solid var(--linha)}
+.ci-abas button{flex:1;background:none;border:0;border-bottom:3px solid transparent;padding:12px 6px;font:600 .9rem Inter,sans-serif;color:var(--suave);cursor:pointer}
+.ci-abas button.sel{color:var(--texto);border-bottom-color:var(--marca)}
+.ci-item{display:flex;gap:12px;align-items:center;padding:12px 14px;background:var(--cartao);border-bottom:1px solid var(--linha);text-decoration:none;color:var(--texto);cursor:pointer}
+.ci-item .ic{flex:0 0 44px;height:44px;border-radius:50%;background:var(--cartao2);display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.ci-item .tx{flex:1;min-width:0}
+.ci-item b{display:block;font-size:.98rem}
+.ci-item small{display:block;color:var(--suave);font-size:.78rem;margin-top:2px}
+.ci-tag{display:inline-block;font-size:.68rem;font-weight:700;padding:1px 7px;border-radius:999px;border:1px solid var(--linha);margin-left:4px;color:var(--suave)}
+.ci-tag.ok{color:var(--ok);border-color:var(--ok)}
+.ci-post{padding:12px 14px;background:var(--cartao);border-bottom:1px solid var(--linha)}
+.ci-post .quem{font-size:.85rem}
+.ci-post .quem a{font-weight:700;color:var(--texto);text-decoration:none}
+.ci-post .quem small{color:var(--suave);font-size:.75rem}
+.ci-post p{margin:5px 0 0;white-space:pre-wrap;word-wrap:break-word;line-height:1.5}
+.ci-post .ap{background:none;border:0;color:var(--suave);font-size:.75rem;cursor:pointer;padding:4px 0}
+</style>
+
+<main>
+  <div class="cartao" id="carregando"><p class="suave">Carregando…</p></div>
+  <div class="oculto" id="tela">
+    <div class="cartao ci-cab"><img src="logo-ouro.png" alt="" style="width:30px;height:30px;object-fit:contain"><h1 id="titulo">Círculos</h1><a href="#" id="voltar" class="oculto">‹ voltar</a></div>
+
+    <!-- LISTA -->
+    <div id="vLista">
+      <div class="cartao ci-intro">
+        <b>Círculos</b> são grupos de membros com um mural só deles. Procure um círculo do seu interesse ou crie o seu.
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:12px">
+          <input type="search" id="busca" placeholder="Buscar círculo pelo nome…" maxlength="40">
+          <button class="btn" type="button" id="bBuscar" style="width:auto;padding:10px 14px">🔎</button>
+        </div>
+        <button class="btn" type="button" id="bCriar" style="width:100%;margin-top:10px">➕ Criar círculo</button>
+      </div>
+      <div class="ci-abas" id="abas"><button type="button" class="sel" data-a="todos">Todos</button><button type="button" data-a="meus">Que participo</button></div>
+      <div id="lista"></div>
+    </div>
+
+    <!-- CRIAR -->
+    <div id="vCriar" class="oculto">
+      <div class="cartao">
+        <label class="campo" for="cNome">Nome do círculo</label>
+        <input type="text" id="cNome" maxlength="40" placeholder="Ex.: Casais de Curitiba">
+        <label class="campo" for="cDesc">Descrição</label>
+        <textarea id="cDesc" rows="4" maxlength="300" placeholder="Sobre o que é este círculo? Quem pode participar?"></textarea>
+        <label class="campo">Como as pessoas entram</label>
+        <div class="chips" id="cEntrada">
+          <div class="chip sel" data-v="aberta">🔓 Entrada livre</div>
+          <div class="chip" data-v="aprovacao">✋ Eu aprovo cada pedido</div>
+        </div>
+        <button class="btn" type="button" id="cSalvar" style="margin-top:12px">Criar círculo</button>
+        <div class="msg" id="mCriar"></div>
+        <p class="suave" style="font-size:.82rem">Cada membro pode criar até 3 círculos. Valem as regras da comunidade: respeito, sem rosto à mostra de terceiros e sem anúncios.</p>
+      </div>
+    </div>
+
+    <!-- CÍRCULO -->
+    <div id="vCirculo" class="oculto">
+      <div class="cartao" id="cInfo"></div>
+      <div class="cartao oculto" id="cMembrosCx"><h2 style="margin-top:0">Membros</h2><div class="lista-pessoas" id="cMembros"></div></div>
+      <div class="cartao oculto" id="cEscrever">
+        <textarea id="pTexto" rows="3" maxlength="1000" placeholder="Escreva no mural do círculo…"></textarea>
+        <button class="btn" type="button" id="pEnviar" style="margin-top:8px">Publicar</button>
+        <div class="msg" id="mPost"></div>
+      </div>
+      <div id="cPosts"></div>
+    </div>
+  </div>
+</main>
+
+<footer><a href="regras.html">Regras e privacidade</a> · circulos.html v1.0</footer>
+
+<script src="config.js?v=1.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="base.js?v=4.7"></script>
+<script src="circulos.js?v=1.0"></script>
+</body>
+</html>
