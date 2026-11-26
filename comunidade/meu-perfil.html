@@ -46,7 +46,7 @@
 
     <!-- Pedidos de álbum -->
     <div class="cartao oculto" id="cartaoPedidos">
-      <h2>Pedidos para ver seu álbum privado</h2>
+      <h2>Pedidos para ver seus álbuns privados</h2>
       <div class="lista-pessoas" id="listaPedidos"></div>
     </div>
 
@@ -57,7 +57,7 @@
       <div class="filtros">
         <select id="upAlbum">
           <option value="publico">Enviar para: Fotolog (todos os membros veem)</option>
-          <option value="privado">Enviar para: 🔒 Álbum privado (só quem eu liberar)</option>
+          <option value="novo">Enviar para: 🔒 Álbum privado (só quem eu liberar)</option>
         </select>
         <label class="btn secundario" for="upCamera" style="padding:10px">📷 Tirar foto</label>
         <label class="btn" for="upArquivos" style="padding:10px">🖼️ Galeria</label>
@@ -70,6 +70,7 @@
       <div id="painelFoto" class="oculto cartao" style="margin:10px 0;background:var(--cartao2)">
         <div class="linha-acoes" style="margin-top:0">
           <button class="btn" id="fPerfil" type="button">⭐ Usar como foto de perfil</button>
+          <select id="fDestino" aria-label="Mover para"></select>
           <button class="btn secundario" id="fMover" type="button">Mover</button>
           <button class="btn vermelho" id="fApagar" type="button">Apagar</button>
           <button class="btn secundario" id="fFechar" type="button">Fechar</button>
@@ -78,8 +79,14 @@
 
       <h2 style="margin-top:14px">Fotolog <span class="suave" id="qPub"></span></h2>
       <div class="fotos-grade" id="gradePub"></div>
-      <h2 style="margin-top:14px">🔒 Álbum privado <span class="suave" id="qPriv"></span></h2>
-      <div class="fotos-grade" id="gradePriv"></div>
+      <h2 style="margin-top:14px">🔒 Meus álbuns privados <span class="suave" id="qPriv"></span></h2>
+      <p class="suave" style="margin-top:0;font-size:.84rem">Crie quantos álbuns quiser (até 10). Cada álbum tem a sua lista de convidados: quem vê um não vê os outros. Quem não tem acesso enxerga só uma miniatura borrada.</p>
+      <div id="blocosAlbuns"></div>
+      <div class="filtros" style="margin-top:10px">
+        <input id="novoAlbumNome" type="text" maxlength="40" placeholder="Nome do novo álbum (ex.: Praia)">
+        <button class="btn" id="bNovoAlbum" type="button" style="padding:10px">+ Criar álbum</button>
+      </div>
+      <div class="msg" id="mAlbumNovo"></div>
     </div>
 
     <!-- Dados -->
@@ -124,8 +131,16 @@
     </div>
 
     <!-- Quem vê o álbum -->
-    <div class="titulo-secao">Quem pode ver meu álbum privado</div>
+    <div class="titulo-secao">Quem pode ver meus álbuns privados</div>
     <div class="cartao">
+      <label class="campo" style="margin-top:0">Convidar um membro direto</label>
+      <div class="filtros">
+        <select id="cvAlbum" aria-label="Álbum"></select>
+        <input id="cvApelido" type="text" maxlength="24" placeholder="Apelido do membro">
+        <select id="cvPrazo" aria-label="Prazo"></select>
+        <button class="btn" id="cvBtn" type="button" style="padding:10px">Dar acesso</button>
+      </div>
+      <div class="msg" id="mConvite"></div>
       <div class="lista-pessoas" id="listaAcessos"></div>
       <p class="suave oculto" id="semAcessos">Ninguém por enquanto.</p>
     </div>
@@ -140,12 +155,12 @@
   </div>
 </main>
 
-<footer><a href="regras.html">Regras e privacidade</a> · meu-perfil.html v3.1</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · meu-perfil.html v3.2</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
-<script src="base.js?v=4.6"></script>
+<script src="base.js?v=4.7"></script>
 <script src="editor-foto.js?v=1.2"></script>
-<script src="meu-perfil.js?v=2.9"></script>
+<script src="meu-perfil.js?v=3.0"></script>
 </body>
 </html>
