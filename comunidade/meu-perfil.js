@@ -1,4 +1,4 @@
-// meu-perfil.js — v2.8 — editar perfil (com detalhes Ele/Ela), capa, e-mail privado, últimas visitas, fotos, álbum privado e bloqueios
+// meu-perfil.js — v2.9 — editar perfil (com detalhes Ele/Ela), capa, e-mail privado, últimas visitas, fotos, álbum privado e bloqueios
 (async function () {
   'use strict';
   const { sb, $, msg, formacao, links, fotoProtegida, gradeFotos, sexos,
@@ -300,20 +300,36 @@
   carregarFotos();
 
   // ---------- Pedidos e acessos do álbum ----------
-  function pessoa(id, apelido, botoes) {
+  function pessoa(id, apelido, botoes, opcoes) {
+    opcoes = opcoes || {};
     const d = document.createElement('div'); d.className = 'pessoa';
+    const nomeBox = document.createElement('div');
     const a = document.createElement('a'); a.href = 'perfil.html?id=' + encodeURIComponent(id); a.textContent = apelido;
+    nomeBox.appendChild(a);
+    if (opcoes.sub) {
+      const s = document.createElement('div'); s.className = 'suave'; s.style.fontSize = '.75rem'; s.textContent = opcoes.sub;
+      nomeBox.appendChild(s);
+    }
     const b = document.createElement('div'); b.className = 'botoes';
+    if (opcoes.extra) b.appendChild(opcoes.extra);
     botoes.forEach(([texto, classe, acao]) => {
       const x = document.createElement('button'); x.type = 'button'; x.textContent = texto; if (classe) x.className = classe;
       x.addEventListener('click', async () => { x.disabled = true; await acao(); });
       b.appendChild(x);
     });
-    d.append(a, b); return d;
+    d.append(nomeBox, b); return d;
+  }
+
+  function selPrazoAlbum() {
+    const s = document.createElement('select');
+    [['', 'Sem limite'], ['24', '24 horas'], ['72', '3 dias'], ['168', '7 dias']].forEach(([v, t]) => {
+      const o = document.createElement('option'); o.value = v; o.textContent = t; s.appendChild(o);
+    });
+    return s;
   }
 
   async function carregarAlbum() {
-    const { data: peds } = await sb.from('album_pedidos').select('solicitante, status')
+    const { data: peds } = await sb.from('album_pedidos').select('solicitante, status, expira_em')
       .eq('dono', eu.id).in('status', ['pendente', 'aceito']).order('criado_em', { ascending: false });
     const lista = peds || [];
     const ids = lista.map(p => p.solicitante);
@@ -326,14 +342,22 @@
     lista.forEach(p => {
       const nome = nomes[p.solicitante]; if (!nome) return;
       if (p.status === 'pendente') {
+        const sel = selPrazoAlbum();
         $('listaPedidos').appendChild(pessoa(p.solicitante, nome, [
-          ['Liberar', 'sim', async () => { await sb.rpc('responder_pedido_album', { p_solicitante: p.solicitante, p_aceitar: true }); carregarAlbum(); }],
+          ['Liberar', 'sim', async () => {
+            const horas = sel.value ? Number(sel.value) : null;
+            await sb.rpc('responder_pedido_album', { p_solicitante: p.solicitante, p_aceitar: true, p_horas: horas });
+            carregarAlbum();
+          }],
           ['Recusar', '', async () => { await sb.rpc('responder_pedido_album', { p_solicitante: p.solicitante, p_aceitar: false }); carregarAlbum(); }]
-        ]));
+        ], { extra: sel }));
       } else {
+        const expira = p.expira_em ? new Date(p.expira_em) : null;
+        if (expira && expira.getTime() <= Date.now()) return; // prazo já passou: não mostra mais como "tem acesso"
+        const sub = expira ? 'acesso até ' + expira.toLocaleDateString('pt-BR') + ' ' + expira.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'acesso sem limite de tempo';
         $('listaAcessos').appendChild(pessoa(p.solicitante, nome, [
           ['Tirar acesso', '', async () => { await sb.from('album_pedidos').delete().eq('dono', eu.id).eq('solicitante', p.solicitante); carregarAlbum(); }]
-        ]));
+        ], { sub }));
       }
     });
     $('cartaoPedidos').classList.toggle('oculto', !$('listaPedidos').children.length);
