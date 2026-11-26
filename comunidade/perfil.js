@@ -1,4 +1,4 @@
-// perfil.js — v3.0 — perfil de um membro (capa, faixas, medalhas e visitas, como no CRS)
+// perfil.js — v3.1 — perfil de um membro (capa, faixas, medalhas e visitas, como no CRS)
 (async function () {
   'use strict';
   const { sb, $, msg, idades, visto, avatar, sexos, gradeFotos, moldura, exigirMembro, emBreve, toast,
@@ -290,44 +290,93 @@
     selo: f => f.curtidas ? '❤️ ' + f.curtidas : '' });
   else $('semFotos').classList.remove('oculto');
 
-  // ---------- Álbum privado ----------
+  // ---------- Álbuns privados (vários, cada um com seus convidados) ----------
+  const fmtData = (d) => { const x = new Date(d); return x.toLocaleDateString('pt-BR') + ' ' + x.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
+
+  async function cartaoAlbum(a) {
+    const c = el('div', 'cartao'); c.style.margin = '8px 0';
+    const topo = el('div'); topo.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:8px';
+    const nome = el('b', null, (a.acesso ? '🔓 ' : '🔒 ') + a.nome);
+    const q = el('span', 'suave', a.fotos + ' foto' + (a.fotos === 1 ? '' : 's')); q.style.fontSize = '.8rem';
+    topo.append(nome, q); c.appendChild(topo);
+    const grade = el('div', 'fotos-grade'); grade.style.marginTop = '8px';
+    if (a.acesso) {
+      if (a.expira_em && id !== eu.id) c.appendChild(el('p', 'suave', 'Liberado até ' + fmtData(a.expira_em) + '.'));
+      c.appendChild(grade);
+      const { data: fs } = await sb.from('fotos').select('caminho, album, criado_em')
+        .eq('album_id', a.id).order('criado_em', { ascending: false });
+      if (fs && fs.length) await gradeFotos(grade, fs, { dono: id, vistoPor: true });
+      return c;
+    }
+    // fechado: miniaturas borradas (24 px) e cadeado — o arquivo original nem chega ao aparelho
+    const { data: minis } = await sb.rpc('album_miniaturas', { p_album: a.id });
+    (minis || []).forEach(m => {
+      const item = el('div', 'item'); item.style.cssText = 'position:relative;overflow:hidden;border-radius:8px;aspect-ratio:1;background:var(--cartao2)';
+      if (m.miniatura) {
+        const img = document.createElement('img'); img.src = m.miniatura; img.alt = '';
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;filter:blur(9px);transform:scale(1.25);pointer-events:none';
+        item.appendChild(img);
+      }
+      const cad = el('span', null, '🔒'); cad.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.3rem;text-shadow:0 1px 4px #000';
+      item.appendChild(cad); grade.appendChild(item);
+    });
+    c.appendChild(grade);
+    const st = a.status;
+    const texto = el('p', 'suave', !st ? 'Só quem o membro liberar consegue ver.'
+      : st === 'pendente' ? 'Pedido enviado. Aguardando o membro responder.'
+      : st === 'aceito' ? 'Seu acesso a este álbum terminou. Você pode pedir de novo.'
+      : 'O membro não liberou este álbum por enquanto. Você pode pedir de novo.');
+    c.appendChild(texto);
+    if (st === 'pendente') {
+      const b = el('button', 'btn secundario', 'Cancelar meu pedido'); b.type = 'button';
+      b.addEventListener('click', async () => { b.disabled = true; await sb.rpc('cancelar_pedido_album', { p_album: a.id }); mostrarAlbum(); });
+      c.appendChild(b);
+    } else {
+      const b = el('button', 'btn', 'Pedir acesso a este álbum'); b.type = 'button';
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        const { error } = await sb.rpc('pedir_album', { p_album: a.id });
+        if (error) { b.disabled = false; msg('mAlbum', 'erro', 'Não foi possível enviar o pedido.'); return; }
+        mostrarAlbum();
+      });
+      c.appendChild(b);
+    }
+    return c;
+  }
+
   async function mostrarAlbum() {
     msg('mAlbum');
-    const { data: acesso } = await sb.rpc('tem_acesso_album', { p_dono: id });
-    $('albumLiberado').classList.toggle('oculto', acesso !== true);
-    $('albumFechado').classList.toggle('oculto', acesso === true);
-    if (acesso === true) {
-      const { data: priv } = await sb.from('fotos').select('caminho, album, criado_em')
-        .eq('dono', id).eq('album', 'privado').order('criado_em', { ascending: false });
-      if (priv && priv.length) await gradeFotos($('gradePrivada'), priv, { dono: id, vistoPor: true });
-      $('albumVazio').classList.toggle('oculto', !!(priv && priv.length));
-      // 📷 novidade: alguma foto nova nos últimos 3 dias (desde que você já tinha acesso)
-      const novidade = (priv || []).some(f => Date.now() - new Date(f.criado_em).getTime() < 3 * 86400e3);
-      $('albumNovo').classList.toggle('oculto', !novidade);
-      return;
-    }
-    $('albumNovo').classList.add('oculto');
-    const { data: ped } = await sb.from('album_pedidos').select('status')
-      .eq('dono', id).eq('solicitante', eu.id).maybeSingle();
-    $('bPedir').classList.toggle('oculto', !!ped && ped.status === 'pendente');
-    $('bCancelarPedido').classList.toggle('oculto', !ped || ped.status !== 'pendente');
-    $('txtAlbum').textContent = !ped ? 'Só quem o membro liberar consegue ver.'
-      : ped.status === 'pendente' ? 'Pedido enviado. Aguardando o membro responder.'
-      : 'O membro não liberou o álbum por enquanto. Você pode pedir de novo.';
+    const { data } = await sb.rpc('albuns_de', { p_dono: id });
+    const lista = data || [];
+    const cont = $('albuns'); cont.innerHTML = '';
+    for (const a of lista) cont.appendChild(await cartaoAlbum(a));
+    $('semAlbuns').classList.toggle('oculto', lista.length > 0);
+    // 📷 novidade: foto nova (3 dias) num álbum que você já pode ver
+    $('albumNovo').classList.toggle('oculto', !(id !== eu.id && lista.some(a => a.acesso && a.novidade)));
   }
-  $('bPedir').addEventListener('click', async () => {
-    $('bPedir').disabled = true;
-    await sb.from('album_pedidos').delete().eq('dono', id).eq('solicitante', eu.id);
-    const { error } = await sb.from('album_pedidos').insert({ dono: id, solicitante: eu.id });
-    $('bPedir').disabled = false;
-    if (error) { msg('mAlbum', 'erro', 'Não foi possível enviar o pedido.'); return; }
-    mostrarAlbum();
-  });
-  $('bCancelarPedido').addEventListener('click', async () => {
-    await sb.from('album_pedidos').delete().eq('dono', id).eq('solicitante', eu.id);
-    mostrarAlbum();
-  });
   mostrarAlbum();
+
+  // ---------- Certificado por amigos (um amigo confirma que o perfil é real) ----------
+  async function mostrarCertificacao() {
+    const { data } = await sb.rpc('certificacao_info', { p_alvo: id });
+    const c = data && data[0];
+    if (!c || (c.total === 0 && !c.posso)) { $('certCard').classList.add('oculto'); return; }
+    $('certCard').classList.remove('oculto');
+    $('certTxt').textContent = c.total > 0 ? '✅ Certificado por ' + c.total + ' membro' + (c.total == 1 ? '' : 's') : 'Ainda sem certificados';
+    $('certQuem').textContent = (c.quem && c.quem.length) ? 'Por: ' + c.quem.join(', ') + (c.total > c.quem.length ? ' e outros' : '') : 'Só amigos podem certificar um perfil.';
+    const b = $('bCertificar');
+    b.classList.toggle('oculto', !c.posso);
+    b.textContent = c.eu_certifiquei ? 'Remover meu certificado' : '✅ Certificar este perfil (conheço, é real)';
+    b.className = 'btn' + (c.eu_certifiquei ? ' secundario' : '') + (c.posso ? '' : ' oculto');
+    b.onclick = async () => {
+      b.disabled = true;
+      const { error } = await sb.rpc(c.eu_certifiquei ? 'remover_certificacao' : 'certificar_perfil', { p_alvo: id });
+      b.disabled = false;
+      if (error) { msg('mCert', 'erro', error.message); return; }
+      msg('mCert'); mostrarCertificacao();
+    };
+  }
+  mostrarCertificacao();
 
   // ---------- Recados ----------
   $('bChat').href = 'chat.html?com=' + encodeURIComponent(id);
