@@ -1,4 +1,4 @@
-// base.js — v4.6 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v4.7 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -907,7 +907,7 @@
     const bb = (n, rotulo, href) => '<' + (href ? 'a href="' + href + '"' : 'button type="button"') + ' data-id="' + n + '">' +
       icone(n) + '<span>' + rotulo + '</span><span class="bolinha" id="bb_' + n + '"></span></' + (href ? 'a' : 'button') + '>';
     baixo.innerHTML = '<nav>' + bb('sigame', 'Siga-me', 'inicio.html') + bb('ultimas', 'Últimas', 'inicio.html?aba=ultimas') +
-      bb('radar', 'Radar', 'radar.html') + bb('forum', 'Fórum', 'forum.html') + bb('grupos', 'Grupos') + '</nav>';
+      bb('radar', 'Radar', 'radar.html') + bb('forum', 'Fórum', 'forum.html') + bb('grupos', 'Grupos', 'circulos.html') + '</nav>';
     document.body.appendChild(baixo);
 
     [...topo.querySelectorAll('[data-id]'), ...baixo.querySelectorAll('[data-id]')].forEach(el => {
@@ -1062,10 +1062,10 @@
     item('radar', 'Radar CL', 'radar.html');
     item('ultimas', 'Ao Vivo (online agora)', 'aovivo.html');
     item('forum', 'Fórum CL', 'forum.html');
-    item('grupos', 'Círculos', null);
+    item('grupos', 'Círculos', 'circulos.html');
     item('agenda', 'Eventos', 'eventos.html');
     item('pin', 'Fazer Check-in', 'checkin.html');
-    item('trofeu', 'Ranking TOP CL', null);
+    item('trofeu', 'Ranking TOP CL', 'ranking.html');
 
     secao('Configurações');
     item('lapis', 'Editar Meu Perfil', 'meu-perfil.html');
