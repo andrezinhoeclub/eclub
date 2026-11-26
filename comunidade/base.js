@@ -1,4 +1,4 @@
-// base.js — v4.5 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
+// base.js — v4.6 — conexão com o banco, moldura (topo, menu, barra de baixo) e funções comuns
 (function () {
   'use strict';
   const A = window.APP || {};
@@ -1095,7 +1095,7 @@
     marcar(iAmigos, notif.amigos, notif.amigos > 1 ? 'pedidos' : 'pedido');
     marcar(iDepo, notif.depoimentos, 'para aceitar');
     marcar(iPaq, notif.paqueras, notif.paqueras > 1 ? 'retribuídas' : 'retribuída');
-    marcar(iRostos, notif.privado, notif.privado > 1 ? 'pedidos' : 'pedido');
+    marcar(iRostos, notif.privado, notif.privado > 1 ? 'pedidos de acesso' : 'pedido de acesso');
     marcar(iAdm, notif.admin, 'pendentes');
     sb.rpc('social_avisos').then(({ data }) => {
       const a = (data && data[0]) || {};
