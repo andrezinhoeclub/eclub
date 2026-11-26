@@ -1,4 +1,4 @@
-// meu-perfil.js — v2.9 — editar perfil (com detalhes Ele/Ela), capa, e-mail privado, últimas visitas, fotos, álbum privado e bloqueios
+// meu-perfil.js — v3.0 — editar perfil (com detalhes Ele/Ela), capa, e-mail privado, últimas visitas, fotos, álbum privado e bloqueios
 (async function () {
   'use strict';
   const { sb, $, msg, formacao, links, fotoProtegida, gradeFotos, sexos,
@@ -198,20 +198,97 @@
     if (u[fotoPerfil]) { $('avatar').textContent = ''; $('avatar').appendChild(fotoProtegida(u[fotoPerfil], { cortar: true, largura: 300 })); }
   }
 
+  // ---------- Miniatura borrada (24 px) que fica no banco para quem ainda não tem acesso ----------
+  async function miniatura24(blob) {
+    const url = URL.createObjectURL(blob);
+    try {
+      const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = url; });
+      const lado = 24, c = document.createElement('canvas'); c.width = lado; c.height = lado;
+      const m = Math.min(img.naturalWidth, img.naturalHeight);
+      c.getContext('2d').drawImage(img, (img.naturalWidth - m) / 2, (img.naturalHeight - m) / 2, m, m, 0, 0, lado, lado);
+      return c.toDataURL('image/jpeg', 0.5);
+    } finally { URL.revokeObjectURL(url); }
+  }
+  let gerandoMini = false;
+  async function gerarMiniaturasPendentes(lista) {   // fotos antigas ainda sem miniatura
+    if (gerandoMini || !lista.length) return;
+    gerandoMini = true;
+    try {
+      const urls = await links(lista.slice(0, 40).map(f => f.caminho));
+      for (const f of lista.slice(0, 40)) {
+        try {
+          if (!urls[f.caminho]) continue;
+          const blob = await (await fetch(urls[f.caminho])).blob();
+          await sb.rpc('salvar_miniatura', { p_foto: f.id, p_mini: await miniatura24(blob) });
+        } catch (e) { /* tenta de novo na próxima vez */ }
+      }
+    } finally { gerandoMini = false; }
+  }
+
+  let albuns = [];
+  function preencherDestinos() {
+    const up = $('upAlbum'), antes = up.value;
+    up.innerHTML = '<option value="publico">Enviar para: Fotolog (todos os membros veem)</option>';
+    if (!albuns.length) up.insertAdjacentHTML('beforeend', '<option value="novo">Enviar para: 🔒 Álbum privado (só quem eu liberar)</option>');
+    albuns.forEach(a => { const o = document.createElement('option'); o.value = 'a' + a.id; o.textContent = 'Enviar para: 🔒 ' + a.nome; up.appendChild(o); });
+    if ([...up.options].some(o => o.value === antes)) up.value = antes;
+    const de = $('fDestino'); de.innerHTML = '<option value="publico">Fotolog</option>';
+    albuns.forEach(a => { const o = document.createElement('option'); o.value = 'a' + a.id; o.textContent = '🔒 ' + a.nome; de.appendChild(o); });
+    const cv = $('cvAlbum'); cv.innerHTML = '';
+    albuns.forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = a.nome; cv.appendChild(o); });
+  }
+
+  function blocoAlbum(a) {
+    const caixa = document.createElement('div'); caixa.className = 'cartao'; caixa.style.cssText = 'margin:8px 0;background:var(--cartao2)';
+    const topo = document.createElement('div'); topo.className = 'linha-acoes'; topo.style.cssText = 'margin-top:0;align-items:center;justify-content:space-between';
+    const nome = document.createElement('b'); nome.textContent = '🔒 ' + a.nome;
+    const info = document.createElement('span'); info.className = 'suave'; info.style.fontSize = '.8rem';
+    info.textContent = ' ' + a.fotos + ' foto(s) · ' + a.convidados + ' convidado(s)' + (a.pendentes ? ' · ' + a.pendentes + ' pedido(s)' : '');
+    const esq = document.createElement('div'); esq.append(nome, info);
+    const dir = document.createElement('div'); dir.className = 'botoes';
+    const bRen = document.createElement('button'); bRen.type = 'button'; bRen.className = 'btn secundario'; bRen.style.padding = '6px 10px'; bRen.textContent = 'Renomear';
+    bRen.addEventListener('click', () => {
+      const inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = 40; inp.value = a.nome;
+      const ok = document.createElement('button'); ok.type = 'button'; ok.className = 'btn'; ok.style.padding = '6px 10px'; ok.textContent = 'Salvar';
+      ok.addEventListener('click', async () => {
+        const { error } = await sb.rpc('renomear_album', { p_album: a.id, p_nome: inp.value });
+        if (error) { msg('mAlbumNovo', 'erro', error.message); return; }
+        carregarFotos(); carregarAlbum();
+      });
+      esq.replaceChildren(inp); dir.replaceChildren(ok);
+    });
+    let conf = false;
+    const bApagar = document.createElement('button'); bApagar.type = 'button'; bApagar.className = 'btn vermelho'; bApagar.style.padding = '6px 10px'; bApagar.textContent = 'Apagar álbum';
+    bApagar.addEventListener('click', async () => {
+      if (!conf) { conf = true; bApagar.textContent = 'Toque de novo'; setTimeout(() => { conf = false; bApagar.textContent = 'Apagar álbum'; }, 4000); return; }
+      const { error } = await sb.rpc('apagar_album', { p_album: a.id });
+      if (error) { msg('mAlbumNovo', 'erro', error.message); conf = false; bApagar.textContent = 'Apagar álbum'; return; }
+      msg('mAlbumNovo', 'ok', 'Álbum apagado.'); carregarFotos(); carregarAlbum();
+    });
+    dir.append(bRen, bApagar);
+    topo.append(esq, dir);
+    const grade = document.createElement('div'); grade.className = 'fotos-grade'; grade.style.marginTop = '8px';
+    caixa.append(topo, grade);
+    return { caixa, grade };
+  }
+
   async function carregarFotos() {
-    const { data } = await sb.from('fotos').select('id, caminho, album')
-      .eq('dono', eu.id).order('criado_em', { ascending: false });
-    const fotos = data || [];
+    const [r1, r2] = await Promise.all([
+      sb.from('fotos').select('id, caminho, album, album_id, miniatura').eq('dono', eu.id).order('criado_em', { ascending: false }),
+      sb.rpc('meus_albuns')]);
+    const fotos = r1.data || [];
+    albuns = r2.data || [];
     const pub = fotos.filter(f => f.album === 'publico'), priv = fotos.filter(f => f.album === 'privado');
     $('qPub').textContent = '(' + pub.length + '/40)';
     $('nFotos').textContent = pub.length;
-    $('qPriv').textContent = '(' + priv.length + '/100)';
+    $('qPriv').textContent = '(' + priv.length + '/100 fotos · ' + albuns.length + '/10 álbuns)';
+    preencherDestinos();
     const opc = {
       etiqueta: f => (f.caminho === fotoPerfil ? '⭐ perfil' : ''),
       aoClicar: (f, url) => {
         selecionada = f;
         $('fPerfil').classList.toggle('oculto', f.album !== 'publico');
-        $('fMover').textContent = f.album === 'publico' ? 'Mover p/ álbum privado' : 'Mover p/ fotos públicas';
+        $('fDestino').value = f.album === 'publico' ? 'publico' : 'a' + f.album_id;
         $('painelFoto').classList.remove('oculto');
         $('painelFoto').scrollIntoView({ behavior: 'smooth', block: 'center' });
         $('painelFoto').dataset.url = url;
@@ -219,9 +296,26 @@
     };
     opc.dono = eu.id;
     await gradeFotos($('gradePub'), pub, opc);
-    await gradeFotos($('gradePriv'), priv, opc);
+    const cont = $('blocosAlbuns'); cont.innerHTML = '';
+    for (const a of albuns) {
+      const b = blocoAlbum(a); cont.appendChild(b.caixa);
+      await gradeFotos(b.grade, priv.filter(f => f.album_id === a.id), opc);
+    }
+    if (!albuns.length) cont.innerHTML = '<p class="suave">Você ainda não tem álbum privado. Crie um abaixo ou envie uma foto para "Álbum privado".</p>';
     mostrarAvatar();
+    gerarMiniaturasPendentes(priv.filter(f => !f.miniatura));
   }
+
+  $('bNovoAlbum').addEventListener('click', async () => {
+    const nome = $('novoAlbumNome').value.trim();
+    if (!nome) { msg('mAlbumNovo', 'erro', 'Escreva o nome do álbum.'); return; }
+    $('bNovoAlbum').disabled = true;
+    const { error } = await sb.rpc('criar_album', { p_nome: nome });
+    $('bNovoAlbum').disabled = false;
+    if (error) { msg('mAlbumNovo', 'erro', error.message); return; }
+    $('novoAlbumNome').value = ''; msg('mAlbumNovo', 'ok', 'Álbum criado ✓');
+    carregarFotos(); carregarAlbum();
+  });
 
   function fecharPainel() { selecionada = null; $('painelFoto').classList.add('oculto'); }
   $('fFechar').addEventListener('click', fecharPainel);
@@ -236,17 +330,21 @@
 
   $('fMover').addEventListener('click', async () => {
     if (!selecionada) return;
-    const destino = selecionada.album === 'publico' ? 'privado' : 'publico';
-    if (destino === 'publico' && !$('fMover').dataset.ok) {
+    const v = $('fDestino').value;
+    const atual = selecionada.album === 'publico' ? 'publico' : 'a' + selecionada.album_id;
+    if (v === atual) { fecharPainel(); return; }
+    if (v === 'publico' && !$('fMover').dataset.ok) {
       $('fMover').dataset.ok = '1';
       msg('mFotos', 'erro', '🚫 No Fotolog é proibido rosto à mostra. Se esta foto mostra rosto, não mova: envie de novo pela Galeria com o Fotolog escolhido, para esconder o rosto. Se não tem rosto, toque em Mover de novo.');
       setTimeout(() => delete $('fMover').dataset.ok, 8000); return;
     }
     delete $('fMover').dataset.ok;
-    const { error } = await sb.from('fotos').update({ album: destino }).eq('id', selecionada.id);
+    let error;
+    if (v === 'publico') ({ error } = await sb.from('fotos').update({ album: 'publico' }).eq('id', selecionada.id));
+    else ({ error } = await sb.rpc('mover_foto_album', { p_foto: selecionada.id, p_album: Number(v.slice(1)) }));
     if (error) { msg('mFotos', 'erro', error.message); return; }
-    if (destino === 'privado' && fotoPerfil === selecionada.caminho) fotoPerfil = null;
-    fecharPainel(); msg('mFotos'); carregarFotos();
+    if (v !== 'publico' && fotoPerfil === selecionada.caminho) fotoPerfil = null;
+    fecharPainel(); msg('mFotos'); carregarFotos(); carregarAlbum();
   });
 
   let confirmarApagar = false;
@@ -266,7 +364,9 @@
     const arquivos = [...input.files];
     input.value = '';
     if (!arquivos.length) return;
-    const album = $('upAlbum').value;
+    const destino = $('upAlbum').value;
+    const album = destino === 'publico' ? 'publico' : 'privado';
+    const albumId = destino[0] === 'a' ? Number(destino.slice(1)) : null;
     let ok = 0, falhas = [];
     for (let i = 0; i < arquivos.length; i++) {
       msg('mFotos', 'info', 'Enviando ' + (i + 1) + ' de ' + arquivos.length + '…');
@@ -280,8 +380,11 @@
         const caminho = eu.id + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
         const up = await sb.storage.from('fotos').upload(caminho, blob, { contentType: 'image/jpeg', upsert: false });
         if (up.error) throw new Error('Falha no envio.');
-        const ins = await sb.from('fotos').insert({ dono: eu.id, caminho, album });
+        const linha = { dono: eu.id, caminho, album };
+        if (albumId) linha.album_id = albumId;
+        const ins = await sb.from('fotos').insert(linha).select('id').single();
         if (ins.error) { await sb.storage.from('fotos').remove([caminho]); throw new Error(ins.error.message); }
+        if (album === 'privado') { try { await sb.rpc('salvar_miniatura', { p_foto: ins.data.id, p_mini: await miniatura24(blob) }); } catch (e) { /* gerada depois */ } }
         ok++;
         if (!fotoPerfil && album === 'publico') {     // primeira foto pública vira a de perfil
           const r = await sb.from('perfis').update({ foto_perfil: caminho }).eq('id', eu.id);
@@ -291,7 +394,7 @@
     }
     msg('mFotos', falhas.length ? 'erro' : 'ok',
       ok + ' foto(s) enviada(s).' + (falhas.length ? ' Problemas: ' + [...new Set(falhas)].join(' ') : ''));
-    carregarFotos();
+    carregarFotos(); carregarAlbum();
   }
   $('upArquivos').addEventListener('change', () => enviarFotos($('upArquivos')));
   $('upCamera').addEventListener('change', () => enviarFotos($('upCamera')));
@@ -328,42 +431,57 @@
     return s;
   }
 
+  function textoPrazo(expira) {
+    if (!expira) return 'sem limite de tempo';
+    const d = new Date(expira);
+    return 'até ' + d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
   async function carregarAlbum() {
-    const { data: peds } = await sb.from('album_pedidos').select('solicitante, status, expira_em')
-      .eq('dono', eu.id).in('status', ['pendente', 'aceito']).order('criado_em', { ascending: false });
-    const lista = peds || [];
-    const ids = lista.map(p => p.solicitante);
-    const nomes = {};
-    if (ids.length) {
-      const { data: ps } = await sb.from('perfis_publicos').select('id, apelido').in('id', ids);
-      (ps || []).forEach(p => { nomes[p.id] = p.apelido; });
-    }
+    const { data } = await sb.rpc('meus_albuns_acessos');
+    const lista = data || [];
     $('listaPedidos').innerHTML = ''; $('listaAcessos').innerHTML = '';
     lista.forEach(p => {
-      const nome = nomes[p.solicitante]; if (!nome) return;
       if (p.status === 'pendente') {
         const sel = selPrazoAlbum();
-        $('listaPedidos').appendChild(pessoa(p.solicitante, nome, [
+        $('listaPedidos').appendChild(pessoa(p.membro, p.apelido, [
           ['Liberar', 'sim', async () => {
             const horas = sel.value ? Number(sel.value) : null;
-            await sb.rpc('responder_pedido_album', { p_solicitante: p.solicitante, p_aceitar: true, p_horas: horas });
+            await sb.rpc('responder_pedido_album', { p_album: p.album_id, p_solicitante: p.membro, p_aceitar: true, p_horas: horas });
             carregarAlbum();
           }],
-          ['Recusar', '', async () => { await sb.rpc('responder_pedido_album', { p_solicitante: p.solicitante, p_aceitar: false }); carregarAlbum(); }]
-        ], { extra: sel }));
+          ['Recusar', '', async () => { await sb.rpc('responder_pedido_album', { p_album: p.album_id, p_solicitante: p.membro, p_aceitar: false }); carregarAlbum(); }]
+        ], { extra: sel, sub: 'quer ver o álbum "' + p.album + '"' }));
       } else {
-        const expira = p.expira_em ? new Date(p.expira_em) : null;
-        if (expira && expira.getTime() <= Date.now()) return; // prazo já passou: não mostra mais como "tem acesso"
-        const sub = expira ? 'acesso até ' + expira.toLocaleDateString('pt-BR') + ' ' + expira.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'acesso sem limite de tempo';
-        $('listaAcessos').appendChild(pessoa(p.solicitante, nome, [
-          ['Tirar acesso', '', async () => { await sb.from('album_pedidos').delete().eq('dono', eu.id).eq('solicitante', p.solicitante); carregarAlbum(); }]
-        ], { sub }));
+        $('listaAcessos').appendChild(pessoa(p.membro, p.apelido, [
+          ['Tirar acesso', '', async () => { await sb.rpc('tirar_acesso_album', { p_album: p.album_id, p_membro: p.membro }); carregarAlbum(); }]
+        ], { sub: 'álbum "' + p.album + '" · acesso ' + textoPrazo(p.expira_em) }));
       }
     });
     $('cartaoPedidos').classList.toggle('oculto', !$('listaPedidos').children.length);
     $('semAcessos').classList.toggle('oculto', !!$('listaAcessos').children.length);
   }
   carregarAlbum();
+
+  // Convidar um membro direto (sem ele pedir)
+  [['', 'Sem limite'], ['24', '24 horas'], ['72', '3 dias'], ['168', '7 dias']].forEach(([v, t]) => {
+    const o = document.createElement('option'); o.value = v; o.textContent = t; $('cvPrazo').appendChild(o);
+  });
+  $('cvBtn').addEventListener('click', async () => {
+    const apelido = $('cvApelido').value.trim();
+    if (!$('cvAlbum').value) { msg('mConvite', 'erro', 'Crie um álbum primeiro.'); return; }
+    if (!apelido) { msg('mConvite', 'erro', 'Escreva o apelido do membro.'); return; }
+    $('cvBtn').disabled = true;
+    const { data: ps } = await sb.from('perfis_publicos').select('id, apelido').ilike('apelido', apelido.replace(/[%_]/g, '')).limit(5);
+    const alvo = (ps || []).find(x => x.apelido.toLowerCase() === apelido.toLowerCase());
+    if (!alvo) { $('cvBtn').disabled = false; msg('mConvite', 'erro', 'Não achei esse apelido. Confira como está escrito no perfil.'); return; }
+    const horas = $('cvPrazo').value ? Number($('cvPrazo').value) : null;
+    const { error } = await sb.rpc('liberar_album', { p_album: Number($('cvAlbum').value), p_membro: alvo.id, p_horas: horas });
+    $('cvBtn').disabled = false;
+    if (error) { msg('mConvite', 'erro', error.message); return; }
+    $('cvApelido').value = ''; msg('mConvite', 'ok', alvo.apelido + ' agora pode ver o álbum ✓');
+    carregarAlbum(); carregarFotos();
+  });
 
   // ---------- Quem pode me mandar mensagem ----------
   function pintarPriv(v) { document.querySelectorAll('#privMsg .chip').forEach(c => c.classList.toggle('sel', (c.dataset.v === 'true') === v)); }
@@ -390,7 +508,7 @@
   await carregarBloqueados();
 
 
-  if (new URLSearchParams(location.search).get('album') === 'privado') $('upAlbum').value = 'privado';
+  if (new URLSearchParams(location.search).get('album') === 'privado') { const o = [...$('upAlbum').options].find(x => x.value !== 'publico'); if (o) $('upAlbum').value = o.value; }
   const irBloq = () => { const h = location.hash.slice(1); if (h === 'bloqueados' || h === 'aparelhos' || h === 'fotos') setTimeout(() => $(h).scrollIntoView({ block: 'start' }), 400); };
   irBloq(); window.addEventListener('hashchange', irBloq);
 })();
