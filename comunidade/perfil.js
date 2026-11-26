@@ -1,4 +1,4 @@
-// perfil.js — v2.9 — perfil de um membro (capa, faixas, medalhas e visitas, como no CRS)
+// perfil.js — v3.0 — perfil de um membro (capa, faixas, medalhas e visitas, como no CRS)
 (async function () {
   'use strict';
   const { sb, $, msg, idades, visto, avatar, sexos, gradeFotos, moldura, exigirMembro, emBreve, toast,
@@ -297,12 +297,16 @@
     $('albumLiberado').classList.toggle('oculto', acesso !== true);
     $('albumFechado').classList.toggle('oculto', acesso === true);
     if (acesso === true) {
-      const { data: priv } = await sb.from('fotos').select('caminho, album')
+      const { data: priv } = await sb.from('fotos').select('caminho, album, criado_em')
         .eq('dono', id).eq('album', 'privado').order('criado_em', { ascending: false });
       if (priv && priv.length) await gradeFotos($('gradePrivada'), priv, { dono: id, vistoPor: true });
       $('albumVazio').classList.toggle('oculto', !!(priv && priv.length));
+      // 📷 novidade: alguma foto nova nos últimos 3 dias (desde que você já tinha acesso)
+      const novidade = (priv || []).some(f => Date.now() - new Date(f.criado_em).getTime() < 3 * 86400e3);
+      $('albumNovo').classList.toggle('oculto', !novidade);
       return;
     }
+    $('albumNovo').classList.add('oculto');
     const { data: ped } = await sb.from('album_pedidos').select('status')
       .eq('dono', id).eq('solicitante', eu.id).maybeSingle();
     $('bPedir').classList.toggle('oculto', !!ped && ped.status === 'pendente');
