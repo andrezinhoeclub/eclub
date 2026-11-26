@@ -111,16 +111,18 @@
     </div>
 
     <!-- Álbum privado -->
-    <div class="titulo-secao">🔒 Álbum privado <span class="selo-foto oculto" id="albumNovo" style="position:static;display:inline-block;margin-left:4px">📷 novidade</span></div>
-    <div class="cartao">
-      <div id="albumLiberado" class="oculto"><div class="fotos-grade" id="gradePrivada"></div><p class="suave oculto" id="albumVazio">O álbum ainda está vazio.</p></div>
-      <div id="albumFechado" class="oculto">
-        <p class="suave" id="txtAlbum">Só quem o membro liberar consegue ver.</p>
-        <button class="btn" id="bPedir" type="button">Pedir acesso ao álbum</button>
-        <button class="btn secundario oculto" id="bCancelarPedido" type="button">Cancelar meu pedido</button>
-      </div>
-      <div class="msg" id="mAlbum"></div>
+    <!-- Certificado por amigos -->
+    <div class="cartao oculto" id="certCard">
+      <b id="certTxt"></b>
+      <p class="suave" id="certQuem" style="margin:4px 0 0;font-size:.82rem"></p>
+      <button class="btn oculto" id="bCertificar" type="button" style="margin-top:10px"></button>
+      <div class="msg" id="mCert"></div>
     </div>
+
+    <div class="titulo-secao">🔒 Álbuns privados <span class="selo-foto oculto" id="albumNovo" style="position:static;display:inline-block;margin-left:4px">📷 novidade</span></div>
+    <div id="albuns"></div>
+    <div class="cartao oculto" id="semAlbuns"><p class="suave" style="margin:0">Este membro ainda não tem álbum privado.</p></div>
+    <div class="msg" id="mAlbum"></div>
 
     <!-- Preferências -->
     <div class="titulo-secao">Preferências</div>
@@ -143,12 +145,12 @@
   </div>
 </main>
 
-<footer><a href="regras.html">Regras e privacidade</a> · perfil.html v3.3</footer>
+<footer><a href="regras.html">Regras e privacidade</a> · perfil.html v3.4</footer>
 
 <script src="config.js?v=1.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
-<script src="base.js?v=4.6"></script>
+<script src="base.js?v=4.7"></script>
 <script src="feed.js?v=1.6"></script>
-<script src="perfil.js?v=3.0"></script>
+<script src="perfil.js?v=3.1"></script>
 </body>
 </html>
