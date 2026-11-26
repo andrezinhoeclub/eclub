@@ -1,4 +1,4 @@
-/* estilo.css — v3.5 — Comunidade Liberal: preto noite e ouro (padrão), modo claro em marfim */
+/* estilo.css — v3.6 — Comunidade Liberal: preto noite e ouro (padrão), modo claro em marfim */
 @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Great+Vibes&display=swap");
 :root{
   --marca:#d6b26e; --marca2:#f1dca6; --marca-txt:#1b1408; --marca-suave:rgba(214,178,110,.14);
@@ -182,6 +182,7 @@ label.campo{display:block;font-size:.84rem;color:var(--suave);margin:12px 0 6px}
 .pessoa button{border:1px solid var(--linha);background:var(--cartao);color:var(--texto);border-radius:7px;padding:6px 10px;font:.84rem Inter,sans-serif;cursor:pointer}
 .pessoa button.sim{background:var(--ok);border-color:var(--ok);color:#fff}
 .pessoa button.nao{background:var(--erro);border-color:var(--erro);color:#fff}
+.pessoa select{border:1px solid var(--linha);background:var(--cartao);color:var(--texto);border-radius:7px;padding:6px 8px;font:.84rem Inter,sans-serif}
 
 /* ---------- Fotos protegidas ---------- */
 .foto-protegida{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:filter .2s}
