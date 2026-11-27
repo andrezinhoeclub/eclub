@@ -2275,7 +2275,7 @@ window.GuardaSessao = (function () {
                 const dataBonita = corte.split('-').reverse().join('/');
                 const ok = await ECUI.confirmar({
                     titulo: `Faxina: tudo antes de ${dataBonita}`,
-                    texto: linhasResumo(r, true) + (r.graficos_noite ? '\n\nJá clicou em Resumo Gerencial para baixar a imagem dos gráficos? Eles serão apagados agora.' : '') + '\n\nAs reservas ficam guardadas no histórico (o desconto de fidelidade continua valendo). Solteiras cadastradas, Modelos e Acessos não são tocados.\n\nNão dá para desfazer.',
+                    texto: linhasResumo(r, true) + (r.graficos_noite ? '\n\nJá baixou a imagem dos gráficos (Resumo Gerencial + Baixar)? Eles serão apagados agora.' : '') + '\n\nAs reservas ficam guardadas no histórico (o desconto de fidelidade continua valendo). Solteiras cadastradas, Modelos e Acessos não são tocados.\n\nNão dá para desfazer.',
                     confirmar: 'Apagar', perigo: true
                 });
                 if (!ok) return;
@@ -2727,7 +2727,7 @@ window.GuardaSessao = (function () {
             const cv = desenharImagemGraficos(noites);
             return new Promise(res => cv.toBlob(bl => res(bl ? { blob: bl, nome: nomeArquivoGraficos(noites) } : null), 'image/png'));
         }
-        // Chamado pelo botão "Resumo Gerencial": baixa junto a imagem pronta
+        // Chamado pelo botão "Baixar" depois do Resumo Gerencial: baixa a imagem pronta
         // com o gráfico de cada noite. Sem noites guardadas, não faz nada.
         async function baixarGraficosDoResumo() {
             try {
@@ -2858,7 +2858,6 @@ window.GuardaSessao = (function () {
 
         window.gerarRelatorioGerencial = async () => {
             ultimoNomeExport = 'Resumo_Gerencial';
-            baixarGraficosDoResumo();
             const tA = document.getElementById('output-excel');
             const val = dadosReservas.filter(reservaValidaDash);
             if (!val.length) { tA.value = 'Sem reservas de pagantes.'; return; }
@@ -2996,6 +2995,8 @@ window.GuardaSessao = (function () {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
             mostrarAviso('Arquivo baixado!', true);
+            // No Resumo Gerencial, o botão Baixar também baixa a imagem dos gráficos.
+            if (ultimoNomeExport === 'Resumo_Gerencial') baixarGraficosDoResumo();
         };
 
         // ===== ANIVERSARIANTES / GESTÃO DE CAMAROTES / MIGRAR CAMAROTE =====
