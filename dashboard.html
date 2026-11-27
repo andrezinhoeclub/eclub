@@ -184,6 +184,19 @@
         .en-linha small { display: block; font-size: 14px; color: #a1a1aa; font-weight: 600; }
         .en-av { width: 36px; height: 36px; border-radius: 50%; background: #2a2a34; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex: none; }
         .en-num { width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+        /* Gráficos da semana (Relatórios) */
+        .gs-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+        .gs-ajuda { margin-top: 10px; font-size: 16px; font-weight: 600; color: #a1a1aa; max-width: 62ch; line-height: 1.45; }
+        .gs-botoes { display: flex; gap: 10px; flex-wrap: wrap; }
+        .gs-btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 22px; border-radius: 14px; font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: .03em; border: 1px solid transparent; cursor: pointer; transition: filter .15s; }
+        .gs-btn:hover { filter: brightness(1.12); }
+        .gs-btn:disabled { opacity: .55; cursor: wait; }
+        .gs-btn.baixar { background: #db2777; color: #fff; }
+        .gs-btn.enviar { background: #16a34a; color: #fff; }
+        .gs-lista { display: flex; flex-direction: column; gap: 18px; }
+        .gs-noite { background: #14141a; border: 1px solid #26262f; border-radius: 20px; padding: 20px 22px; min-width: 0; }
+        .gs-noite h3 { margin: 0; font-size: 21px; font-weight: 800; color: #fff; }
+        .gs-noite .en-graf { height: 190px; }
         .en-vazio { padding: 22px 0; color: #a1a1aa; font-size: 16px; font-weight: 700; }
         @media (max-width: 1100px) { .en-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } .en-grade2 { grid-template-columns: 1fr; } .en-largo { grid-column: auto; } }
         @media (max-width: 760px) { .en-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .en-grade3 { grid-template-columns: 1fr; } .en-titulo h2 { font-size: 24px; } .en-kpi b { font-size: 28px; } }
@@ -373,6 +386,20 @@ window.GuardaSessao = (function () {
             </div>
 
             <div id="kpis-relatorios" class="grid grid-cols-2 md:grid-cols-5 gap-4"></div>
+
+            <div id="graficos-semana" class="glass-card p-8">
+                <div class="gs-topo">
+                    <div>
+                        <h2 class="text-xs font-black uppercase text-pink-400 italic tracking-widest">📈 Gráficos da semana · entradas por hora</h2>
+                        <p class="gs-ajuda">O sistema guarda sozinho o gráfico de cada noite, todo dia às 8h15, depois do fechamento. Baixe a imagem <b>antes</b> da faxina de domingo: os gráficos são apagados junto com a limpeza.</p>
+                    </div>
+                    <div class="gs-botoes">
+                        <button id="btn-gs-baixar" type="button" onclick="baixarImagemGraficos()" class="gs-btn baixar">📥 Baixar imagem</button>
+                        <button id="btn-gs-enviar" type="button" onclick="enviarImagemGraficos()" class="gs-btn enviar" hidden>📲 Enviar no WhatsApp</button>
+                    </div>
+                </div>
+                <div id="gs-lista" class="gs-lista"><p class="en-vazio">Carregando os gráficos...</p></div>
+            </div>
 
             <div class="glass-card p-8">
                 <h2 class="text-xs font-black uppercase text-yellow-500 italic mb-6 tracking-widest">Performance e Financeiro</h2>
@@ -1054,6 +1081,7 @@ window.GuardaSessao = (function () {
             document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
             document.querySelectorAll('.btn-menu').forEach(x => x.classList.remove('active', 'active-danger', 'active-success', 'active-pink', 'active-blue'));
             document.getElementById(id).classList.remove('hidden');
+            if (id === 'aba-relatorios') { try { carregarGraficosNoite(); } catch (_) {} }
             if (type === 'danger') btn.classList.add('active-danger');
             else if (type === 'success') btn.classList.add('active-success');
             else if (type === 'pink') btn.classList.add('active-pink');
@@ -1189,7 +1217,7 @@ window.GuardaSessao = (function () {
             document.getElementById('dashboard-login').classList.add('hidden');
             document.getElementById('painel-dashboard').classList.remove('hidden');
             montarGridCamarotes();
-            await Promise.all([carregarEventos(), carregarModelos(), carregarConfiguracoes(), carregarSolteirasBadge(), carregarReservas(), carregarLinksAniversario(), carregarNomesAcessos(), carregarEntradasSolteiras(), carregarDadosPrivados()]);
+            await Promise.all([carregarEventos(), carregarModelos(), carregarConfiguracoes(), carregarSolteirasBadge(), carregarReservas(), carregarLinksAniversario(), carregarNomesAcessos(), carregarEntradasSolteiras(), carregarDadosPrivados(), carregarGraficosNoite()]);
             ligarTempoReal();
             // Os avisos em tempo real podem se perder (aba dormindo, internet
             // que caiu). Ao voltar para a aba, ou quando a internet volta, a
@@ -2247,11 +2275,12 @@ window.GuardaSessao = (function () {
                 `${r.caronas} pedido(s) de carona`,
             ];
             if (comVallet) linhas.push(`${r.vallet_atendimentos} carro(s) do Vallet`);
+            if (r.graficos_noite != null) linhas.push(`${r.graficos_noite} gráfico(s) da noite (Relatórios)`);
             linhas.push(`${(r.capas || []).length} foto(s) de capa`);
             return linhas.map(l => '• ' + l).join('\n');
         }
         async function recarregarTudoDepoisDeLimpar() {
-            await Promise.all([carregarEventos(), carregarReservas(), carregarLinksAniversario(), carregarEntradasSolteiras()]).catch(() => {});
+            await Promise.all([carregarEventos(), carregarReservas(), carregarLinksAniversario(), carregarEntradasSolteiras(), carregarGraficosNoite()]).catch(() => {});
             try { renderEstaNoite(); } catch (_) {}
         }
         window.faxinaPorData = async () => {
@@ -2268,12 +2297,12 @@ window.GuardaSessao = (function () {
             try {
                 const { data: r, error } = await sb.rpc('faxina_por_data', { p_data_corte: corte, p_executar: false });
                 if (error) throw error;
-                const total = r.eventos + r.reservas + r.listas_aniversario + r.entradas_solteiras + r.caronas + r.vallet_atendimentos;
+                const total = r.eventos + r.reservas + r.listas_aniversario + r.entradas_solteiras + r.caronas + r.vallet_atendimentos + (r.graficos_noite || 0);
                 if (!total) { mostrarAviso('Nada para limpar antes dessa data. Tudo certo!', true); return; }
                 const dataBonita = corte.split('-').reverse().join('/');
                 const ok = await ECUI.confirmar({
                     titulo: `Faxina: tudo antes de ${dataBonita}`,
-                    texto: linhasResumo(r, true) + '\n\nAs reservas ficam guardadas no histórico (o desconto de fidelidade continua valendo). Solteiras cadastradas, Modelos e Acessos não são tocados.\n\nNão dá para desfazer.',
+                    texto: linhasResumo(r, true) + (r.graficos_noite ? '\n\nJá baixou a imagem dos gráficos da semana (Relatórios)? Eles serão apagados agora.' : '') + '\n\nAs reservas ficam guardadas no histórico (o desconto de fidelidade continua valendo). Solteiras cadastradas, Modelos e Acessos não são tocados.\n\nNão dá para desfazer.',
                     confirmar: 'Apagar', perigo: true
                 });
                 if (!ok) return;
@@ -2588,6 +2617,218 @@ window.GuardaSessao = (function () {
             ];
             container.innerHTML = tiles.map((t, i) => `<div class="kpi-tile${i === tiles.length - 1 ? ' col-span-2 md:col-span-1' : ''}"><p class="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-2">${t.label}</p><p class="text-lg md:text-xl font-black ${t.cor}">${t.valor}</p></div>`).join('');
         }
+
+        // ===== GRÁFICOS DA SEMANA (Relatórios) =====
+        // O banco guarda sozinho, a cada 15 min, as entradas por hora de cada
+        // noite (tabela graficos_noite). Aqui só mostra e monta UMA imagem com
+        // todas as noites para mandar no fechamento de domingo. A faxina e o
+        // zerar sistema apagam esses gráficos junto.
+        let dadosGraficosNoite = [];
+        let graficosNoiteErro = '';
+        async function carregarGraficosNoite() {
+            try {
+                const { data, error } = await sb.from('graficos_noite').select('*').order('data_noite', { ascending: true });
+                if (error) throw error;
+                dadosGraficosNoite = data || [];
+                graficosNoiteErro = '';
+            } catch (e) {
+                const msg = String(e?.message || e || '');
+                graficosNoiteErro = /graficos_noite|does not exist|schema cache|relation/i.test(msg)
+                    ? 'Falta rodar o arquivo 1-graficos-da-noite.sql no Supabase (SQL Editor).'
+                    : 'Não foi possível carregar os gráficos: ' + msg;
+            }
+            renderGraficosSemana();
+        }
+        function rotuloNoiteGrafico(dataISO) {
+            const dia = new Date(dataISO + 'T12:00:00Z').toLocaleDateString('pt-BR', { weekday: 'long', timeZone: 'UTC' }).replace('-feira', '');
+            return dia.charAt(0).toUpperCase() + dia.slice(1) + ' ' + dataISO.slice(8, 10) + '/' + dataISO.slice(5, 7);
+        }
+        function numerosGrafico(g) {
+            const horas = (g.horas || []).map(Number);
+            const cli = horas.map((_, i) => Number((g.clientes || [])[i]) || 0);
+            const sol = horas.map((_, i) => Number((g.solteiras || [])[i]) || 0);
+            const tot = horas.map((_, i) => cli[i] + sol[i]);
+            const total = tot.reduce((a, b) => a + b, 0);
+            const maxV = Math.max(0, ...tot);
+            return { horas, cli, sol, tot, total, maxV, iPico: total ? tot.indexOf(maxV) : -1 };
+        }
+        function resumoGrafico(g, n) {
+            const p = [];
+            p.push(`${g.total_clientes} ${g.total_clientes === 1 ? 'cliente' : 'clientes'}${g.na_lista ? ` de ${g.na_lista} na lista` : ''}`);
+            p.push(`${g.total_solteiras} ${g.total_solteiras === 1 ? 'solteira' : 'solteiras'}`);
+            if (n.iPico >= 0) p.push(`pico às ${n.horas[n.iPico]}h · ${n.maxV} ${n.maxV === 1 ? 'pessoa' : 'pessoas'}`);
+            return p.join(' · ');
+        }
+        function renderGraficosSemana() {
+            const el = document.getElementById('gs-lista');
+            if (!el) return;
+            const btnEnviar = document.getElementById('btn-gs-enviar');
+            if (btnEnviar) btnEnviar.hidden = !podeCompartilharImagem();
+            if (graficosNoiteErro) { el.innerHTML = `<p class="en-vazio">${escapeHtml(graficosNoiteErro)}</p>`; return; }
+            if (!dadosGraficosNoite.length) {
+                el.innerHTML = `<p class="en-vazio">Nenhuma noite guardada ainda. O gráfico aparece aqui sozinho quando a festa começa.</p>`;
+                return;
+            }
+            el.innerHTML = dadosGraficosNoite.map(g => {
+                const n = numerosGrafico(g);
+                const titulo = `${rotuloNoiteGrafico(g.data_noite)}${g.eventos_nomes ? ' · ' + g.eventos_nomes : ''}`;
+                if (!n.total) {
+                    return `<div class="gs-noite"><div class="en-cab"><h3>${escapeHtml(titulo)}</h3></div><p class="en-vazio" style="padding:8px 0 0">Ninguém entrou nesta noite.</p></div>`;
+                }
+                const cols = `grid-template-columns:repeat(${n.horas.length},minmax(0,1fr))`;
+                const maxB = Math.max(0, ...n.cli, ...n.sol);
+                const pct = v => (maxB && v ? Math.max(1.5, v / maxB * 100) : 0);
+                const barra = (v, cls) => `<div class="b"><em>${v || ''}</em>${v ? `<i class="seg ${cls}" style="height:${pct(v)}%"></i>` : ''}</div>`;
+                const legenda = `<div class="en-legenda"><span><i style="background:#16a34a"></i>Clientes</span><span><i style="background:#ec4899"></i>Solteiras</span></div>`;
+                return `<div class="gs-noite"><div class="en-cab"><h3>${escapeHtml(titulo)}</h3><span>${escapeHtml(resumoGrafico(g, n))}</span></div>${legenda}`
+                    + `<div class="en-graf" style="${cols}" role="img" aria-label="${escapeHtml(titulo)}: ${n.horas.map((x, i) => `${x}h ${n.cli[i]} clientes e ${n.sol[i]} solteiras`).join(', ')}">`
+                    + n.horas.map((x, i) => `<div class="en-col ${i === n.iPico ? 'pico' : ''}" title="${x}h: ${n.cli[i]} clientes · ${n.sol[i]} solteiras"><div class="par">${barra(n.cli[i], 'l')}${barra(n.sol[i], 's')}</div></div>`).join('')
+                    + `</div><div class="en-horas" style="${cols}">${n.horas.map(x => `<span>${x}h</span>`).join('')}</div></div>`;
+            }).join('');
+        }
+
+        // ---- Imagem única (todas as noites, uma embaixo da outra) ----
+        function noitesParaImagem() {
+            return dadosGraficosNoite.filter(g => numerosGrafico(g).total > 0);
+        }
+        function nomeArquivoGraficos(noites) {
+            const d = x => x.slice(8, 10) + '-' + x.slice(5, 7);
+            const a = noites[0].data_noite, b = noites[noites.length - 1].data_noite;
+            return a === b ? `graficos-noite-${d(a)}.png` : `graficos-semana-${d(a)}-a-${d(b)}.png`;
+        }
+        function desenharImagemGraficos(noites) {
+            const W = 1080, M = 44, BLOCO = 470, GAP = 26, TOPO = 190, RODAPE = 70;
+            const H = TOPO + noites.length * BLOCO + (noites.length - 1) * GAP + RODAPE;
+            const cv = document.createElement('canvas');
+            cv.width = W; cv.height = H;
+            const c = cv.getContext('2d');
+            const fonte = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+            const f = (peso, tam) => `${peso} ${tam}px ${fonte}`;
+            const ret = (x, y, w, h, r, cor, borda) => {
+                c.beginPath();
+                c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+                c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+                c.fillStyle = cor; c.fill();
+                if (borda) { c.strokeStyle = borda; c.lineWidth = 2; c.stroke(); }
+            };
+            const barraTopo = (x, y, w, h, cor) => {
+                const r = Math.min(5, w / 2, h);
+                c.beginPath(); c.moveTo(x, y + h); c.lineTo(x, y + r); c.arcTo(x, y, x + r, y, r);
+                c.lineTo(x + w - r, y); c.arcTo(x + w, y, x + w, y + r, r); c.lineTo(x + w, y + h); c.closePath();
+                c.fillStyle = cor; c.fill();
+            };
+            c.fillStyle = '#0a0a0f'; c.fillRect(0, 0, W, H);
+
+            // Topo
+            const a = noites[0].data_noite, b = noites[noites.length - 1].data_noite;
+            const dm = x => x.slice(8, 10) + '/' + x.slice(5, 7);
+            c.textBaseline = 'alphabetic';
+            c.fillStyle = '#f472b6'; c.font = f(900, 22); c.fillText('E-CLUB · FECHAMENTO DA SEMANA', M, 62);
+            c.fillStyle = '#ffffff'; c.font = f(900, 46); c.fillText('Entradas por hora', M, 116);
+            c.fillStyle = '#a1a1aa'; c.font = f(700, 24);
+            const totC = noites.reduce((t, g) => t + (g.total_clientes || 0), 0), totS = noites.reduce((t, g) => t + (g.total_solteiras || 0), 0);
+            c.fillText(`${a === b ? 'Noite de ' + dm(a) : dm(a) + ' a ' + dm(b)} · ${noites.length} ${noites.length === 1 ? 'noite' : 'noites'} · ${totC} clientes · ${totS} solteiras`, M, 156);
+            // Legenda (direita)
+            c.font = f(800, 22);
+            const legS = 'Solteiras', legC = 'Clientes';
+            let lx = W - M - c.measureText(legS).width;
+            c.fillStyle = '#d4d4d8'; c.fillText(legS, lx, 62); ret(lx - 30, 44, 20, 20, 5, '#ec4899');
+            lx -= 30 + 26 + c.measureText(legC).width;
+            c.fillStyle = '#d4d4d8'; c.fillText(legC, lx, 62); ret(lx - 30, 44, 20, 20, 5, '#16a34a');
+
+            noites.forEach((g, k) => {
+                const n = numerosGrafico(g);
+                const y0 = TOPO + k * (BLOCO + GAP);
+                ret(M, y0, W - 2 * M, BLOCO, 24, '#14141a', '#26262f');
+                const px = M + 28, larg = W - 2 * M - 56;
+                c.fillStyle = '#ffffff'; c.font = f(800, 32);
+                let titulo = rotuloNoiteGrafico(g.data_noite) + (g.eventos_nomes ? ' · ' + g.eventos_nomes : '');
+                while (c.measureText(titulo).width > larg && titulo.length > 10) titulo = titulo.slice(0, -2).trimEnd() + '…';
+                c.fillText(titulo, px, y0 + 52);
+                c.fillStyle = '#a1a1aa'; c.font = f(700, 22);
+                c.fillText(resumoGrafico(g, n), px, y0 + 88);
+
+                // Área do gráfico
+                const gTopo = y0 + 140, gBase = y0 + BLOCO - 62, gAlt = gBase - gTopo;
+                const nH = n.horas.length, colW = larg / nH;
+                const maxB = Math.max(1, ...n.cli, ...n.sol);
+                const bw = Math.min(30, (colW - 12) / 2);
+                c.strokeStyle = '#33333f'; c.lineWidth = 2;
+                c.beginPath(); c.moveTo(px, gBase + 1); c.lineTo(px + larg, gBase + 1); c.stroke();
+                n.horas.forEach((x, i) => {
+                    const cx = px + colW * i + colW / 2;
+                    if (i === n.iPico) ret(px + colW * i + 3, gTopo - 34, colW - 6, gAlt + 34, 10, 'rgba(244,114,182,0.08)');
+                    [[n.cli[i], '#16a34a', cx - bw - 1], [n.sol[i], '#ec4899', cx + 1]].forEach(([v, cor, bx]) => {
+                        if (!v) return;
+                        const h = Math.max(4, v / maxB * gAlt);
+                        barraTopo(bx, gBase - h, bw, h, cor);
+                        c.fillStyle = i === n.iPico ? '#ffffff' : '#d4d4d8'; c.font = f(800, 19); c.textAlign = 'center';
+                        c.fillText(String(v), bx + bw / 2, gBase - h - 8);
+                        c.textAlign = 'left';
+                    });
+                    c.fillStyle = i === n.iPico ? '#ffffff' : '#a1a1aa'; c.font = f(800, 21); c.textAlign = 'center';
+                    c.fillText(x + 'h', cx, gBase + 34);
+                    c.textAlign = 'left';
+                });
+            });
+
+            const agora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            c.fillStyle = '#71717a'; c.font = f(700, 19);
+            c.fillText(`Gerado em ${agora} · Dashboard E-Club`, M, H - 28);
+            return cv;
+        }
+        function imagemGraficosBlob() {
+            const noites = noitesParaImagem();
+            if (!noites.length) return Promise.resolve(null);
+            const cv = desenharImagemGraficos(noites);
+            return new Promise(res => cv.toBlob(bl => res(bl ? { blob: bl, nome: nomeArquivoGraficos(noites) } : null), 'image/png'));
+        }
+        function podeCompartilharImagem() {
+            try {
+                if (!navigator.canShare || !window.File) return false;
+                return navigator.canShare({ files: [new File([new Blob(['x'], { type: 'image/png' })], 'teste.png', { type: 'image/png' })] });
+            } catch (_) { return false; }
+        }
+        async function prepararImagemGraficos(btn) {
+            if (!dadosGraficosNoite.length) await carregarGraficosNoite();
+            if (graficosNoiteErro) { mostrarAviso(graficosNoiteErro); return null; }
+            const r = await imagemGraficosBlob();
+            if (!r) { mostrarAviso('Ainda não tem entradas guardadas nesta semana para montar a imagem.'); return null; }
+            return r;
+        }
+        window.baixarImagemGraficos = async () => {
+            const btn = document.getElementById('btn-gs-baixar');
+            const rot = btn ? btn.innerHTML : '';
+            if (btn) { btn.disabled = true; btn.textContent = 'Montando...'; }
+            try {
+                const r = await prepararImagemGraficos(btn);
+                if (!r) return;
+                const url = URL.createObjectURL(r.blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = r.nome;
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 4000);
+                mostrarAviso('Imagem baixada: ' + r.nome, true);
+            } catch (e) {
+                console.error('Imagem dos gráficos:', e);
+                mostrarAviso('Não foi possível montar a imagem.');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = rot; }
+            }
+        };
+        window.enviarImagemGraficos = async () => {
+            const btn = document.getElementById('btn-gs-enviar');
+            try {
+                const r = await prepararImagemGraficos(btn);
+                if (!r) return;
+                const arq = new File([r.blob], r.nome, { type: 'image/png' });
+                await navigator.share({ files: [arq], title: 'Entradas por hora · E-Club' });
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+                console.error('Enviar imagem:', e);
+                mostrarAviso('Não deu para enviar direto. Use "Baixar imagem" e mande pelo WhatsApp.');
+            }
+        };
 
         window.renderRelatorios = () => {
             try { renderEstaNoite(); } catch (e) { console.error('Esta noite:', e); }
@@ -3695,6 +3936,6 @@ window.GuardaSessao = (function () {
   .ap-rodape b{color:#e3b94e;font-weight:800}
   @media print{.ap-rodape{display:none!important}}
 </style>
-<div id="ap-rodape" class="ap-rodape" data-tela="Dashboard" data-versao="1.9">Desenvolvido por <b>Abre a Porta</b> · Dashboard v1.9 · 15/11/2026</div>
+<div id="ap-rodape" class="ap-rodape" data-tela="Dashboard" data-versao="2.0">Desenvolvido por <b>Abre a Porta</b> · Dashboard v2.0 · 27/11/2026</div>
 </body>
 </html>
