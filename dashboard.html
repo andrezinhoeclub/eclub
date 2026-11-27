@@ -184,19 +184,6 @@
         .en-linha small { display: block; font-size: 14px; color: #a1a1aa; font-weight: 600; }
         .en-av { width: 36px; height: 36px; border-radius: 50%; background: #2a2a34; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex: none; }
         .en-num { width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
-        /* Gráficos da semana (Relatórios) */
-        .gs-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
-        .gs-ajuda { margin-top: 10px; font-size: 16px; font-weight: 600; color: #a1a1aa; max-width: 62ch; line-height: 1.45; }
-        .gs-botoes { display: flex; gap: 10px; flex-wrap: wrap; }
-        .gs-btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 22px; border-radius: 14px; font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: .03em; border: 1px solid transparent; cursor: pointer; transition: filter .15s; }
-        .gs-btn:hover { filter: brightness(1.12); }
-        .gs-btn:disabled { opacity: .55; cursor: wait; }
-        .gs-btn.baixar { background: #db2777; color: #fff; }
-        .gs-btn.enviar { background: #16a34a; color: #fff; }
-        .gs-lista { display: flex; flex-direction: column; gap: 18px; }
-        .gs-noite { background: #14141a; border: 1px solid #26262f; border-radius: 20px; padding: 20px 22px; min-width: 0; }
-        .gs-noite h3 { margin: 0; font-size: 21px; font-weight: 800; color: #fff; }
-        .gs-noite .en-graf { height: 190px; }
         .en-vazio { padding: 22px 0; color: #a1a1aa; font-size: 16px; font-weight: 700; }
         @media (max-width: 1100px) { .en-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } .en-grade2 { grid-template-columns: 1fr; } .en-largo { grid-column: auto; } }
         @media (max-width: 760px) { .en-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .en-grade3 { grid-template-columns: 1fr; } .en-titulo h2 { font-size: 24px; } .en-kpi b { font-size: 28px; } }
@@ -387,19 +374,6 @@ window.GuardaSessao = (function () {
 
             <div id="kpis-relatorios" class="grid grid-cols-2 md:grid-cols-5 gap-4"></div>
 
-            <div id="graficos-semana" class="glass-card p-8">
-                <div class="gs-topo">
-                    <div>
-                        <h2 class="text-xs font-black uppercase text-pink-400 italic tracking-widest">📈 Gráficos da semana · entradas por hora</h2>
-                        <p class="gs-ajuda">O sistema guarda sozinho o gráfico de cada noite, todo dia às 8h15, depois do fechamento. Baixe a imagem <b>antes</b> da faxina de domingo: os gráficos são apagados junto com a limpeza.</p>
-                    </div>
-                    <div class="gs-botoes">
-                        <button id="btn-gs-baixar" type="button" onclick="baixarImagemGraficos()" class="gs-btn baixar">📥 Baixar imagem</button>
-                        <button id="btn-gs-enviar" type="button" onclick="enviarImagemGraficos()" class="gs-btn enviar" hidden>📲 Enviar no WhatsApp</button>
-                    </div>
-                </div>
-                <div id="gs-lista" class="gs-lista"><p class="en-vazio">Carregando os gráficos...</p></div>
-            </div>
 
             <div class="glass-card p-8">
                 <h2 class="text-xs font-black uppercase text-yellow-500 italic mb-6 tracking-widest">Performance e Financeiro</h2>
@@ -1081,7 +1055,6 @@ window.GuardaSessao = (function () {
             document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
             document.querySelectorAll('.btn-menu').forEach(x => x.classList.remove('active', 'active-danger', 'active-success', 'active-pink', 'active-blue'));
             document.getElementById(id).classList.remove('hidden');
-            if (id === 'aba-relatorios') { try { carregarGraficosNoite(); } catch (_) {} }
             if (type === 'danger') btn.classList.add('active-danger');
             else if (type === 'success') btn.classList.add('active-success');
             else if (type === 'pink') btn.classList.add('active-pink');
@@ -1217,7 +1190,7 @@ window.GuardaSessao = (function () {
             document.getElementById('dashboard-login').classList.add('hidden');
             document.getElementById('painel-dashboard').classList.remove('hidden');
             montarGridCamarotes();
-            await Promise.all([carregarEventos(), carregarModelos(), carregarConfiguracoes(), carregarSolteirasBadge(), carregarReservas(), carregarLinksAniversario(), carregarNomesAcessos(), carregarEntradasSolteiras(), carregarDadosPrivados(), carregarGraficosNoite()]);
+            await Promise.all([carregarEventos(), carregarModelos(), carregarConfiguracoes(), carregarSolteirasBadge(), carregarReservas(), carregarLinksAniversario(), carregarNomesAcessos(), carregarEntradasSolteiras(), carregarDadosPrivados()]);
             ligarTempoReal();
             // Os avisos em tempo real podem se perder (aba dormindo, internet
             // que caiu). Ao voltar para a aba, ou quando a internet volta, a
@@ -2275,12 +2248,12 @@ window.GuardaSessao = (function () {
                 `${r.caronas} pedido(s) de carona`,
             ];
             if (comVallet) linhas.push(`${r.vallet_atendimentos} carro(s) do Vallet`);
-            if (r.graficos_noite != null) linhas.push(`${r.graficos_noite} gráfico(s) da noite (Relatórios)`);
+            if (r.graficos_noite != null) linhas.push(`${r.graficos_noite} gráfico(s) de entradas por hora`);
             linhas.push(`${(r.capas || []).length} foto(s) de capa`);
             return linhas.map(l => '• ' + l).join('\n');
         }
         async function recarregarTudoDepoisDeLimpar() {
-            await Promise.all([carregarEventos(), carregarReservas(), carregarLinksAniversario(), carregarEntradasSolteiras(), carregarGraficosNoite()]).catch(() => {});
+            await Promise.all([carregarEventos(), carregarReservas(), carregarLinksAniversario(), carregarEntradasSolteiras()]).catch(() => {});
             try { renderEstaNoite(); } catch (_) {}
         }
         window.faxinaPorData = async () => {
@@ -2302,7 +2275,7 @@ window.GuardaSessao = (function () {
                 const dataBonita = corte.split('-').reverse().join('/');
                 const ok = await ECUI.confirmar({
                     titulo: `Faxina: tudo antes de ${dataBonita}`,
-                    texto: linhasResumo(r, true) + (r.graficos_noite ? '\n\nJá baixou a imagem dos gráficos da semana (Relatórios)? Eles serão apagados agora.' : '') + '\n\nAs reservas ficam guardadas no histórico (o desconto de fidelidade continua valendo). Solteiras cadastradas, Modelos e Acessos não são tocados.\n\nNão dá para desfazer.',
+                    texto: linhasResumo(r, true) + (r.graficos_noite ? '\n\nJá clicou em Resumo Gerencial para baixar a imagem dos gráficos? Eles serão apagados agora.' : '') + '\n\nAs reservas ficam guardadas no histórico (o desconto de fidelidade continua valendo). Solteiras cadastradas, Modelos e Acessos não são tocados.\n\nNão dá para desfazer.',
                     confirmar: 'Apagar', perigo: true
                 });
                 if (!ok) return;
@@ -2618,7 +2591,7 @@ window.GuardaSessao = (function () {
             container.innerHTML = tiles.map((t, i) => `<div class="kpi-tile${i === tiles.length - 1 ? ' col-span-2 md:col-span-1' : ''}"><p class="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-2">${t.label}</p><p class="text-lg md:text-xl font-black ${t.cor}">${t.valor}</p></div>`).join('');
         }
 
-        // ===== GRÁFICOS DA SEMANA (Relatórios) =====
+        // ===== GRÁFICOS DA NOITE (imagem do Resumo Gerencial) =====
         // O banco guarda sozinho, a cada 15 min, as entradas por hora de cada
         // noite (tabela graficos_noite). Aqui só mostra e monta UMA imagem com
         // todas as noites para mandar no fechamento de domingo. A faxina e o
@@ -2637,7 +2610,6 @@ window.GuardaSessao = (function () {
                     ? 'Falta rodar o arquivo 1-graficos-da-noite.sql no Supabase (SQL Editor).'
                     : 'Não foi possível carregar os gráficos: ' + msg;
             }
-            renderGraficosSemana();
         }
         function rotuloNoiteGrafico(dataISO) {
             const dia = new Date(dataISO + 'T12:00:00Z').toLocaleDateString('pt-BR', { weekday: 'long', timeZone: 'UTC' }).replace('-feira', '');
@@ -2659,34 +2631,6 @@ window.GuardaSessao = (function () {
             if (n.iPico >= 0) p.push(`pico às ${n.horas[n.iPico]}h · ${n.maxV} ${n.maxV === 1 ? 'pessoa' : 'pessoas'}`);
             return p.join(' · ');
         }
-        function renderGraficosSemana() {
-            const el = document.getElementById('gs-lista');
-            if (!el) return;
-            const btnEnviar = document.getElementById('btn-gs-enviar');
-            if (btnEnviar) btnEnviar.hidden = !podeCompartilharImagem();
-            if (graficosNoiteErro) { el.innerHTML = `<p class="en-vazio">${escapeHtml(graficosNoiteErro)}</p>`; return; }
-            if (!dadosGraficosNoite.length) {
-                el.innerHTML = `<p class="en-vazio">Nenhuma noite guardada ainda. O gráfico aparece aqui sozinho quando a festa começa.</p>`;
-                return;
-            }
-            el.innerHTML = dadosGraficosNoite.map(g => {
-                const n = numerosGrafico(g);
-                const titulo = `${rotuloNoiteGrafico(g.data_noite)}${g.eventos_nomes ? ' · ' + g.eventos_nomes : ''}`;
-                if (!n.total) {
-                    return `<div class="gs-noite"><div class="en-cab"><h3>${escapeHtml(titulo)}</h3></div><p class="en-vazio" style="padding:8px 0 0">Ninguém entrou nesta noite.</p></div>`;
-                }
-                const cols = `grid-template-columns:repeat(${n.horas.length},minmax(0,1fr))`;
-                const maxB = Math.max(0, ...n.cli, ...n.sol);
-                const pct = v => (maxB && v ? Math.max(1.5, v / maxB * 100) : 0);
-                const barra = (v, cls) => `<div class="b"><em>${v || ''}</em>${v ? `<i class="seg ${cls}" style="height:${pct(v)}%"></i>` : ''}</div>`;
-                const legenda = `<div class="en-legenda"><span><i style="background:#16a34a"></i>Clientes</span><span><i style="background:#ec4899"></i>Solteiras</span></div>`;
-                return `<div class="gs-noite"><div class="en-cab"><h3>${escapeHtml(titulo)}</h3><span>${escapeHtml(resumoGrafico(g, n))}</span></div>${legenda}`
-                    + `<div class="en-graf" style="${cols}" role="img" aria-label="${escapeHtml(titulo)}: ${n.horas.map((x, i) => `${x}h ${n.cli[i]} clientes e ${n.sol[i]} solteiras`).join(', ')}">`
-                    + n.horas.map((x, i) => `<div class="en-col ${i === n.iPico ? 'pico' : ''}" title="${x}h: ${n.cli[i]} clientes · ${n.sol[i]} solteiras"><div class="par">${barra(n.cli[i], 'l')}${barra(n.sol[i], 's')}</div></div>`).join('')
-                    + `</div><div class="en-horas" style="${cols}">${n.horas.map(x => `<span>${x}h</span>`).join('')}</div></div>`;
-            }).join('');
-        }
-
         // ---- Imagem única (todas as noites, uma embaixo da outra) ----
         function noitesParaImagem() {
             return dadosGraficosNoite.filter(g => numerosGrafico(g).total > 0);
@@ -2783,52 +2727,24 @@ window.GuardaSessao = (function () {
             const cv = desenharImagemGraficos(noites);
             return new Promise(res => cv.toBlob(bl => res(bl ? { blob: bl, nome: nomeArquivoGraficos(noites) } : null), 'image/png'));
         }
-        function podeCompartilharImagem() {
+        // Chamado pelo botão "Resumo Gerencial": baixa junto a imagem pronta
+        // com o gráfico de cada noite. Sem noites guardadas, não faz nada.
+        async function baixarGraficosDoResumo() {
             try {
-                if (!navigator.canShare || !window.File) return false;
-                return navigator.canShare({ files: [new File([new Blob(['x'], { type: 'image/png' })], 'teste.png', { type: 'image/png' })] });
-            } catch (_) { return false; }
-        }
-        async function prepararImagemGraficos(btn) {
-            if (!dadosGraficosNoite.length) await carregarGraficosNoite();
-            if (graficosNoiteErro) { mostrarAviso(graficosNoiteErro); return null; }
-            const r = await imagemGraficosBlob();
-            if (!r) { mostrarAviso('Ainda não tem entradas guardadas nesta semana para montar a imagem.'); return null; }
-            return r;
-        }
-        window.baixarImagemGraficos = async () => {
-            const btn = document.getElementById('btn-gs-baixar');
-            const rot = btn ? btn.innerHTML : '';
-            if (btn) { btn.disabled = true; btn.textContent = 'Montando...'; }
-            try {
-                const r = await prepararImagemGraficos(btn);
+                await carregarGraficosNoite();
+                if (graficosNoiteErro) { console.warn('Gráficos da noite:', graficosNoiteErro); return; }
+                const r = await imagemGraficosBlob();
                 if (!r) return;
                 const url = URL.createObjectURL(r.blob);
                 const a = document.createElement('a');
                 a.href = url; a.download = r.nome;
                 document.body.appendChild(a); a.click(); a.remove();
                 setTimeout(() => URL.revokeObjectURL(url), 4000);
-                mostrarAviso('Imagem baixada: ' + r.nome, true);
+                mostrarAviso('Imagem dos gráficos baixada: ' + r.nome, true);
             } catch (e) {
                 console.error('Imagem dos gráficos:', e);
-                mostrarAviso('Não foi possível montar a imagem.');
-            } finally {
-                if (btn) { btn.disabled = false; btn.innerHTML = rot; }
             }
-        };
-        window.enviarImagemGraficos = async () => {
-            const btn = document.getElementById('btn-gs-enviar');
-            try {
-                const r = await prepararImagemGraficos(btn);
-                if (!r) return;
-                const arq = new File([r.blob], r.nome, { type: 'image/png' });
-                await navigator.share({ files: [arq], title: 'Entradas por hora · E-Club' });
-            } catch (e) {
-                if (e && e.name === 'AbortError') return;
-                console.error('Enviar imagem:', e);
-                mostrarAviso('Não deu para enviar direto. Use "Baixar imagem" e mande pelo WhatsApp.');
-            }
-        };
+        }
 
         window.renderRelatorios = () => {
             try { renderEstaNoite(); } catch (e) { console.error('Esta noite:', e); }
@@ -2942,6 +2858,7 @@ window.GuardaSessao = (function () {
 
         window.gerarRelatorioGerencial = async () => {
             ultimoNomeExport = 'Resumo_Gerencial';
+            baixarGraficosDoResumo();
             const tA = document.getElementById('output-excel');
             const val = dadosReservas.filter(reservaValidaDash);
             if (!val.length) { tA.value = 'Sem reservas de pagantes.'; return; }
